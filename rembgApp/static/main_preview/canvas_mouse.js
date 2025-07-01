@@ -1,7 +1,8 @@
 import { download_zip } from "./download_zip.js";
 
-import { headerBarColor, headerBarHeight, headerColorInput, headerOpacityInput, setHeaderBarValues } from "./header.js";
-import {updateHeaderBarColor} from "./header.js";
+//import { headerBarColor, headerBarHeight } from "./header.js"; //setHeaderBarValues
+//import {updateHeaderBarColor} from "./header.js"; // todo : no use for this 
+import { fetchHeaderMetadata, setHeaderValues, getHeaderValues, headerBarColor, headerBarHeight} from "./header_encapsulation.js";
 
 import { footerColor, footerHeight, footerTexts, footerColorInput, footerOpacityInput, footerTextList} from "./footer.js";
 import { initializeFooter } from "./footer.js";
@@ -10,6 +11,9 @@ import {canvasRedrawFooter} from "./footer.js";
 import { logoImage, logoX, logoY, logoScale } from "./logo_properties.js";
 import { initializeLogo } from "./logo_properties.js";
 import { canvasDrawLogo } from "./logo_properties.js";
+
+fetchHeaderMetadata(project_id);
+
 
 //  function to draw a border around the image
 function drawImageBorder(ctx, imageX, imageY, imageScale, img) {
@@ -32,9 +36,7 @@ function drawImageBorder(ctx, imageX, imageY, imageScale, img) {
 export let showBorder = false;
 
 // Define drawCanvas at the module level
-function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-    footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, logoScale) {
-    //console.log("drawCanvas function executed!");
+function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, logoScale) {
 
     // Draw the background first
     ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
@@ -73,7 +75,6 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
         imageX: imageX,
         imageY: imageY,
         imageScale: imageScale
-
     };
 
     metadataMap.set(canvas, metadata);
@@ -97,6 +98,7 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
         ctx.fillRect(0, 0,  canvas.width, headerBarHeight);
     }
 
+    
     // Draw footer 
     ctx.fillStyle = footerColor;
     ctx.fillRect(0, canvas.height - footerHeight, canvas.width, footerHeight);
@@ -349,8 +351,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     
                    
                     // new code for header and footer  
-                    setHeaderBarValues(metadata.header_height, metadata.header_color, metadata.header_opacity);
-                    console.log(metadata.project_id + " | heade height: " + metadata.header_height + " | header color: " + metadata.header_color + " | Opacity: " + metadata.header_opacity);
+                    //setHeaderBarValues(metadata.header_height, metadata.header_color, metadata.header_opacity);
+                    //console.log(metadata.project_id + " | heade height: " + metadata.header_height + " | header color: " + metadata.header_color + " | Opacity: " + metadata.header_opacity);
+
+                    setHeaderValues(metadata.header_height, metadata.header_color, metadata.header_opacity);
                     // new code ends
                 }
                
@@ -446,7 +450,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 imageY = mouseY - dragOffsetY;
                 
                 showBorder = true;
-                
+
                 redrawCanvas(ctx, img, background, imageX, 
                     imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
                     imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
