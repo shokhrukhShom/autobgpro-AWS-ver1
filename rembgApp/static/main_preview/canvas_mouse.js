@@ -2,11 +2,12 @@ import { download_zip } from "./download_zip.js";
 
 //import { headerBarColor, headerBarHeight } from "./header.js"; //setHeaderBarValues
 //import {updateHeaderBarColor} from "./header.js"; // todo : no use for this 
-import { fetchHeaderMetadata, setHeaderValues, getHeaderValues, headerBarColor, headerBarHeight} from "./header_encapsulation.js";
+import { fetchHeaderMetadata, setMetaValues, getMetaValues, headerBarColor, headerBarHeight, footerHeight,footerColor, footerTexts} from "./metadata_fetch.js";
 
-import { footerColor, footerHeight, footerTexts, footerColorInput, footerOpacityInput, footerTextList} from "./footer.js";
+// import { footerColor, footerHeight, footerTexts} from "./footer.js";
+
 import { initializeFooter } from "./footer.js";
-import {canvasRedrawFooter} from "./footer.js";
+//import {canvasRedrawFooter} from "./footer.js"; //dont need this
 
 import { logoImage, logoX, logoY, logoScale } from "./logo_properties.js";
 import { initializeLogo } from "./logo_properties.js";
@@ -74,7 +75,28 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
         shadowColor: 'rgba(0, 0, 0, 0.7)',
         imageX: imageX,
         imageY: imageY,
-        imageScale: imageScale
+        imageScale: imageScale,
+        
+        design_data: {  // Add this new structure
+            header: {
+                height: headerBarHeight,
+                color: headerBarColor,
+                opacity: "1"
+            },
+            footer: {
+                height: footerHeight,
+                color: footerColor,
+                opacity: "1"
+            },
+            texts: [...footerTexts],  // Create a copy of the array
+
+            logo_x: logoX,
+            logo_y: logoY,
+            logo_scale: logoScale,
+            logo_path: logoImage.src, //.src
+
+        }
+        
     };
 
     metadataMap.set(canvas, metadata);
@@ -87,7 +109,7 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
     // Draw the transparent header bar
     if (headerBarHeight > 0) {
         //console.log("headerBarHeight > 0 is true. Bar Height: " + headerBarHeight);
-        console.log("Drawing header bar: ", headerBarHeight, headerBarColor);
+        //console.log("Drawing header bar: ", headerBarHeight, headerBarColor);
         // Reset shadow properties before drawing the header
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
@@ -98,13 +120,17 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
         ctx.fillRect(0, 0,  canvas.width, headerBarHeight);
     }
 
-    
-    // Draw footer 
-    ctx.fillStyle = footerColor;
-    ctx.fillRect(0, canvas.height - footerHeight, canvas.width, footerHeight);
+    if (footerHeight) {
+        //console.log("footer height: ", footerHeight);
+        // Draw footer 
+        ctx.fillStyle = footerColor;
+        ctx.fillRect(0, canvas.height - footerHeight, canvas.width, footerHeight);
 
+    }
+    
     // Draw each footer text
     if (footerTexts != 0){
+        console.log("footer text", footerTexts);
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;
@@ -120,7 +146,7 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
     } 
     
     // Draw the uploaded logo image if it's loaded
-    if (logoImage && logoImage.src) {
+    if (logoImage && logoImage.src) { //&& logoImage.src
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;
@@ -178,42 +204,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             return metadataList; // Return all metadata related to the project
             
-            // New Code
-            // Find metadata for this specific image
-            // const metadata = metadataList.find(m => m.image_path.includes(image_path));
-            // if (!metadata) return null;
-
-            // return {
-            //     shadowSettings: {
-            //         offsetY: metadata.shadow_offset_y,
-            //         blur: metadata.shadow_blur,
-            //         color: metadata.shadow_color,
-            //         imageX: metadata.image_x,
-            //         imageY: metadata.image_y,
-            //         imageScale: metadata.image_scale
-            //     },
-            //     designElements: {
-            //         header: {
-            //             height: metadata.header_height,
-            //             color: metadata.header_color,
-            //             opacity: metadata.header_opacity
-            //         },
-            //         footer: {
-            //             height: metadata.footer_height,
-            //             color: metadata.footer_color,
-            //             opacity: metadata.footer_opacity
-            //         },
-            //         logo: {
-            //             path: metadata.logo_path,
-            //             x: metadata.logo_x,
-            //             y: metadata.logo_y,
-            //             scale: metadata.logo_scale
-            //         },
-            //         texts: metadata.texts || []
-            //     }
-            // };
-            // End New Code
-
         } catch (error) {
             console.error("Error fetching metadata:", error);
             return null;
@@ -337,7 +327,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (metadata) {
                     //console.log(`Applying metadata to image ${index}:`, metadata);
             
-                    // Apply saved properties
+                    // Apply saved properties from database that saved in metadata
                     imageX = metadata.image_x ?? canvas.width / 2;
                     imageY = metadata.image_y ?? canvas.height / 2;
                     imageScale = metadata.image_scale ?? 1;
@@ -351,15 +341,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                     
                    
                     // new code for header and footer  
-                    //setHeaderBarValues(metadata.header_height, metadata.header_color, metadata.header_opacity);
                     //console.log(metadata.project_id + " | heade height: " + metadata.header_height + " | header color: " + metadata.header_color + " | Opacity: " + metadata.header_opacity);
-
-                    setHeaderValues(metadata.header_height, metadata.header_color, metadata.header_opacity);
+                    // Setting metadata from sqlite database. setHeaderValues function called from header_encapsulation.js
+                    setMetaValues(
+                        metadata.header_height, 
+                        metadata.header_color, 
+                        metadata.header_opacity, 
+                        metadata.footer_color, 
+                        metadata.footer_height,
+                        metadata.texts,
+                        // metadata.logo_path,
+                        // metadata.logo_x,
+                        // metadata.logo_y,
+                        // metadata.logo_scale
+                    );
+                    //console.log("metadata for logo image: ", metadata.logo_path, metadata.logo_x, metadata.logo_y, metadata.logo_scale)
                     // new code ends
                 }
                
 
-                // // Draw the canvas content
+                // Draw the canvas content
                 drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, 
                     currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, logoScale);
                 
@@ -480,13 +481,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         canvas.addEventListener('wheel', (e) => {
 
             const { mouseX, mouseY } = getScaledMouseCoordinates(canvas, e);
-
             if (isMouseOverImage(mouseX, mouseY)) { 
                 const delta = e.deltaY > 0 ? -0.02 : 0.02;
                 imageScale = Math.max(0.1, imageScale + delta); // Ensure scale doesn't go below 0.1
                 
                 showBorder = true;
-
                 redrawCanvas(ctx, img, background, imageX, 
                             imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
                             imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
@@ -573,7 +572,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 metadataMap, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts, 
                 logoImage, logoX, logoY, logoScale);
         });
-        
 
     });
     
@@ -583,6 +581,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('exportImages').addEventListener('click', () => {
         console.log("exportImages initiated next download_zip function");
         download_zip();  
+    });
+
+    // Add this near your other event listeners
+    document.addEventListener('saveLogoMetadata', (event) => {
+        const { logo_path, logo_x, logo_y, logo_scale } = event.detail;
+        
+        // Update the metadata map
+        metadataMap.forEach((metadata, canvas) => {
+            metadata.design_data.logo_path = logo_path;
+            metadata.design_data.logo_x = logo_x;
+            metadata.design_data.logo_y = logo_y;
+            metadata.design_data.logo_scale = logo_scale;
+        });
+
+        // Optionally: Save to server immediately
+        // You can call your save_metadata API here if you want real-time saving
     });
 
 

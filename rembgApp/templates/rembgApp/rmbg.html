@@ -1,0 +1,492 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+
+    <title>Image Upload and Preview</title>
+
+    <link rel="stylesheet" href="{% static 'css/uploadImg.css' %}"> <!--center the images-->
+    <link rel="stylesheet" href="{% static 'css/rmbg.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bg_insert.css' %}">
+    <link rel="stylesheet" href="{% static 'css/canvasStyle.css' %}">
+    <link rel="stylesheet" href="{% static 'css/canvas-selection.css' %}">
+    <link rel="stylesheet" href="{% static 'css/text_edit.css' %}">
+
+</head>
+<body>
+    {% if user.is_authenticated %}
+        <span id="latest_upload_id" style="float: left; overflow: hidden; position: relative; font-size: 11px;">Project No.{{latest_upload_id}} </span>
+        <span style="float: right;"><a href="/">Sign Out</a> | User: <strong>{{ user.username }}</strong> and ID <strong> {{user.id}} </strong>.</span> 
+    {% endif %}
+    <br>
+    <hr style="margin-top: 30px; margin-bottom: 2px;">
+        
+    {% if message %}
+    <div style="color: red;">{{ message }}</div>
+    {% endif %}
+
+    <!--Tool Bar-->
+    <div class="tool-bar" id="tool_bar">
+        <ul>
+            <li onclick="Background_Insert()">BG Insert</li>
+            <li onclick="textBtn()">Text</li>
+            <li class="dropdown" onclick="toggleDropdown(event)">
+                <span id="shadowBtn">Shadow</span>
+                <div class="dropdown-content">
+
+                    <label for="shadow-offset-y">Shadow Offset:</label> 
+                    <input type="range" id="shadow-offset-y" min="5" max="50" value="20"> <!-- JS code at the bottom-->
+                    <span id="offset-y-value" style="color: gray;"> 20</span>
+
+                    <label for="shadow-blur">Shadow Blur:</label>
+                    <input type="range" id="shadow-blur" min="0" max="50" value="20"> <!-- JS code at the bottom-->
+                    <span id="blur-value" style="color: gray;"> 20</span>
+                    <br>
+                    <button id="cancelShadow"> reset </button>
+                    <br><br>
+                    <button onclick="saveChanges()"> Save Changes</button>
+                    <br>
+            
+
+                </div>
+            </li>
+            <li>Template</li>
+            <li onclick="location.href='{% url  'uploadImg' %}'">New Project</li>
+            <li id="exportImages">Export</li>
+        </ul>
+    </div>
+
+    <div id="main_preview" style="display: block;">
+        <h1>Main Preview</h1>
+        <button id="saveChanges" onclick="saveChanges()"> Save Changes</button>
+    </div>
+
+    <div  style="display:none ;"> <!-- Preview for Edit TODO -->
+        <div id="enlarged-image-container" class="enlarged-container" style="display: none;">
+            <button id="close-button" class="close-button">✖</button> <!-- Close button -->
+            <img id="enlarged-image" src="" alt="Enlarged Image" />
+        </div>
+
+        <!--When individual image clicked-->
+        <div id="image-edit-page" style="display: none;"> 
+            <div id="img_tool_bar">
+                <ul>
+                    <li id="Edit_Image_Btn">Edit Image</li>
+                    <li>Transform</li>
+                    <li id="cancel">Cancel</li>
+                </ul>
+            </div>
+        </div>  
+
+    </div>
+
+    <!--Start implementing canvas shadow -->
+    <div id="select-canvas" style="display: none;">
+        <h1>Select Canvas</h1>
+        <button class="nextBtn backToMain">Back</button>
+        <button class="nextBtn" id="selectAllBtn">Select All</button>
+        <button class="nextBtn" id="nextTextBtn">Next</button>
+        <br>
+        <br>
+    </div>
+    
+
+    <div id="no_container" >
+        <!-- Main Preview of Canvases -->
+        <div id="rmbg_images" class="canvas-container" style="display: block;"> 
+            {% for rembg_path in sorted_rembg_files_path %}
+                        <span class="clickable-image canvas-item canvas-wrapper" data-path="{{ rembg_path }}">
+                            <canvas class="rembg-canvas"  style=" border: 1px solid #ccc; box-shadow: none;"></canvas>
+                            <img src="{{ rembg_path}}" alt="image"  class="png-img" data-path="{{ rembg_path }}"
+                            style="display:none; width: 500px;" /><!-- getting image src with data-path on Canvases-->  
+                            <div class="checkmark" style="display: none;">✔</div> <!-- Checkmark -->
+                        </span> 
+            {% endfor %} 
+        </div>
+
+        <!-- Text Edit Right Side: Static Content -->
+        <div id="static-content" style="display: none;">
+            <button class="nextBtn backToMain" >Exit</button>
+            <!-- Add this to your image editing interface -->
+
+            
+            <!-- For text components -->
+            <button id="saveTextBtn" class="nextBtn">Save Design</button>
+
+            <div class="line"></div>
+            <h1>TEXT EDITOR</h1>
+            
+             <!-- Upload Logo Start -->
+            <div class="logo-upload-container" style="text-align: center; margin: 10px auto;">
+                <label for="logo-upload">Upload Logo</label>
+                <input type="file" class="logo-upload" id="logo-upload" accept="image/*">
+                <span id="resetLogoInput" style="cursor: pointer; color: #fff; font-weight: bold; font-size: 20px; padding: 4px;">✕</span>
+
+            </div>
+            <!-- Upload Logo END -->
+            <div class="grid-container" >
+            <!-- Header Bar Start -->
+            <div class="grid-item" style="text-align:left; margin: 10px;">
+                <h3>Header</h3>
+                <label for="header-height">Height:</label>
+                <input type="range" id="header-height" min="0" max="200" value="0">
+                <span id="header-height-value">0</span>
+
+                <label for="header-color">Color:</label>
+                <input type="color" id="header-color" value="#000000">
+                <div>
+                    <label for="header-opacity">Opacity:</label>
+                    <input type="range" id="header-opacity" min="0" max="1" step="0.1" value="1">
+                    <span id="header-opacity-value">1</span>
+                </div>
+            </div>
+            <!-- Header Bar END -->
+
+            <!-- Footer Bar, Color Pick and Opacity-->
+            <div class="grid-item" style="text-align: left; margin: 10px;">
+                <h3> Footer </h3>
+                <label for="footer-height">Height:</label>
+                <input type="range" id="footer-height" min="0" max="200" value="0">
+                <span id="footer-height-value">0</span>
+                
+                <label for="footer-color">Color:</label>
+                <input type="color" id="footer-color" value="#000000">
+                <div>
+                    <label for="footer-opacity">Opacity:</label>
+                    <input type="range" id="footer-opacity" min="0" max="1" step="0.1" value="1">
+                    <span id="footer-opacity-value">1</span>
+                </div>
+            </div>
+            <!--Footer Settings END-->
+            </div>
+            <!-- text START -->
+            <div style="width: 100%;" >
+                <div id="footer-text-controls" style="text-align: center; margin: 10px auto;">
+                    
+                    <button id="add-text-btn-footer" style="padding: 5px; margin: 5px;"><span id="plus-sign">+</span> Add Text</button>
+                </div>
+
+                <div id="footer-text-list" style="margin: 10px auto; text-align: center;">
+                    <!-- Dynamic text input sections will be added here -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+
+    <!-- background insert page -->
+    <div id="bg_images" style="display: none;">
+        
+        <button class="nextBtn" onclick="backToMainBtn()" >Back</button>
+        <button class="nextBtn" id="submitBtn" >Apply</button>
+        
+        
+       <!--"Background insert" pictures -->
+        <h1>Choose your backgrond</h1>
+        <div class="container">
+            <div class="image-grid">
+                {% for bg_path in bg_img_paths %}
+                        <div class="picture"><img src={{bg_path}} alt={{bg_path}} /> 
+                            <div class="checkmark">✔</div>
+                        </div> 
+                {% endfor %}
+            </div>
+        </div>  
+    </div>  
+
+
+
+    <!--Error message Start-->
+    <div id="error-message" class="hidden">
+        <span id="error-text"></span>
+        <button id="dismiss-btn" class="dismiss-btn">&times;</button>
+    </div>
+    <!--Error message  END-->
+
+
+    <!--Edit Image Start -->
+    <div id="canvasPage" style="display:none;">
+        <h1> Edit Image</h1>
+      
+
+        <div id="field">
+            <div class="top-controls-container"
+                style="
+                    display: flex; /* Flex container */
+                    justify-content: space-between; /* Align left and right */
+                    align-items: center; /* Vertically center items */
+                    padding: 10px; /* Add padding */
+                    width: 100%; /* Full width of the field */
+                    box-sizing: border-box; /* Ensure padding doesn't break the width */
+                ">
+
+                    <div class="top-toolbar-container"
+                    style="
+                    display: flex; /* Use Flexbox for layout */
+                    justify-content: flex-start; /* Align items to the left */
+                    align-items: center; /* Center items vertically */
+                    padding: 10px; /* Add padding */
+                    ">
+                <div class="top-tools">
+                    <button onclick="redo_last()" type="button" class="button">Redo <b>↺</b></button>
+                    <button onclick="undo_last()" type="button" class="button">Undo <b>↻</b></button>
+                    <button onclick="clear_canvas()" type="button" class="button">Clear</button>
+                </div>
+
+                <div class="backgroundSelect"
+                style="margin-left: 20px;">
+                    <select id="background-color" onchange="changeBackgroundColor(this.value)"
+                    style="
+                        background-color: rgb(212, 212, 212);
+                        font-size: medium;
+                    ">
+                        <option value="#252525" selected>Dark Gray</option>
+                        <option value="lightgray">Light Gray</option>
+                        <option value="white">White</option>
+                        <option value="black">Black</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="top-save-control"
+            style="
+                display: flex; /* Use Flexbox for layout */
+                justify-content: flex-end; /* Align items to the right */
+                align-items: center; /* Center items vertically */
+            ">
+                    <button id="saveImage" type="button" class="buttonSave" name="saveBTN">
+                        Save
+                    </button>
+                    <button type="button" onclick="backToMainBtn()" class="buttonSave dontsave">
+                        Exit without saving
+                    </button>
+                
+            </div>
+
+        </div>
+
+
+        <!-- Canvas and Tools-->
+        <canvas id="canvas" width="900" ></canvas>
+
+        <div class="tools">
+
+            <button onclick="useEraser()" type="button" class="button">Erase</button>
+            <button onclick="useRestore()" type="button" class="button">Restore </button>
+
+            <input 
+                oninput="updateCursorWidth(this.value)"
+                type="range" 
+                min="2" max="100" 
+                class="pen-range"
+                value = "50"
+                >
+
+            <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg" 
+            style="
+            display: none;
+            /*display: flex;*/
+            background-color: black; 
+            border:2px dotted white; 
+            justify-content: center;
+            margin-top: 15px;
+            ">
+                <circle cx="20" cy="20" r="20" stroke="white" stroke-width="2" fill="none" />
+            </svg>
+                
+    
+            </div>
+        </div>
+    
+    </div>
+    <!--Edit Image End -->
+
+
+    <!--Edit image js src-->
+    <script type="text/javascript" src="{% static 'canvasJavascript.js' %}">
+    </script>
+
+    <!--Load canvas.js  -->
+    <script type="text/javascript" src="{% static 'canvas.js' %}" defer>
+    </script>
+
+    <script type="module" src="{% static 'main_preview/canvas_mouse.js' %}" defer></script>
+    <!-- Load rmbg.js  -->
+    <script type="text/javascript" src="{% static 'rmbg.js' %}" defer>
+    </script>
+
+    <!-- Load zip jszip.js.js -->
+    <script type="text/javascript" src="static/jszip.js">
+    </script> 
+    
+
+
+    <!-- Code for canvas --> 
+    <script>
+        // Update your JavaScript to send the JSON to the server using fetch
+        function saveChanges(){
+
+            //console.log("save btn pressed");
+            const finalMetadataArray = Array.from(metadataMap.values()); // metadataMap 
+            console.log(finalMetadataArray);
+            
+            // Fetch POST to save sqlite database
+
+            fetch('save_metadata', {  // Adjust URL based on your Django URL structure
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken() // Include CSRF token
+                },
+                body: JSON.stringify({ metadata:finalMetadataArray }) 
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Response from server:", data);
+                showError("Shadow Setting are saved", "green")
+             
+            })
+            .catch(error => {
+                console.error("Error saving metadata:", error);
+                showError("Error saving metadata: " + error, "red");
+            });
+        }
+
+        // Function to get CSRF token from Django's cookies
+        function getCSRFToken() {
+            const cookieValue = document.cookie.match(/csrftoken=([^ ;]+)/);
+            return cookieValue ? cookieValue[1] : '';
+        }
+                
+            
+        // Setting up objs array to store canvas properties
+        window.metadataMap = new Map();
+        
+
+        // assigning the background to variable
+        window.project_id = "{{ latest_upload_id|escapejs }}";
+
+        document.addEventListener("DOMContentLoaded", () => {
+
+            //experimental
+            window.currentBg = "{{ current_bg|escapejs }}";
+
+        });
+
+
+        // Call this when saving saveTextComponents
+        document.getElementById('saveTextBtn').addEventListener('click', saveTextComponents);
+
+        function saveTextComponents() {
+            const canvasWrappers = document.querySelectorAll('.canvas-wrapper');
+            const visibleCanvases = [];
+            const project_id = "{{ latest_upload_id|escapejs }}";
+            
+            // Filter only visible canvases
+            canvasWrappers.forEach(wrapper => {
+                if (window.getComputedStyle(wrapper).display !== 'none') {
+                    const canvas = wrapper.querySelector('.rembg-canvas');
+                    if (canvas) visibleCanvases.push(canvas);
+                }
+            });
+            
+            // Prepare data with proper formatting
+            const elements = visibleCanvases.map(canvas => {
+                const meta = metadataMap.get(canvas);
+                
+                // Get relative image path (remove domain and query params)
+                let imagePath = meta.imagePath;
+                if (imagePath.includes(window.location.origin)) {
+                    imagePath = imagePath.replace(window.location.origin, '');
+                }
+                if (imagePath.includes('?')) {
+                    imagePath = imagePath.split('?')[0];
+                }
+                
+                return {
+                    image_path: imagePath,
+                    design_data: {
+                        header: {
+                            height: parseInt(meta.design_data.header.height) || 0,
+                            color: meta.design_data.header.color,
+                            opacity: parseFloat(meta.design_data.header.opacity) || 1.0
+                        },
+                        footer: {
+                            height: parseInt(meta.design_data.footer.height) || 0,
+                            color: meta.design_data.footer.color,
+                            opacity: parseFloat(meta.design_data.footer.opacity) || 1.0
+                        },
+                        texts: meta.design_data.texts || [],
+                        
+                        // New Code
+                        logo_x: meta.design_data.logo_x,
+                        logo_y: meta.design_data.logo_y,
+                        logo_scale: meta.design_data.logo_scale,
+                        logo_path: meta.design_data.logo_path,
+                        
+                    }
+                };
+            });
+            
+            const data = { 
+                project_id: project_id,
+                elements: elements 
+            };
+            
+            console.log("Saving design data:", JSON.stringify(data, null, 2));
+
+            fetch('save_metadata', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || 'Failed to save design'); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Design saved:", data);
+                showError("Design saved successfully!", "green");
+            })
+            .catch(error => {
+                console.error("Error saving design:", error);
+                showError("Error saving design: " + error.message, "red");s
+            });
+        }
+        
+
+
+    </script>
+
+
+<!--Load main preview js file-->
+<script type="module" src="{% static 'main_preview/canvas_mouse.js' %}" defer></script>
+
+<!-- Load Logo Properties JS File-->
+<script type="module" src="{% static 'main_preview/logo_properties.js' %}" defer></script>
+
+<!-- Load Header JS File-->
+<script type="module" src="{% static 'main_preview/header.js' %}" defer></script>
+
+<!-- Load Footer JS File-->
+<script type="module" src="{% static 'main_preview/footer.js' %}" defer></script>
+
+<!--load download zip js file-->
+<script type="module" src="{% static 'main_preview/download_zip.js' %}" defer></script>
+ 
+</body>
+</html>

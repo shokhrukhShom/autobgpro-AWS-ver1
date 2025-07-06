@@ -9,6 +9,7 @@ let footerHeight = 1;
 let footerColor = 'rgba(0, 0, 0, 0.5)';
 let footerTexts = [];
 
+
 // Fetch header metadata from SQLite database
 async function fetchHeaderMetadata(project_id) {
     try {
@@ -63,10 +64,10 @@ async function fetchHeaderMetadata(project_id) {
                     // Start logging every 0.25 second
                     if (!intervalId) {
                         intervalId = setInterval(() => {
-                            console.log("Hovering on:", fileName);
+                            //console.log("Hovering on:", fileName);
                             // ------assign metadata here-------------------
                             let hoveredMetadata = metadataList.find(obj => obj.image_path.endsWith(fileName));
-                            console.log("Hovered metadata: ", hoveredMetadata);
+                            //console.log("Hovered metadata: ", hoveredMetadata);
                             
                             
                             //Assigning metadata 
@@ -76,8 +77,6 @@ async function fetchHeaderMetadata(project_id) {
                             footerHeight = hoveredMetadata.footer_height;;
                             footerColor = hoveredMetadata.footer_color;
                             footerTexts = hoveredMetadata.texts;
-
-                            
 
 
                         }, 250); // 0.25 second
@@ -103,26 +102,26 @@ async function fetchHeaderMetadata(project_id) {
 
 // Set header values (for manual updates)
 function setMetaValues(header_height, header_color, header_opacity, footer_color, footer_height, texts) {
-    headerBarHeight = header_height;
-    headerBarColor = header_color;
-    headerOpacity = header_opacity;
-    footerColor = footer_color;
-    footerHeight = footer_height;
-    footerTexts = texts;
-}
+        
+        headerBarHeight = header_height;
+        headerBarColor = header_color;
+        headerOpacity = header_opacity;
+        footerColor = footer_color;
+        footerHeight = footer_height;
+        footerTexts = texts;
+    }
 
 // Get current header values
 function getMetaValues() {
     return {
-        headerBarColor,
         headerBarHeight,
+        headerBarColor,
         headerOpacity,
 
-        footerHeight,
         footerColor,
+        footerHeight,
         footerTexts,
     };
 }
 
-export { fetchHeaderMetadata, setMetaValues, getMetaValues, headerBarColor, headerBarHeight, 
-    footerColor, footerHeight, footerTexts };
+export { fetchHeaderMetadata, setMetaValues, getMetaValues, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts};
