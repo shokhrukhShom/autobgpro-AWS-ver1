@@ -12,6 +12,8 @@ import { initializeFooter } from "./footer.js";
 import { logoImage, logoX, logoY, logoScale } from "./logo_properties.js";
 import { initializeLogo } from "./logo_properties.js";
 import { canvasDrawLogo } from "./logo_properties.js";
+import { getLogo, setLogo } from "./logo_properties.js";
+
 
 fetchHeaderMetadata(project_id);
 
@@ -130,7 +132,7 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
     
     // Draw each footer text
     if (footerTexts != 0){
-        console.log("footer text", footerTexts);
+        //console.log("footer text", footerTexts);
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;
@@ -339,6 +341,32 @@ document.addEventListener("DOMContentLoaded", async () => {
                     offsetYValue.textContent = shadowOffsetY;
                     blurValue.textContent = shadowBlur;     
                     
+                    // new code for logo -------------------------
+                    // Load logo from metadata if available
+                    if (metadata.logo_path) {
+                        const logoImg = new Image();
+                        logoImg.src = metadata.logo_path;
+                        setLogo(
+                            logoImg,
+                            metadata.logo_x || 100,
+                            metadata.logo_y || 100,
+                            metadata.logo_scale || 0.1
+                        );
+                        
+                        logoImg.onload = function() {
+                            const logo = getLogo();
+                            drawCanvas(ctx, img, background, imageX, imageY, imageScale, 
+                                shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, 
+                                project_id, metadataMap, headerBarColor, headerBarHeight, 
+                                footerColor, footerHeight, footerTexts, 
+                                logo.image, logo.x, logo.y, logo.scale);
+                        };
+                    } else {
+                        console.log("No logo metadata found for canvas ", index);
+                    }
+                    // new code for logo ends -------------------------
+
+
                    
                     // new code for header and footer  
                     //console.log(metadata.project_id + " | heade height: " + metadata.header_height + " | header color: " + metadata.header_color + " | Opacity: " + metadata.header_opacity);
@@ -357,6 +385,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     );
                     //console.log("metadata for logo image: ", metadata.logo_path, metadata.logo_x, metadata.logo_y, metadata.logo_scale)
                     // new code ends
+
                 }
                
 

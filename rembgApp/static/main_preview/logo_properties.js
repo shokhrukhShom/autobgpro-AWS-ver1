@@ -1,9 +1,30 @@
+// New code for logo -------------------------
+const logoState = {
+    image: new Image(),
+    x: 100,
+    y: 100,
+    scale: 0.1
+};
+
+export function getLogo() {
+    return logoState;
+}
+
+export function setLogo(img, x = 100, y = 100, scale = 0.1) {
+    logoState.image = img;
+    logoState.x = x;
+    logoState.y = y;
+    logoState.scale = scale;
+}
+
+// End new code for logo -------------------------
+
+
 // LOGO image initializing
 export let logoImage = new Image(); // Image object for the logo
 export let logoX = 100;  // Position for the logo on the canvas
 export let logoY = 100;  // Position for the logo on the canvas
 export let logoScale = 0.1; // Scale for the logo
-
 
 
 // Flag to track if logo upload listener has been initialized
@@ -12,7 +33,24 @@ let logoUploadInitialized = false;
 let file = null; // Variable to store the uploaded file
 
 export function initializeLogo (canvas){
-    // New Code Upload Logo
+
+    // new code-------------------
+    // Check if metadata exists for this canvas and has logo info
+    const meta = metadataMap.get(canvas);
+    if (meta && meta.design_data && meta.design_data.logo_path) {
+        logoImage = new Image();
+        logoImage.src = meta.design_data.logo_path;
+        logoX = meta.design_data.logo_x || 100;
+        logoY = meta.design_data.logo_y || 100;
+        logoScale = meta.design_data.logo_scale || 0.1;
+        
+        logoImage.onload = function() {
+            canvasDrawLogo(); // Redraw canvas when logo loads
+        };
+    }
+    // end new code-----------------
+
+
     // LOGO image Function to handle the image upload
     document.getElementById('logo-upload').addEventListener('change', function(e) {
         file = e.target.files[0];
@@ -115,17 +153,15 @@ export function initializeLogo (canvas){
                     };
                 };
                 reader.readAsDataURL(file);
-                file = null;
-                console.log("reset log: ", file);
             }
         });
 
         // Optionally reset logo position/scale or image
         // Uncomment if desired:
-        logoX = 100;
-        logoY = 100;
-        logoScale = 0.1;
-        logoImage.src = "";  // Clear the logo image if needed
+        // logoX = 100;
+        // logoY = 100;
+        // logoScale = 0.1;
+        // logoImage.src = "";  // Clear the logo image if needed
         
         canvasDrawLogo(); // Redraw canvas
     });

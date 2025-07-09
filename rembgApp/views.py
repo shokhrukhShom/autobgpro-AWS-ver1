@@ -624,7 +624,7 @@ def upload_logo(request):
             print(relative_path)
             
             
-            # #new code
+            # New code
             selected_pictures_json = request.POST.get('selectedPictures') # Get the JSON string from the POST data
             selected_pictures = json.loads(selected_pictures_json) if selected_pictures_json else []
             
@@ -651,41 +651,14 @@ def upload_logo(request):
                     
                     if not created:
                         # Update existing metadata
-                        metadata.logo_path = relative_path
+                        metadata.logo_path = 'http://127.0.0.1:8000/'+relative_path
                         # metadata.logo_x = 100  # Reset position on new upload
                         # metadata.logo_y = 100
                         # metadata.logo_scale = 0.1
                         metadata.save()
 
-            # #end new code
-            
-            
-            # New code | save logo to sqlite -----------
-            # Get the latest project for the current user
-            # and get canvas by image path array list
-            # latest_project = Uploaded_Pictures.objects.filter(author=request.user).order_by('-id').first()
+            # End new code
 
-            # if latest_project:
-            #     # Get or create metadata for this project
-            #     metadata, created = Metadata.objects.get_or_create(
-            #         project=latest_project,
-            #         defaults={
-            #             'logo_path': relative_path,
-            #             'logo_x': 100,  # Default X position
-            #             'logo_y': 100,  # Default Y position
-            #             'logo_scale': 0.1  # Default scale
-            #         }
-            #     )
-                
-            #     if not created:
-            #         # Update existing metadata
-            #         metadata.logo_path = relative_path
-            #         metadata.logo_x = 100  # Reset position on new upload
-            #         metadata.logo_y = 100
-            #         metadata.logo_scale = 0.1
-            #         metadata.save()
-            # # END New code | save logo to sqlite -----------
-            
             return JsonResponse({
                 'status': 'success',
                 'logo_path': relative_path
