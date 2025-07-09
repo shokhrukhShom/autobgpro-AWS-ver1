@@ -1,0 +1,31 @@
+How it all works
+
+Intro:
+I am building and building but getting confuced on how code works, thats why lets explain here.
+This is remove background and choose your own background to image SAS (software as a service) project. 
+With $20 per month ($150 per year) subscription, with potential of 1,000 users 
+and 1,000 x $20 = $20,000 monthly earning potential. 
+
+
+How canvas shows background
+TODO
+
+
+How canvas shows png
+TODO
+
+
+How background removed and pictures stored
+TODO
+
+
+Storing/saving Shadow header/footer/logo/text design
+Metadata model is set up to store shadow settings as well as text design
+
+
+Showing header/footer/logo/text design design
+TODO
+
+How logo upload works
+When "Upload Logo" clicked it shows logo on canvsa only. "Save Design" button calls records two API "upload_logo" and "save_metadata". This both saves shadow and data for logoX, logoY, logoScale. 
+logo_path saved with "logo_upload" API.

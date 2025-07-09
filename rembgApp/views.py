@@ -16,7 +16,8 @@ import io
 import base64
 from django.core.files.base import ContentFile
 import re
-
+import time
+from django.conf import settings
 
 
 
@@ -461,104 +462,7 @@ def save_image_edit(request):
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"})
 
-#Old code for sava_metadata
-"""
-@csrf_exempt  # Use CSRF token in frontend for security
-@login_required
-def save_metadata(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)  # Parse JSON request
-            metadata_list = data.get('metadata', [])
 
-            for meta in metadata_list:
-                project_id = meta.get('project_id')  # Get project ID
-                if not project_id:
-                    return JsonResponse({'error': 'Project ID is required'}, status=400)
-
-                try:
-                    project = Uploaded_Pictures.objects.get(id=project_id)  # Get project instance
-                except Uploaded_Pictures.DoesNotExist:
-                    return JsonResponse({'error': 'Uploaded_Pictures not found'}, status=404)
-
-                image_path = meta.get('imagePath')  # Ensure each image has its own metadata
-
-                # Check if metadata for this specific image already exists (same project + image path)
-                metadata = Metadata.objects.filter(project=project, image_path=image_path).first()
-
-                if metadata:
-                    # Update existing metadata entry for this image
-                    metadata.canvas_width = meta.get('canvasWidth', metadata.canvas_width)
-                    metadata.canvas_height = meta.get('canvasHeight', metadata.canvas_height)
-                    metadata.background_path = meta.get('backgroundPath', metadata.background_path)
-                    metadata.shadow_offset_y = meta.get('shadowOffsetY', metadata.shadow_offset_y)
-                    metadata.shadow_blur = meta.get('shadowBlur', metadata.shadow_blur)
-                    metadata.shadow_color = meta.get('shadowColor', metadata.shadow_color)
-                    metadata.image_x = meta.get('imageX', metadata.image_x)
-                    metadata.image_y = meta.get('imageY', metadata.image_y)
-                    metadata.image_scale = meta.get('imageScale', metadata.image_scale)
-
-                    # Update header, footer, logo, and texts
-                    metadata.header_height = meta.get('header', {}).get('height', metadata.header_height)
-                    metadata.header_color = meta.get('header', {}).get('color', metadata.header_color)
-                    metadata.header_opacity = meta.get('header', {}).get('opacity', metadata.header_opacity)
-
-                    metadata.footer_height = meta.get('footer', {}).get('height', metadata.footer_height)
-                    metadata.footer_color = meta.get('footer', {}).get('color', metadata.footer_color)
-                    metadata.footer_opacity = meta.get('footer', {}).get('opacity', metadata.footer_opacity)
-
-                    metadata.logo_path = meta.get('logo', {}).get('path', metadata.logo_path)
-                    metadata.logo_x = meta.get('logo', {}).get('x', metadata.logo_x)
-                    metadata.logo_y = meta.get('logo', {}).get('y', metadata.logo_y)
-                    metadata.logo_scale = meta.get('logo', {}).get('scale', metadata.logo_scale)
-
-                    #metadata.texts = meta.get('texts', metadata.texts)  # Update texts
-                    #Potential Issue: If meta.get('texts') is None, it overwrites metadata.texts to None instead of keeping the existing value.
-                    metadata.texts = meta.get('texts') if meta.get('texts') is not None else metadata.texts
-
-
-                    metadata.save()  # Save updates
-                else:
-                    # Create a new metadata entry for this image
-                    Metadata.objects.create(
-                        project=project,
-                        canvas_width=meta.get('canvasWidth'),
-                        canvas_height=meta.get('canvasHeight'),
-                        image_path=image_path,  # Differentiate by image path
-                        background_path=meta.get('backgroundPath'),
-                        shadow_offset_y=meta.get('shadowOffsetY'),
-                        shadow_blur=meta.get('shadowBlur'),
-                        shadow_color=meta.get('shadowColor'),
-                        image_x=meta.get('imageX'),
-                        image_y=meta.get('imageY'),
-                        image_scale=meta.get('imageScale'),
-
-                        # New fields for header, footer, logo, and texts
-                        #----------------new code ----
-                        # ---------- todo needs attentions not in use right now
-                        header_height=meta.get('header', {}).get('height', 0),
-                        header_color=meta.get('header', {}).get('color', '#000000'),
-                        header_opacity=meta.get('header', {}).get('opacity', 1.0),
-
-                        footer_height=meta.get('footer', {}).get('height', 0),
-                        footer_color=meta.get('footer', {}).get('color', '#000000'),
-                        footer_opacity=meta.get('footer', {}).get('opacity', 1.0),
-
-                        logo_path=meta.get('logo', {}).get('path', ''),
-                        logo_x=meta.get('logo', {}).get('x', 100),
-                        logo_y=meta.get('logo', {}).get('y', 100),
-                        logo_scale=meta.get('logo', {}).get('scale', 1.0),
-
-                        texts=meta.get('texts', [])  # Store texts as JSON
-                    )
-
-            return JsonResponse({'message': 'Metadata saved successfully!'}, status=201)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
-
-    return JsonResponse({'error': 'Invalid request'}, status=400)
-"""
 
 @csrf_exempt
 @login_required
@@ -617,166 +521,6 @@ def handle_shadow_settings(request, data):
 
     return JsonResponse({'message': 'Shadow settings saved successfully!'}, status=201)
 
-#Ols Code
-'''
-# def handle_design_elements(request, data):
-#     project_id = data.get('project_id')
-#     if not project_id:
-#         return JsonResponse({'error': 'Project ID is required'}, status=400)
-
-#     try:
-#         project = Uploaded_Pictures.objects.get(id=project_id, author=request.user)
-#     except Uploaded_Pictures.DoesNotExist:
-#         return JsonResponse({'error': 'Project not found or access denied'}, status=404)
-
-#     for element in data.get('elements', []):
-#         image_path = element.get('image_path')
-#         design_data = element.get('design_data', {})
-        
-#         metadata, created = Metadata.objects.get_or_create(
-#             project=project,
-#             image_path=image_path,
-#             defaults={
-#                 'header_height': design_data.get('header', {}).get('height', 0),
-#                 'header_color': design_data.get('header', {}).get('color', '#000000'),
-#                 'header_opacity': design_data.get('header', {}).get('opacity', 1.0),
-#                 'footer_height': design_data.get('footer', {}).get('height', 0),
-#                 'footer_color': design_data.get('footer', {}).get('color', '#000000'),
-#                 'footer_opacity': design_data.get('footer', {}).get('opacity', 1.0),
-#                 'logo_path': design_data.get('logo', {}).get('path', ''),
-#                 'logo_x': design_data.get('logo', {}).get('x', 100),
-#                 'logo_y': design_data.get('logo', {}).get('y', 100),
-#                 'logo_scale': design_data.get('logo', {}).get('scale', 1.0),
-#                 'texts': design_data.get('texts', [])
-#             }
-#         )
-
-#         if not created:
-#             # Header
-#             if 'header' in design_data:
-#                 metadata.header_height = design_data['header'].get('height', metadata.header_height)
-#                 metadata.header_color = design_data['header'].get('color', metadata.header_color)
-#                 metadata.header_opacity = design_data['header'].get('opacity', metadata.header_opacity)
-            
-#             # Footer
-#             if 'footer' in design_data:
-#                 metadata.footer_height = design_data['footer'].get('height', metadata.footer_height)
-#                 metadata.footer_color = design_data['footer'].get('color', metadata.footer_color)
-#                 metadata.footer_opacity = design_data['footer'].get('opacity', metadata.footer_opacity)
-            
-#             # Logo
-#             if 'logo' in design_data:
-#                 metadata.logo_path = design_data['logo'].get('path', metadata.logo_path)
-#                 metadata.logo_x = design_data['logo'].get('x', metadata.logo_x)
-#                 metadata.logo_y = design_data['logo'].get('y', metadata.logo_y)
-#                 metadata.logo_scale = design_data['logo'].get('scale', metadata.logo_scale)
-            
-#             # Texts
-#             if 'texts' in design_data:
-#                 metadata.texts = design_data['texts'] if design_data['texts'] is not None else metadata.texts
-            
-#             metadata.save()
-
-#     return JsonResponse({'message': 'Design elements saved successfully!'}, status=201)
-'''
-
-#doesnt work properly
-''' 
-# def handle_design_elements(request, data):
-    
-#     print("Received data:", data)  # Add this line for debugging
-    
-#     project_id = data.get('project_id')
-#     if not project_id:
-#         return JsonResponse({'error': 'Project ID is required'}, status=400)
-
-#     try:
-#         project = Uploaded_Pictures.objects.get(id=project_id, author=request.user)
-#     except Uploaded_Pictures.DoesNotExist:
-#         return JsonResponse({'error': 'Project not found or access denied'}, status=404)
-
-#     for element in data.get('elements', []):
-#         image_path = element.get('image_path')
-#         design_data = element.get('design_data', {})
-        
-        
-#         if not image_path:
-#             continue
-
-#         # Get existing metadata or create new if doesn't exist
-#         metadata, created = Metadata.objects.get_or_create(
-#             project=project,
-#             image_path=image_path,
-#             defaults={
-#                 'texts': design_data.get('texts', [])
-#             }
-#         )
-
-#         # Only update texts if they exist in the request
-#         if 'texts' in design_data:
-#             metadata.texts = design_data['texts'] if design_data['texts'] is not None else []
-#             metadata.save()
-
-#     return JsonResponse({'message': 'Text components saved for visible canvases!'}, status=201)
-'''
-
-# this on kinda works but little messed up
-"""
-# def handle_design_elements(request, data):
-#     try:
-#         project_id = data.get('project_id')
-#         if not project_id:
-#             return JsonResponse({'error': 'Project ID is required'}, status=400)
-
-#         try:
-#             project = Uploaded_Pictures.objects.get(id=project_id, author=request.user)
-#         except Uploaded_Pictures.DoesNotExist:
-#             return JsonResponse({'error': 'Project not found or access denied'}, status=404)
-
-#         for element in data.get('elements', []):
-#             image_path = element.get('image_path', '')
-#             design_data = element.get('design_data', {})
-            
-#             # Clean image path
-#             if image_path.startswith('http'):
-#                 image_path = image_path.replace(request.build_absolute_uri('/'), '')
-#             if '?' in image_path:
-#                 image_path = image_path.split('?')[0]
-            
-#             # Validate required fields
-#             if not image_path:
-#                 continue
-                
-#             # Prepare data with defaults
-#             header = design_data.get('header', {})
-#             footer = design_data.get('footer', {})
-            
-#             defaults = {
-#                 'header_height': int(header.get('height', 0)),
-#                 'header_color': header.get('color', '#000000'),
-#                 'header_opacity': float(header.get('opacity', 1.0)),
-#                 'footer_height': int(footer.get('height', 0)),
-#                 'footer_color': footer.get('color', '#000000'),
-#                 'footer_opacity': float(footer.get('opacity', 1.0)),
-#                 'texts': design_data.get('texts', [])
-#             }
-            
-#             # Save to database
-#             metadata, created = Metadata.objects.update_or_create(
-#                 project=project,
-#                 image_path=image_path,
-#                 defaults=defaults
-#             )
-            
-#             print(f"Saved metadata for {image_path}")  # Debug log
-
-#         return JsonResponse({'message': 'Design elements saved successfully!'}, status=201)
-        
-#     except Exception as e:
-#         print("Error in handle_design_elements:", str(e))  # Debug log
-#         return JsonResponse({'error': str(e)}, status=400)
-"""
-
 def handle_design_elements(request, data):
     elements = data.get('elements', [])
     for element in elements:
@@ -804,10 +548,17 @@ def handle_design_elements(request, data):
                 'header_height': design_data.get('header', {}).get('height', 0),
                 'header_color': design_data.get('header', {}).get('color', '#000000'),
                 'header_opacity': design_data.get('header', {}).get('opacity', 1.0),
+                
                 'footer_height': design_data.get('footer', {}).get('height', 0),
                 'footer_color': design_data.get('footer', {}).get('color', '#000000'),
                 'footer_opacity': design_data.get('footer', {}).get('opacity', 1.0),
-                'texts': design_data.get('texts', []), 
+                
+                'texts': design_data.get('texts', []),
+                
+                'logo_path': design_data.get('logo_path', "Not Given"),
+                'logo_x': design_data.get('logo_x', 100),
+                'logo_y': design_data.get('logo_y', 100),
+                'logo_scale': design_data.get('logo_scale', 0.1) 
             }
         )
 
@@ -825,11 +576,125 @@ def handle_design_elements(request, data):
             
             if 'texts' in design_data:
                 metadata.texts = design_data['texts'] if design_data['texts'] is not None else metadata.texts
+                
+            # Update logo properties if they exist in the design_data
+            if 'logo_path' in design_data:
+                metadata.logo_path = design_data['logo_path']
+            if 'logo_x' in design_data:
+                metadata.logo_x = design_data['logo_x']
+            if 'logo_y' in design_data:
+                metadata.logo_y = design_data['logo_y']
+            if 'logo_scale' in design_data:
+                metadata.logo_scale = design_data['logo_scale']
             
             metadata.save()
 
     return JsonResponse({'message': 'Design elements saved successfully!'}, status=201)
 
+
+#Save logo png file in folder
+@csrf_exempt
+@login_required
+def upload_logo(request):
+    if request.method == 'POST':
+        try:
+            user_id = str(request.user.id)
+            logo_file = request.FILES.get('logo')
+            project_id = request.POST.get('project_id')  # Get the project ID from the POST data
+
+            if not logo_file:
+                return JsonResponse({'error': 'No logo file provided'}, status=400)
+            
+            # Create logos directory if it doesn't exist
+            logo_dir = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', 'logos')
+            os.makedirs(logo_dir, exist_ok=True)
+            
+            # Generate a unique filename (you can customize this)
+            timestamp = int(time.time())
+            logo_filename = f'logo_{timestamp}{os.path.splitext(logo_file.name)[1]}'
+            logo_path = os.path.join(logo_dir, logo_filename)
+            
+            # Save the file
+            with open(logo_path, 'wb+') as destination:
+                for chunk in logo_file.chunks():
+                    destination.write(chunk)
+            
+            # Return the relative path that can be used in the frontend
+            relative_path = os.path.join('media', 'images', f'user_id_{user_id}', 'logos', logo_filename)
+            print(relative_path)
+            
+            
+            # #new code
+            selected_pictures_json = request.POST.get('selectedPictures') # Get the JSON string from the POST data
+            selected_pictures = json.loads(selected_pictures_json) if selected_pictures_json else []
+            
+            if selected_pictures:
+                print("Selected pictures:", selected_pictures)
+                
+                for pic in selected_pictures:
+                    # print("Picture from selected pictures array: ", pic)
+                    selected_canvas = Metadata.objects.filter(project__id=project_id, image_path=pic).first()
+                    print("Selected canvas: ", selected_canvas)
+
+                    if selected_canvas:
+                        # Get or create metadata for this project
+                        metadata, created = Metadata.objects.get_or_create(
+                            project=selected_canvas.project,
+                            image_path=pic,
+                            defaults={
+                                'logo_path': relative_path,
+                                # 'logo_x': 100,  # Default X position
+                                # 'logo_y': 100,  # Default Y position
+                                # 'logo_scale': 0.1  # Default scale
+                            }
+                    )
+                    
+                    if not created:
+                        # Update existing metadata
+                        metadata.logo_path = relative_path
+                        # metadata.logo_x = 100  # Reset position on new upload
+                        # metadata.logo_y = 100
+                        # metadata.logo_scale = 0.1
+                        metadata.save()
+
+            # #end new code
+            
+            
+            # New code | save logo to sqlite -----------
+            # Get the latest project for the current user
+            # and get canvas by image path array list
+            # latest_project = Uploaded_Pictures.objects.filter(author=request.user).order_by('-id').first()
+
+            # if latest_project:
+            #     # Get or create metadata for this project
+            #     metadata, created = Metadata.objects.get_or_create(
+            #         project=latest_project,
+            #         defaults={
+            #             'logo_path': relative_path,
+            #             'logo_x': 100,  # Default X position
+            #             'logo_y': 100,  # Default Y position
+            #             'logo_scale': 0.1  # Default scale
+            #         }
+            #     )
+                
+            #     if not created:
+            #         # Update existing metadata
+            #         metadata.logo_path = relative_path
+            #         metadata.logo_x = 100  # Reset position on new upload
+            #         metadata.logo_y = 100
+            #         metadata.logo_scale = 0.1
+            #         metadata.save()
+            # # END New code | save logo to sqlite -----------
+            
+            return JsonResponse({
+                'status': 'success',
+                'logo_path': relative_path
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
 @csrf_exempt  # Use CSRF token in frontend for security

@@ -1,4 +1,3 @@
-
 // LOGO image initializing
 export let logoImage = new Image(); // Image object for the logo
 export let logoX = 100;  // Position for the logo on the canvas
@@ -10,10 +9,9 @@ export let logoScale = 0.1; // Scale for the logo
 // Flag to track if logo upload listener has been initialized
 let logoUploadInitialized = false;
 
-let file = null;;
+let file = null; // Variable to store the uploaded file
 
-export function initializeLogo (canvas){ 
-    
+export function initializeLogo (canvas){
     // New Code Upload Logo
     // LOGO image Function to handle the image upload
     document.getElementById('logo-upload').addEventListener('change', function(e) {
@@ -36,12 +34,16 @@ export function initializeLogo (canvas){
     if (!logoUploadInitialized) {
         document.getElementById('saveTextBtn').addEventListener('click', function(e) {
             console.log("logo saved!");
-            console.log("Save Text Log: ", file);
+            console.log("Save Text Log: ", file.src);
             //const file = e.target.files[0];
             if (file) {
+                console.log("File to be uploaded:", file); // Debug log
+
+                // Prepare form data
                 const formData = new FormData();
-                formData.append('logo', file);
-                
+                formData.append('logo', file); // Append the file to the form data 
+                formData.append('selectedPictures', JSON.stringify(selectedPicture)); // Append selected pictures
+                formData.append('project_id', project_id); // Append the project ID to the form data
                 // Send to server for saving
                 fetch('/upload_logo/', {
                     method: 'POST',
@@ -53,7 +55,8 @@ export function initializeLogo (canvas){
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        logoImage.src = '/' + data.logo_path; // Set the logo source to the saved path .src
+                        logoImage.src = '/' + data.logo_path; // Set the logo source to the saved path src
+                        console.log("Logo uploaded successfully:", logoImage);
                         logoImage.onload = function() {
                             canvasDrawLogo(); // Redraw the canvas with the logo
                         };

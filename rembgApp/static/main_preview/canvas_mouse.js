@@ -93,7 +93,7 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
             logo_x: logoX,
             logo_y: logoY,
             logo_scale: logoScale,
-            logo_path: logoImage.src, //.src
+            //logo_path: logoImage.src // .src
 
         }
         
@@ -146,7 +146,7 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
     } 
     
     // Draw the uploaded logo image if it's loaded
-    if (logoImage && logoImage.src) { //&& logoImage.src
+    if (logoImage) { //&& logoImage.src
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;
