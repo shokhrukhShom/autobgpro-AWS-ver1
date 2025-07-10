@@ -148,7 +148,10 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
     } 
     
     // Draw the uploaded logo image if it's loaded
-    if (logoImage) { //&& logoImage.src
+    if (logoImage && logoImage.src) { //&& logoImage.src
+
+        
+        console.log("Drawing logo at:", logoX, logoY, "with scale:", logoScale, "logo src:", logoImage.src);
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;
@@ -160,6 +163,8 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
         ctx.drawImage(logoImage, 0, 0); // Draw the logo image
         ctx.restore();
     }
+
+
 }
 
 function redrawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, logoScale) {
@@ -342,8 +347,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     blurValue.textContent = shadowBlur;     
                     
                     // new code for logo -------------------------
-                    // Load logo from metadata if available
                     if (metadata.logo_path) {
+                        console.log("Loading logo from metadata:", metadata.logo_path);
                         const logoImg = new Image();
                         logoImg.src = metadata.logo_path;
                         setLogo(
@@ -361,8 +366,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 footerColor, footerHeight, footerTexts, 
                                 logo.image, logo.x, logo.y, logo.scale);
                         };
-                    } else {
-                        console.log("No logo metadata found for canvas ", index);
                     }
                     // new code for logo ends -------------------------
 
@@ -378,10 +381,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                         metadata.footer_color, 
                         metadata.footer_height,
                         metadata.texts,
-                        // metadata.logo_path,
-                        // metadata.logo_x,
-                        // metadata.logo_y,
-                        // metadata.logo_scale
+                        metadata.logo_path,
+                        metadata.logo_x,
+                        metadata.logo_y,
+                        metadata.logo_scale
                     );
                     //console.log("metadata for logo image: ", metadata.logo_path, metadata.logo_x, metadata.logo_y, metadata.logo_scale)
                     // new code ends

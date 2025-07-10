@@ -1,4 +1,12 @@
-// header_encapsulation.js
+
+
+// new code for logo-------------------
+import {getLogo, setLogo} from './logo_properties.js';
+import {canvasDrawLogo} from './logo_properties.js';
+import {drawCanvas} from './canvas_mouse.js';
+// end new code for logo-------------------
+
+
 
 // Default values (fallback if no metadata is found)
 let headerBarColor = 'rgba(0, 0, 0, 0.5)';
@@ -9,9 +17,14 @@ let footerHeight = 1;
 let footerColor = 'rgba(0, 0, 0, 0.5)';
 let footerTexts = [];
 
+let logoImage = ''; // New code for logo-------------------
+let logoX = 100;
+let logoY = 100;
+let logoScale = 0.1;
+// end new code for logo-------------------
 
 // Fetch header metadata from SQLite database
-async function fetchHeaderMetadata(project_id) {
+async function fetchHeaderMetadata(project_id) { // export new added
     try {
         const response = await fetch(`/get_metadata/${project_id}/`);
         console.log("response: fetchHeaderMetadata");
@@ -61,7 +74,7 @@ async function fetchHeaderMetadata(project_id) {
                     //console.log("Hovering over image path:", dataPath);
                     fileName = dataPath.split('/').pop();
                     
-                    // Start logging every 0.25 second
+                    // Start updating every 0.25 second
                     if (!intervalId) {
                         intervalId = setInterval(() => {
                             //console.log("Hovering on:", fileName);
@@ -73,12 +86,45 @@ async function fetchHeaderMetadata(project_id) {
                             //Assigning metadata 
                             headerBarColor = hoveredMetadata.header_color;
                             headerBarHeight = hoveredMetadata.header_height;
-                            
+
                             footerHeight = hoveredMetadata.footer_height;;
                             footerColor = hoveredMetadata.footer_color;
                             footerTexts = hoveredMetadata.texts;
+                            
 
 
+                            // New code for logo update -------------------------
+                            if (hoveredMetadata.logo_path) {
+                                const logoImg = new Image();
+                                logoImg.src = hoveredMetadata.logo_path;
+                                setLogo(
+                                    logoImg,
+                                    hoveredMetadata.logo_x || 100,
+                                    hoveredMetadata.logo_y || 100,
+                                    hoveredMetadata.logo_scale || 0.1
+                                );
+                                
+                                logoImg.onload = function() {
+                                    const logo = getLogo();
+                                    // Trigger canvas redraw with updated logo
+                                    const event = new CustomEvent('canvasDrawLogo', {
+                                        detail: {
+                                            // headerBarColor,
+                                            // headerBarHeight,
+                                            // footerColor,
+                                            // footerHeight,
+                                            // footerTexts,
+                                            logoImage: logo.image,
+                                            logoX: logo.x,
+                                            logoY: logo.y,
+                                            logoScale: logo.scale
+                                        }
+                                    });
+                                    document.dispatchEvent(event);
+                                };
+                            }
+                            // End new code for logo -------------------------
+                            
                         }, 250); // 0.25 second
                     }
                 }
@@ -100,8 +146,22 @@ async function fetchHeaderMetadata(project_id) {
 
 }
 
+
+
 // Set header values (for manual updates)
-function setMetaValues(header_height, header_color, header_opacity, footer_color, footer_height, texts) {
+function setMetaValues(
+    header_height, 
+    header_color, 
+    header_opacity, 
+    footer_color, 
+    footer_height, 
+    texts,
+    // logo_path = '',
+    // logo_x = 100,
+    // logo_y = 100,
+    // logo_scale = 0.1
+
+    ) {
         
         headerBarHeight = header_height;
         headerBarColor = header_color;
@@ -109,6 +169,14 @@ function setMetaValues(header_height, header_color, header_opacity, footer_color
         footerColor = footer_color;
         footerHeight = footer_height;
         footerTexts = texts;
+
+        // new code for logo-------------------
+        // logoImage = logo_path;
+        // logoX = logo_x;
+        // logoY = logo_y;
+        // logoScale = logo_scale;
+
+        // end new code for logo-------------------
     }
 
 // Get current header values
@@ -117,11 +185,30 @@ function getMetaValues() {
         headerBarHeight,
         headerBarColor,
         headerOpacity,
-
         footerColor,
         footerHeight,
         footerTexts,
+        // Logo
+        // logoImage,
+        // logoX,
+        // logoY,
+        // logoScale,
     };
 }
 
-export { fetchHeaderMetadata, setMetaValues, getMetaValues, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts};
+export { 
+    fetchHeaderMetadata, 
+    setMetaValues, 
+    getMetaValues, 
+    headerBarColor, 
+    headerBarHeight, 
+    footerColor, 
+    footerHeight, 
+    footerTexts,
+
+    // Logo
+    // logoImage,
+    // logoX,
+    // logoY,
+    // logoScale,
+    };

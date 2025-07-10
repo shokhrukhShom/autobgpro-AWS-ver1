@@ -1,3 +1,10 @@
+// LOGO image initializing
+export let logoImage = new Image(); // Image object for the logo
+export let logoX = 100;  // Position for the logo on the canvas
+export let logoY = 100;  // Position for the logo on the canvas
+export let logoScale = 0.1; // Scale for the logo
+
+
 // New code for logo -------------------------
 const logoState = {
     image: new Image(),
@@ -20,11 +27,16 @@ export function setLogo(img, x = 100, y = 100, scale = 0.1) {
 // End new code for logo -------------------------
 
 
-// LOGO image initializing
-export let logoImage = new Image(); // Image object for the logo
-export let logoX = 100;  // Position for the logo on the canvas
-export let logoY = 100;  // Position for the logo on the canvas
-export let logoScale = 0.1; // Scale for the logo
+  // Get current logo state
+    const logo = getLogo();
+    // Draw the logo if it exists
+    if (logo.image && logo.image.src) {
+        logoImage = logo.image;
+        logoX = logo.x;
+        logoY = logo.y;
+        logoScale = logo.scale;
+    }
+
 
 
 // Flag to track if logo upload listener has been initialized
@@ -252,6 +264,8 @@ export function initializeLogo (canvas){
         }
     }, { passive: false });
 }
+
+
 
 export function canvasDrawLogo() { //export
     const event = new CustomEvent('canvasDrawLogo', { // canvasDrawLogo
