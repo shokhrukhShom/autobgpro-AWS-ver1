@@ -71,6 +71,7 @@ export function initializeFooter(canvas, ctx) {
                 content: `Text ${id + 1}`,
                 fontSize: 60,
                 color: '#000000',
+                fontFamily: 'Arial', // Default font family
                 x: 500,
                 y: 150 + id * 40, // Offset each new text vertically
                 isDraggingFooterElement: false, // Use isDraggingFooterElement

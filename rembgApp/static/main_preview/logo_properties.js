@@ -83,9 +83,16 @@ export function initializeLogo (canvas){
      // Only initialize the logo upload once
     if (!logoUploadInitialized) {
         document.getElementById('saveTextBtn').addEventListener('click', function(e) {
-            console.log("logo saved!");
-            console.log("Save Text Log: ", file.src);
+            //console.log("logo saved!");
+            //console.log("Save Text Log: ", file.src);
             //const file = e.target.files[0];
+
+            // Check if file is selected
+            if (file === null) {
+                console.log("No file selected for upload.");
+                return; // Exit if no file is selected
+            }
+
             if (file) {
                 console.log("File to be uploaded:", file); // Debug log
 

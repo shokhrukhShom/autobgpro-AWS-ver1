@@ -110,6 +110,8 @@ function download_zip() {
                 // Draw footer texts if they exist
                 if (metadata.design_data.texts && metadata.design_data.texts.length > 0) {
                     metadata.design_data.texts.forEach((text) => {
+                        console.log("font family:", text.fontFamily);
+                        
                         tempCtx.font = `${text.fontSize}px ${text.fontFamily || 'Arial'}`;
                         tempCtx.fillStyle = text.color;
                         tempCtx.textAlign = 'center';

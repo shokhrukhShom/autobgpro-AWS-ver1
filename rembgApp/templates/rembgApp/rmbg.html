@@ -425,7 +425,14 @@
                             color: meta.design_data.footer.color,
                             opacity: parseFloat(meta.design_data.footer.opacity) || 1.0
                         },
-                        texts: meta.design_data.texts || [],
+                        //texts: meta.design_data.texts || [],
+                        
+                        // new code for texts
+                        texts: (meta.design_data.texts || []).map(text => ({
+                            ...text,
+                            fontFamily: text.fontFamily || 'Arial' // Ensure fontFamily is included
+                        })),
+                        // end new code texts
                         
                         // New Code
                         logo_x: meta.design_data.logo_x,
