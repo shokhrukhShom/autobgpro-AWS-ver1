@@ -95,7 +95,7 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
             logo_x: logoX,
             logo_y: logoY,
             logo_scale: logoScale,
-            //logo_path: logoImage.src // .src
+            logo_path: logoImage.src // .src
 
         }
         
