@@ -1,15 +1,14 @@
+import { getCanvasState, updateCanvasState } from './metadata_fetch.js'; // Importing canvas state management functions
 
-
-export let footerHeight = 0; // Default footer height
-let footerOpacity = 1; // Default footer opacity
-export let footerColor = `rgba(0, 0, 0, ${footerOpacity})`; // Default footer color
+// export let footerHeight = 0; // Default footer height
+// let footerOpacity = 1; // Default footer opacity
+// export let footerColor = `rgba(0, 0, 0, ${footerOpacity})`; // Default footer color
 
 let footerTextIdCounter = 0; // Unique ID counter for footer texts
 export let footerTexts = []; // Array to hold footer text objects
+
 export let footerTextList = document.getElementById('footer-text-list');
-
 export let footerColorInput = document.getElementById('footer-color');
-
 export let footerOpacityInput = document.getElementById('footer-opacity');
 
 
@@ -30,33 +29,57 @@ export function initializeFooter(canvas, ctx) {
 
     // Update footer height
     footerHeightInput.addEventListener('input', (e) => {
-        footerHeight = parseInt(e.target.value, 10);
-        footerHeightValue.textContent = footerHeight;
-        canvasRedrawFooter();
-    });
+        const height = parseInt(e.target.value, 10);
+        const state = getCanvasState();
 
-    // Update footer color
-    footerColorInput.addEventListener('input', () => { //(e) removed the (e)
-        updateFooterColor();
+        updateCanvasState({
+            footer: {
+                ...state.footer,
+                height
+            }
+        });
+
+        footerHeightValue.textContent = height;
+
         canvasRedrawFooter();
     });
 
     // Update footer opacity
     footerOpacityInput.addEventListener('input', (e) => {
-        footerOpacity = parseFloat(e.target.value);
-        footerOpacityValue.textContent = footerOpacity;
-        updateFooterColor();
+        const opacity = parseFloat(e.target.value);
+        const state = getCanvasState();
+        const rgbaMatch = state.footer.color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        const [r, g, b] = rgbaMatch ? rgbaMatch.slice(1, 4) : [0, 0, 0];
+
+        updateCanvasState({
+            footer: {
+                ...state.footer,
+                opacity,
+                color: `rgba(${r}, ${g}, ${b}, ${opacity})`
+            }
+        });
+
+        footerOpacityValue.textContent = opacity;
+
         canvasRedrawFooter();
     });
 
-    // Helper to update footer color
-    function updateFooterColor() {
-        const color = footerColorInput.value;
+    // Update footer color
+    footerColorInput.addEventListener('input', (e) => {
+        const color = e.target.value;
         const r = parseInt(color.slice(1, 3), 16);
         const g = parseInt(color.slice(3, 5), 16);
         const b = parseInt(color.slice(5, 7), 16);
-        footerColor = `rgba(${r}, ${g}, ${b}, ${footerOpacity})`;
-    }
+        const state = getCanvasState();
+
+        updateCanvasState({
+            footer: {
+                ...state.footer,
+                color: `rgba(${r}, ${g}, ${b}, ${state.footer.opacity})`
+            }
+        });
+        canvasRedrawFooter();
+    });
 
     // Add a new text input section ----------
     const addTextButton = document.getElementById('add-text-btn-footer');
@@ -66,6 +89,8 @@ export function initializeFooter(canvas, ctx) {
             //console.log("+ btn clicked");
 
             const id = footerTextIdCounter++;
+            const state = getCanvasState(); // new
+
             const textObj = {
                 id, // Unique ID
                 content: `Text ${id + 1}`,
@@ -76,8 +101,14 @@ export function initializeFooter(canvas, ctx) {
                 y: 150 + id * 40, // Offset each new text vertically
                 isDraggingFooterElement: false, // Use isDraggingFooterElement
             };
+            updateCanvasState({
+                footer: {
+                    ...state.footer,
+                    texts: [...state.footer.texts, textObj]
+                }
+            });
 
-            footerTexts.push(textObj);
+            //footerTexts.push(textObj);
             createTextInputSection(textObj);
             canvasRedrawFooter();
         });
@@ -115,154 +146,191 @@ export function initializeFooter(canvas, ctx) {
 
             <button id="remove-footer-text-${textObj.id}" style="margin-right: 5px;">Remove</button>
         `;
+        // Append the new text section to the footer text list
+        footerTextList.appendChild(textSection);
 
-        document.getElementById('footer-text-list').appendChild(textSection);
+        // Add event listeners to the new text section
+        const [textInput, sizeInput, colorInput, fontSelect, removeBtn] = 
+        textSection.querySelectorAll('input, select, button');
+        fontSelect.value = textObj.fontFamily;
 
-        // Set selected font
-        const fontSelect = textSection.querySelector(".footer-font-family");
-        fontSelect.value = textObj.fontFamily || "Arial"; // Default to Arial if not set
-
-        // Event listener for changing font
-        fontSelect.addEventListener("change", (e) => {
-            textObj.fontFamily = e.target.value;
-            canvasRedrawFooter();
-        });
-
-        // Add event listeners to update text properties
-        document.getElementById(`footer-text-${textObj.id}`).addEventListener('input', (e) => {
-            textObj.content = e.target.value;
-            canvasRedrawFooter();
-        });
-
-        document.getElementById(`footer-font-size-${textObj.id}`).addEventListener('input', (e) => {
-            textObj.fontSize = parseInt(e.target.value, 10);
-            canvasRedrawFooter();
-        });
-
-        document.getElementById(`footer-font-color-${textObj.id}`).addEventListener('input', (e) => {
-            textObj.color = e.target.value;
-            canvasRedrawFooter();
-        });
+        textInput.addEventListener('input', (e) => updateFooterText(textObj.id, 'content', e.target.value));
+        sizeInput.addEventListener('input', (e) => updateFooterText(textObj.id, 'fontSize', parseInt(e.target.value)));
+        colorInput.addEventListener('input', (e) => updateFooterText(textObj.id, 'color', e.target.value));
+        fontSelect.addEventListener('change', (e) => updateFooterText(textObj.id, 'fontFamily', e.target.value));
 
         // Remove text functionality
-        document.getElementById(`remove-footer-text-${textObj.id}`).addEventListener('click', () => {
-            footerTexts = footerTexts.filter((text) => text.id !== textObj.id);
-            textSection.style.opacity = "0"; // Fade out
+        // document.getElementById(`remove-footer-text-${textObj.id}`).addEventListener('click', () => {
+        //     //footerTexts = footerTexts.filter((text) => text.id !== textObj.id);
 
-            setTimeout(() => {
-                textSection.remove();
-                canvasRedrawFooter();
-            }, 600); // Matches CSS transition time
+        //     const state = getCanvasState();
+        //     const newTexts = state.footer.texts.filter(t => t.id !== textObj.id);
+
+        //     updateCanvasState({
+        //         footer: {
+        //             ...state.footer,
+        //             texts: newTexts
+        //         }
+        //     });
+        //     textSection.style.opacity = "0"; // Fade out
+
+        //     setTimeout(() => {
+        //         textSection.remove();
+        //         canvasRedrawFooter();
+        //     }, 600); // Matches CSS transition time
+        // });
+
+        // Remove button functionality
+        removeBtn.addEventListener('click', () => {
+            const state = getCanvasState();
+            const newTexts = state.footer.texts.filter(t => t.id !== textObj.id);
+
+            updateCanvasState({
+                footer: {
+                    ...state.footer,
+                    texts: newTexts
+                }
+            });
+
+            section.style.opacity = '0';
+            setTimeout(() => section.remove(), 500);
+            canvasRedrawFooter();
         });
+
+
+        // Add the new text object to the footerTexts array
+        function updateFooterText(id, key, value) {
+        const state = getCanvasState();
+        const updatedTexts = state.footer.texts.map(text =>
+            text.id === id ? { ...text, [key]: value } : text
+        );
+
+        updateCanvasState({
+            footer: {
+                ...state.footer,
+                texts: updatedTexts
+            }
+        });
+
+            canvasRedrawFooter(); // Redraw the canvas after adding new text
+        }
     }
+
 
     // Mouse down event for dragging footer elements
     canvas.addEventListener('mousedown', (e) => {
-        
+        const { footer } = getCanvasState();
         const rect = canvas.getBoundingClientRect();
-        // const mouseX = e.clientX - rect.left;
-        // const mouseY = e.clientY - rect.top;
-
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
 
         const mouseX = (e.clientX - rect.left) * scaleX;
         const mouseY = (e.clientY - rect.top) * scaleY;
 
-        footerTexts.forEach((text) => {
-
-            //console.log("Mousedown: ", text.content);
-
+        const updatedTexts = footer.texts.map(text => {
             const textWidth = ctx.measureText(text.content).width;
             const textHeight = text.fontSize;
-            if (
-                mouseX >= text.x - textWidth / 2 &&
-                mouseX <= text.x + textWidth / 2 &&
-                mouseY >= text.y - textHeight / 2 &&
-                mouseY <= text.y + textHeight / 2
-            ) {
-                text.isDraggingFooterElement = true; // Use isDraggingFooterElement
-                dragOffsetX = mouseX - text.x; // Store the offset between mouse and text X
-                dragOffsetY = mouseY - text.y; // Store the offset between mouse and text Y
+            const isInBounds =  mouseX >= text.x - textWidth / 2 &&
+                                mouseX <= text.x + textWidth / 2 &&
+                                mouseY >= text.y - textHeight / 2 &&
+                                mouseY <= text.y + textHeight / 2
+            if (isInBounds) {
+                dragOffsetX = mouseX - text.x;
+                dragOffsetY = mouseY - text.y;
+                return { ...text, isDraggingFooterElement: true };
             }
+
+            return text;
         });
+        updateCanvasState({ footer: { ...footer, texts: updatedTexts } });
     });
 
     // Mouse move event for dragging footer elements
     canvas.addEventListener('mousemove', (e) => {
-        if (footerTexts.some((text) => text.isDraggingFooterElement)) { 
-            const rect = canvas.getBoundingClientRect();
+        const { footer } = getCanvasState();
 
-            const scaleX = canvas.width / rect.width;  // Scale factor for X
-            const scaleY = canvas.height / rect.height; // Scale factor for Y
+        // Check if any footer text is being dragged
+        if (!footer.texts.some(text => text.isDraggingFooterElement)) return;
 
-            const mouseX = (e.clientX - rect.left) * scaleX;
-            const mouseY =(e.clientY - rect.top) * scaleY;
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;  // Scale factor for X
+        const scaleY = canvas.height / rect.height; // Scale factor for Y
 
-            footerTexts.forEach((text) => {
-                if (text.isDraggingFooterElement) {
-                    text.x = mouseX - dragOffsetX; // Move text relative to initial offset
-                    text.y = mouseY - dragOffsetY;
-                    // text.x = mouseX - dragOffsetX; // Move text relative to initial offset
-                    // text.y = mouseY - dragOffsetY;
-                }
-            });
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const mouseY =(e.clientY - rect.top) * scaleY;
 
-            // Redraw the canvas
-            canvasRedrawFooter();
-        }
+        const updatedTexts = footer.texts.map(text => {
+            // Check if this text is being dragged
+            if (!text.isDraggingFooterElement) return text;
+            // Update the position of the dragged text    
+            return { ...text, x: mouseX - dragOffsetX, y: mouseY - dragOffsetY };
+        });
+        // Update the footer texts in the state
+        updateCanvasState({ footer: { ...footer, texts: updatedTexts } });
+        // Redraw the canvas
+        canvasRedrawFooter();
+        
     });
 
 
     // Mouse up event to stop dragging
     canvas.addEventListener('mouseup', () => {
-        footerTexts.forEach((text) => (text.isDraggingFooterElement = false)); // Use isDraggingFooterElement
-        //draggedFooterElement = null;
+        const { footer } = getCanvasState();
+        // set isDraggingFooterElement to false for all texts
+        const updatedTexts = footer.texts.map(text => ({ ...text, isDraggingFooterElement: false }));
+        updateCanvasState({ footer: { ...footer, texts: updatedTexts } });
     });
 
     // Mouse wheel event for resizing footer text
-    canvas.addEventListener('wheel', (e) => {
-        //console.log("wheel: text working");
+    canvas.addEventListener('wheel', (event) => {
+        const { footer } = getCanvasState();
+        
         const rect = canvas.getBoundingClientRect();
-        // const mouseX = e.clientX - rect.left;
-        // const mouseY = e.clientY - rect.top;
-
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
 
         const mouseX = (event.clientX - rect.left) * scaleX;
         const mouseY = (event.clientY - rect.top) * scaleY;
         
+        let updated = false;
 
-        footerTexts.forEach((text) => {
+        const updatedTexts = footer.texts.map(text => {
             const textWidth = ctx.measureText(text.content).width;
             const textHeight = text.fontSize;
-            if (
-                mouseX >= text.x - textWidth / 2 &&
-                mouseX <= text.x + textWidth / 2 &&
-                mouseY >= text.y - textHeight / 2 &&
-                mouseY <= text.y + textHeight / 2
-            ) {
-                e.preventDefault();
-                text.fontSize += e.deltaY < 0 ? 0.7 : -0.7; // Increase or decrease font size
-                text.fontSize = Math.max(10, Math.min(150, text.fontSize)); // Clamp font size
-                canvasRedrawFooter();
+            const isInBounds = mouseX >= text.x - textWidth / 2 &&
+                               mouseX <= text.x + textWidth / 2 &&
+                               mouseY >= text.y - textHeight / 2 &&
+                               mouseY <= text.y + textHeight / 2;
+
+            if (isInBounds) {
+                event.preventDefault();
+                const newSize = Math.max(10, Math.min(150, text.fontSize + (event.deltaY < 0 ? 0.7 : -0.7)));
+                updated = true;
+                return { ...text, fontSize: newSize };
             }
+
+            return text;
         });
+
+        if (updated) {
+            updateCanvasState({ footer: { ...footer, texts: updatedTexts } });
+            canvasRedrawFooter();
+        }
+
     }, { passive: false });
 }
 
-// Function to trigger a canvas redraw for footer updates
+// Function to trigger a redraw of the footer
+// This function dispatches a custom event that can be listened to by other parts of the application
+// to redraw the footer with the current state.
 function canvasRedrawFooter() { // removed the "export:" here
-    //console.log("Dispatched via canvasRedrawFooter");
-    // Dispatch a custom event to notify canvas_mouse.js to redraw the canvas
-    //console.log("canvasRedrawFooter triggered");
-    
+    const state = getCanvasState();
     const event = new CustomEvent('canvasRedrawFooter', {
         detail: {
-            footerHeight,  // Footer height
-            footerColor,   // Footer color
-            footerTexts    // Footer text objects
+            footerHeight: state.footer.height, // Footer height
+            footerColor: state.footer.color,   // Footer color
+            footerTexts: state.footer.texts // Footer texts
         }
         
     });

@@ -2,7 +2,7 @@ import { download_zip } from "./download_zip.js";
 
 //import { headerBarColor, headerBarHeight } from "./header.js"; //setHeaderBarValues
 //import {updateHeaderBarColor} from "./header.js"; // todo : no use for this 
-import { fetchHeaderMetadata, setMetaValues, getMetaValues, headerBarColor, headerBarHeight, footerHeight,footerColor, footerTexts} from "./metadata_fetch.js";
+import { fetchMetadataAPI, setMetaValues, getMetaValues, getCanvasState} from "./metadata_fetch.js"; //headerBarColor, headerBarHeight, footerHeight,footerColor, footerTexts
 
 // import { footerColor, footerHeight, footerTexts} from "./footer.js";
 
@@ -15,7 +15,8 @@ import { canvasDrawLogo } from "./logo_properties.js";
 import { getLogo, setLogo } from "./logo_properties.js";
 
 
-fetchHeaderMetadata(project_id);
+fetchMetadataAPI(project_id);
+
 
 
 //  function to draw a border around the image
@@ -38,8 +39,15 @@ function drawImageBorder(ctx, imageX, imageY, imageScale, img) {
 
 export let showBorder = false;
 
+
 // Define drawCanvas at the module level
-function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, logoScale) {
+function drawCanvas(ctx, img, background, imageX, imageY, 
+    imageScale, shadowOffsetY, 
+    shadowBlur, canvas, imagePath, currentBg, project_id, 
+    metadataMap) {
+
+    const state = getCanvasState(); // Get the current canvas state
+
 
     // Draw the background first
     ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
@@ -81,21 +89,21 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
         
         design_data: {  // Add this new structure
             header: {
-                height: headerBarHeight,
-                color: headerBarColor,
-                opacity: "1"
+                height: state.header.height, //headerBarHeight,
+                color: state.header.color, //headerBarColor,
+                opacity: state.header.opacity //headerOpacity
             },
             footer: {
-                height: footerHeight,
-                color: footerColor,
-                opacity: "1"
+                height: state.footer.height, //footerHeight,
+                color: state.footer.color, //footerColor,
+                opacity: state.footer.opacity //footerOpacity
             },
-            texts: [...footerTexts],  // Create a copy of the array
+            texts: [...state.footer.texts],  // Create a copy of the array
 
-            logo_x: logoX,
-            logo_y: logoY,
-            logo_scale: logoScale,
-            logo_path: logoImage.src // .src
+            logo_x: state.logo.x, //logoX,
+            logo_y: state.logo.y, //logoY,
+            logo_scale: state.logo.scale, //logoScale,
+            logo_path: state.logo.image //logoImage.src
 
         }
         
@@ -109,36 +117,35 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
     }
 
     // Draw the transparent header bar
-    if (headerBarHeight > 0) {
-        //console.log("headerBarHeight > 0 is true. Bar Height: " + headerBarHeight);
-        //console.log("Drawing header bar: ", headerBarHeight, headerBarColor);
+    if (state.header.height > 0) { //headerBarHeight > 0
+
         // Reset shadow properties before drawing the header
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;
         ctx.shadowColor = 'transparent';
 
-        ctx.fillStyle = headerBarColor;
-        ctx.fillRect(0, 0,  canvas.width, headerBarHeight);
+        ctx.fillStyle = state.header.color; //headerBarColor;
+        ctx.fillRect(0, 0,  canvas.width, state.header.height);
     }
 
-    if (footerHeight) {
+    if (state.footer.height > 0) { //footerHeight > 0
         //console.log("footer height: ", footerHeight);
         // Draw footer 
-        ctx.fillStyle = footerColor;
-        ctx.fillRect(0, canvas.height - footerHeight, canvas.width, footerHeight);
+        ctx.fillStyle = state.footer.color; //footerColor;
+        ctx.fillRect(0, canvas.height - state.footer.height, canvas.width, state.footer.height);
 
     }
     
     // Draw each footer text
-    if (footerTexts != 0){
+    if (state.footer.texts.length > 0) {
         //console.log("footer text", footerTexts);
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;
         ctx.shadowColor = 'transparent';
 
-        footerTexts.forEach((text) => {
+        state.footer.texts.forEach((text) => {
             ctx.font = `${text.fontSize}px Arial`;
             ctx.fillStyle = text.color;
             ctx.font = `${text.fontSize}px ${text.fontFamily}`;
@@ -148,7 +155,7 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
     } 
     
     // Draw the uploaded logo image if it's loaded
-    if (logoImage && logoImage.src) { //&& logoImage.src
+    if (state.logo.image) { //&& logoImage.src
 
         
         console.log("Drawing logo at:", logoX, logoY, "with scale:", logoScale, "logo src:", logoImage.src);
@@ -158,17 +165,19 @@ function drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffs
         ctx.shadowColor = 'transparent';
 
         ctx.save();
-        ctx.translate(logoX, logoY); // Set position of the logo
-        ctx.scale(logoScale, logoScale); // Set scale of the logo
-        ctx.drawImage(logoImage, 0, 0); // Draw the logo image
+        ctx.translate(state.logo.x, state.logo.y); // Set position of the logo
+        ctx.scale(state.logo.scale, state.logo.scale); // Set scale of the logo
+        ctx.drawImage(state.logo.image, 0, 0); // Draw the logo image
         ctx.restore();
     }
 
 
 }
 
-function redrawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, logoScale) {
-    drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, logoScale);
+function redrawCanvas(ctx, img, background, imageX, imageY, imageScale, 
+    shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap) {
+    drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, 
+        shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap);
 }
 
 
@@ -347,26 +356,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                     blurValue.textContent = shadowBlur;     
                     
                     // new code for logo -------------------------
-                    if (metadata.logo_path) {
-                        console.log("Loading logo from metadata:", metadata.logo_path);
-                        const logoImg = new Image();
-                        logoImg.src = metadata.logo_path;
-                        setLogo(
-                            logoImg,
-                            metadata.logo_x || 100,
-                            metadata.logo_y || 100,
-                            metadata.logo_scale || 0.1
-                        );
+                    // if (metadata.logo_path) {
+                    //     console.log("Loading logo from metadata:", metadata.logo_path);
+                    //     const logoImg = new Image();
+                    //     logoImg.src = metadata.logo_path;
+                    //     setLogo(
+                    //         logoImg,
+                    //         metadata.logo_x || 100,
+                    //         metadata.logo_y || 100,
+                    //         metadata.logo_scale || 0.1
+                    //     );
                         
-                        logoImg.onload = function() {
-                            const logo = getLogo();
-                            drawCanvas(ctx, img, background, imageX, imageY, imageScale, 
-                                shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, 
-                                project_id, metadataMap, headerBarColor, headerBarHeight, 
-                                footerColor, footerHeight, footerTexts, 
-                                logo.image, logo.x, logo.y, logo.scale);
-                        };
-                    }
+                    //     logoImg.onload = function() {
+                    //         const logo = getLogo();
+                    //         drawCanvas(ctx, img, background, imageX, imageY, imageScale, 
+                    //             shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, 
+                    //             project_id, metadataMap, headerBarColor, headerBarHeight, 
+                    //             footerColor, footerHeight, footerTexts, 
+                    //             logo.image, logo.x, logo.y, logo.scale);
+                    //     };
+                    // }
                     // new code for logo ends -------------------------
 
 
@@ -374,18 +383,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                     // new code for header and footer  
                     //console.log(metadata.project_id + " | heade height: " + metadata.header_height + " | header color: " + metadata.header_color + " | Opacity: " + metadata.header_opacity);
                     // Setting metadata from sqlite database. setHeaderValues function called from header_encapsulation.js
-                    setMetaValues(
-                        metadata.header_height, 
-                        metadata.header_color, 
-                        metadata.header_opacity, 
-                        metadata.footer_color, 
-                        metadata.footer_height,
-                        metadata.texts,
-                        metadata.logo_path,
-                        metadata.logo_x,
-                        metadata.logo_y,
-                        metadata.logo_scale
-                    );
+                    // setMetaValues(
+                    //     metadata.header_height, 
+                    //     metadata.header_color, 
+                    //     metadata.header_opacity, 
+                    //     metadata.footer_color, 
+                    //     metadata.footer_height,
+                    //     metadata.texts,
+                    //     metadata.logo_path,
+                    //     metadata.logo_x,
+                    //     metadata.logo_y,
+                    //     metadata.logo_scale
+                    // );
                     //console.log("metadata for logo image: ", metadata.logo_path, metadata.logo_x, metadata.logo_y, metadata.logo_scale)
                     // new code ends
 
@@ -393,26 +402,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                
 
                 // Draw the canvas content
-                drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, 
-                    currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, logoScale);
+                drawCanvas(ctx, img, background, imageX, imageY, 
+                    imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, 
+                    currentBg, project_id, metadataMap);
                 
                 
 
 
                 // Listen for the custom event to redraw the canvas for footer updates
-                document.addEventListener('canvasRedrawFooter', (event) => {
-                    const { footerHeight, footerColor, footerTexts } = event.detail;
-                    //console.log("canvasRedrawFooter activated" );
-                    drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                        footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, logoScale);
+                document.addEventListener('canvasRedrawFooter', () => {
+                    drawCanvas(ctx, img, background, imageX, imageY, 
+                    imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, 
+                    currentBg, project_id, metadataMap);
                 });
 
                 // Listen for the custom event to redraw the canvas for footer updates
-                document.addEventListener('canvasDrawLogo', (event) => {
-                    const { logoImage, logoX, logoY, logoScale } = event.detail;
-                    //console.log("canvasDrawLogo activated" );
-                    drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                        footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, logoScale);
+                document.addEventListener('canvasDrawLogo', () => {
+                    drawCanvas(ctx, img, background, imageX, imageY, 
+                    imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, 
+                    currentBg, project_id, metadataMap);
                 });
 
 
@@ -469,9 +477,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Redraw the canvas with the border visible
                 redrawCanvas(ctx, img, background, imageX, 
                     imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                    imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                    footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, 
-                    logoScale);
+                    imagePath, currentBg, project_id, metadataMap);
             }
         });
 
@@ -486,9 +492,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 redrawCanvas(ctx, img, background, imageX, 
                     imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                    imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                    footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, 
-                    logoScale);
+                    imagePath, currentBg, project_id, metadataMap);
             }
         });
 
@@ -498,9 +502,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Redraw the canvas without the border
             redrawCanvas(ctx, img, background, imageX, 
                 imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, 
-                logoScale); 
+                imagePath, currentBg, project_id, metadataMap); 
         });
 
         canvas.addEventListener('mouseleave', () => {
@@ -520,18 +522,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 showBorder = true;
                 redrawCanvas(ctx, img, background, imageX, 
                             imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                            imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                            footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, 
-                            logoScale);
+                            imagePath, currentBg, project_id, metadataMap);
                 e.preventDefault(); // Prevent default scrolling behavior
 
                 setTimeout(() => {
                     showBorder = false;
                     redrawCanvas(ctx, img, background, imageX, 
                             imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                            imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                            footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, 
-                            logoScale);
+                            imagePath, currentBg, project_id, metadataMap);
                 }, 400);
             }
         }, { passive: false });
@@ -547,9 +545,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             redrawCanvas(ctx, img, background, imageX, 
                 imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, 
-                logoScale);
+                imagePath, currentBg, project_id, metadataMap);
         });
 
         shadowBlurInput.addEventListener('input', (e) => {
@@ -558,9 +554,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             redrawCanvas(ctx, img, background, imageX, 
                 imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, 
-                logoScale);
+                imagePath, currentBg, project_id, metadataMap);
         });
 
         // Apply shadow when botton clicked
@@ -570,9 +564,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             shadowBlur = shadowBlurInput.value;    // Default value
             redrawCanvas(ctx, img, background, imageX, 
                 imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, 
-                logoScale);
+                imagePath, currentBg, project_id, metadataMap);
         })
 
         //----------------
@@ -591,18 +583,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             shadowBlur = shadowBlurInput.value;    // Default value
             redrawCanvas(ctx, img, background, imageX, 
                 imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                imagePath, currentBg, project_id, metadataMap, headerBarColor, headerBarHeight, 
-                footerColor, footerHeight, footerTexts, logoImage, logoX, logoY, 
-                logoScale);
+                imagePath, currentBg, project_id, metadataMap);
         });
 
         // Listen for the custom event to redraw the canvas
-        document.addEventListener('canvasRedraw', (event) => {
-            const { headerBarColor, headerBarHeight } = event.detail;
+        document.addEventListener('canvasRedraw', () => {
             drawCanvas(ctx, img, background, imageX, imageY, imageScale, 
                 shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id,
-                metadataMap, headerBarColor, headerBarHeight, footerColor, footerHeight, footerTexts, 
-                logoImage, logoX, logoY, logoScale);
+                metadataMap);
         });
 
     });

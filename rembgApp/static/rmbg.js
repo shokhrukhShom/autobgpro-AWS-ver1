@@ -377,10 +377,15 @@ function textBtn(){
     // NEXt button clicked, Proceed with selected canvases
     nextTextBtn.addEventListener("click", function() {
         const selectedCanvases = document.querySelectorAll(".canvas-item.selected");
+        
         if (selectedCanvases.length === 0) {
             showError("Error: Please select at least one canvas.", 'red')
             return;
         }
+
+        // set disableFetchMetadata to true
+        window.disableFetchMetadata = true; // Disable metadata fetching for text editing
+        console.log("disableFetchMetadata rmbg.js:", window.disableFetchMetadata);
 
         selectedPicture = []; // Array to store selected canvas filenames
 

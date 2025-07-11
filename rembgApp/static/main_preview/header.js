@@ -1,79 +1,127 @@
 
 import { drawCanvas } from "./canvas_mouse.js";
+import { getCanvasState, updateCanvasState } from './metadata_fetch.js'; //headerBarColor
 
-export let headerBarHeight = 0; // Default height of the header bar
-let headerOpacity = 1; // Default opacity (50%)
-export let headerBarColor = `rgba(0, 0, 0, ${headerOpacity});` // Semi-transparent black
+
 
 //Add event listeners to adjust the height and color of the transparent bar.
-export let headerOpacityInput = document.getElementById('header-opacity');
+let headerOpacityInput = document.getElementById('header-opacity');
 let headerOpacityValue = document.getElementById('header-opacity-value');
 let headerHeightInput = document.getElementById('header-height');
 let headerHeightValue = document.getElementById('header-height-value');
-export let headerColorInput = document.getElementById('header-color');
+let headerColorInput = document.getElementById('header-color');
 
-
-// New Code ------------------------
-// export function setHeaderBarValues(height, color, opacity) {
-//     headerBarHeight = height;
-//     headerBarColor = color;
-//     headerOpacity = opacity;
-//     console.log("setHeaderBarValues initiated");
-// }
 
 // End New Code ---------------------
 
 
 // Update the header opacity
 headerOpacityInput.addEventListener('input', (e) => {
-    headerOpacity = parseFloat(e.target.value);
-    headerOpacityValue.textContent = headerOpacity;
-    updateHeaderBarColor();
+    // headerOpacity = parseFloat(e.target.value);
+    // headerOpacityValue.textContent = headerOpacity;
+    
+    // New code for header opacity
+    const opacity = parseFloat(e.target.value);
+    const state = getCanvasState();
+    updateCanvasState({
+        header: {
+            ...state.header,
+            opacity
+        }
+    });
+    // Update the header opacity value display
+    headerOpacityValue.textContent = opacity;
+    // End new code for header opacity
+
     triggerCanvasRedraw(); // Trigger a redraw of the canvas
 });
 
+
+
 // Adjust the bar height
 headerHeightInput.addEventListener('input', (e) => {
-    headerBarHeight = parseInt(e.target.value, 10);
-    headerHeightValue.textContent = headerBarHeight;
+    // headerBarHeight = parseInt(e.target.value, 10);
+    // headerHeightValue.textContent = headerBarHeight;
+
+    //new code for header height
+    const height = parseInt(e.target.value, 10);
+    const state = getCanvasState();
+
+    updateCanvasState({
+        header: {
+            ...state.header,
+            height
+        }
+    });
+    // Update the header height value display
+    headerHeightValue.textContent = height;
+    //end new code for header height
+
     triggerCanvasRedraw(); // Trigger a redraw of the canvas
 });
 
 // Update the header bar color dynamically
 headerColorInput.addEventListener('input', () => {
-    updateHeaderBarColor();
-    triggerCanvasRedraw(); // Trigger a redraw of the canvas
-});
-
-// Function to update the `headerBarColor`
-function updateHeaderBarColor() {
-    const color = headerColorInput.value;
+    const color = headerColorInput.value; // hex color input value
     const r = parseInt(color.slice(1, 3), 16);
     const g = parseInt(color.slice(3, 5), 16);
     const b = parseInt(color.slice(5, 7), 16);
-    headerBarColor = `rgba(${r}, ${g}, ${b}, ${headerOpacity})`;
-}
-
-
-
-// Adjust bar color
-document.getElementById('header-color').addEventListener('input', (e) => {
+    // headerBarColor = `rgba(${r}, ${g}, ${b}, ${headerOpacity})`;
     
-    const color = e.target.value;
-    headerBarColor = `rgba(${parseInt(color.slice(1, 3), 16)}, ${parseInt(color.slice(3, 5), 16)}, ${parseInt(color.slice(5, 7), 16)}, ${headerOpacity})`; // Hex to RGBA
+    // NEW CODE ------------------------
+    // Update the canvas state with the new header bar colorconst state = getCanvasState();
+    const state = getCanvasState();
+    const newColor = `rgba(${r}, ${g}, ${b}, ${state.header.opacity})`;
+    updateCanvasState({
+        header: {
+            ...state.header,
+            color: newColor
+        }
+    });
+    headerColorInput.value = color; // Update the input value to reflect the new color
+    // END NEW CODE ------------------------
     triggerCanvasRedraw(); // Trigger a redraw of the canvas
 });
 
+
+
+headerOpacityInput.addEventListener('input', (e) => {
+    const opacity = parseFloat(e.target.value);
+    const state = getCanvasState();
+
+    // Extract RGB values from existing rgba color string
+    const rgbaMatch = state.header.color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    const [r, g, b] = rgbaMatch ? rgbaMatch.slice(1, 4) : [0, 0, 0]; // fallback to black
+
+    const updatedColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+
+    // Update state with both new opacity and updated color
+    updateCanvasState({
+        header: {
+            ...state.header,
+            opacity,
+            color: updatedColor
+        }
+    });
+
+    headerOpacityValue.textContent = opacity;
+    triggerCanvasRedraw();
+});
 
 
 
 // Function to trigger a canvas redraw
 function triggerCanvasRedraw() {
+
+    const state = getCanvasState(); // Get the current canvas state : new code
+
     // Dispatch a custom event to notify canvas_mouse.js to redraw the canvas
     const event = new CustomEvent('canvasRedraw', {
         detail: {
-            headerBarColor,
-            headerBarHeight
+            headerBarColor: state.header.color, // Use the updated header bar color from the state
+            headerBarHeight: state.header.height // Use the updated header bar height from the state
+            // headerBarColor,
+            // headerBarHeight
         }
     });
     document.dispatchEvent(event);
