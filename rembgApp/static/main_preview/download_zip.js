@@ -1,4 +1,4 @@
-import {getLogo, setLogo} from './logo_properties.js';
+// import {getLogo, setLogo} from './logo_properties.js';
 
 
 

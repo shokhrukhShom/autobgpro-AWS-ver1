@@ -9,10 +9,10 @@ import { fetchMetadataAPI, setMetaValues, getMetaValues, getCanvasState} from ".
 import { initializeFooter } from "./footer.js";
 //import {canvasRedrawFooter} from "./footer.js"; //dont need this
 
-import { logoImage, logoX, logoY, logoScale } from "./logo_properties.js";
+// import { logoImage, logoX, logoY, logoScale } from "./logo_properties.js"; removed this because it was not used
 import { initializeLogo } from "./logo_properties.js";
 import { canvasDrawLogo } from "./logo_properties.js";
-import { getLogo, setLogo } from "./logo_properties.js";
+// import { getLogo, setLogo } from "./logo_properties.js"; //removed this because it was not used
 
 
 fetchMetadataAPI(project_id);
@@ -158,7 +158,7 @@ function drawCanvas(ctx, img, background, imageX, imageY,
     if (state.logo.image) { //&& logoImage.src
 
         
-        console.log("Drawing logo at:", logoX, logoY, "with scale:", logoScale, "logo src:", logoImage.src);
+        //console.log("Drawing logo at:", state.logo.x, state.logo.y, "with scale:", state.logo.scale, "logo src:", state.logo.image.src);
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;

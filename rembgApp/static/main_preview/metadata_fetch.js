@@ -1,7 +1,7 @@
 
 
 // new code for logo-------------------
-import {getLogo, setLogo} from './logo_properties.js';
+// import {getLogo, setLogo} from './logo_properties.js';
 import {canvasDrawLogo} from './logo_properties.js';
 import {drawCanvas} from './canvas_mouse.js';
 // end new code for logo-------------------

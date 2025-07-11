@@ -1,41 +1,4 @@
-// LOGO image initializing
-export let logoImage = new Image(); // Image object for the logo
-export let logoX = 100;  // Position for the logo on the canvas
-export let logoY = 100;  // Position for the logo on the canvas
-export let logoScale = 0.1; // Scale for the logo
-
-
-// New code for logo -------------------------
-const logoState = {
-    image: new Image(),
-    x: 100,
-    y: 100,
-    scale: 0.1
-};
-
-export function getLogo() {
-    return logoState;
-}
-
-export function setLogo(img, x = 100, y = 100, scale = 0.1) {
-    logoState.image = img;
-    logoState.x = x;
-    logoState.y = y;
-    logoState.scale = scale;
-}
-
-// End new code for logo -------------------------
-
-
-  // Get current logo state
-    const logo = getLogo();
-    // Draw the logo if it exists
-    if (logo.image && logo.image.src) {
-        logoImage = logo.image;
-        logoX = logo.x;
-        logoY = logo.y;
-        logoScale = logo.scale;
-    }
+import { getCanvasState, updateCanvasState } from './metadata_fetch.js';
 
 
 
@@ -50,14 +13,18 @@ export function initializeLogo (canvas){
     // Check if metadata exists for this canvas and has logo info
     const meta = metadataMap.get(canvas);
     if (meta && meta.design_data && meta.design_data.logo_path) {
-        logoImage = new Image();
-        logoImage.src = meta.design_data.logo_path;
-        logoX = meta.design_data.logo_x || 100;
-        logoY = meta.design_data.logo_y || 100;
-        logoScale = meta.design_data.logo_scale || 0.1;
-        
-        logoImage.onload = function() {
-            canvasDrawLogo(); // Redraw canvas when logo loads
+        const img = new Image();
+        img.src = meta.design_data.logo_path;
+        img.onload = () => {
+            updateCanvasState({
+                logo: {
+                    image: img,
+                    x: meta.design_data.logo_x || 100,
+                    y: meta.design_data.logo_y || 100,
+                    scale: meta.design_data.logo_scale || 0.1
+                }
+            });
+            canvasDrawLogo(); // Redraw the canvas with the logo
         };
     }
     // end new code-----------------
@@ -70,23 +37,27 @@ export function initializeLogo (canvas){
         if (file) {
             const reader = new FileReader();
             reader.onload = function(event) {
-                logoImage.src = event.target.result; // Set the uploaded image as the source for the logo image
-                logoImage.onload = function() {
+                const img = new Image();
+                img.src = event.target.result; // Set the uploaded image as the source for the logo image
+                img.onload = function() {
+                    const state = getCanvasState();
+                    updateCanvasState({
+                        logo: {
+                            ...state.logo,
+                            image: img, // Update the logo image in the state
+                        }
+                    });
                     canvasDrawLogo(); // Redraw the canvas with the logo
                 };
             };
             reader.readAsDataURL(file); // Convert the uploaded file to data URL
         }
-        canvasDrawLogo(); // Redraw canvas
     });
 
      // Only initialize the logo upload once
     if (!logoUploadInitialized) {
         document.getElementById('saveTextBtn').addEventListener('click', function(e) {
-            //console.log("logo saved!");
-            //console.log("Save Text Log: ", file.src);
-            //const file = e.target.files[0];
-
+            
             // Check if file is selected
             if (file === null) {
                 console.log("No file selected for upload.");
@@ -112,11 +83,19 @@ export function initializeLogo (canvas){
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        logoImage.src = '/' + data.logo_path; // Set the logo source to the saved path src
-                        console.log("Logo uploaded successfully:", logoImage);
-                        logoImage.onload = function() {
-                            canvasDrawLogo(); // Redraw the canvas with the logo
-                        };
+                        const img = new Image();
+                        img.src = '/' + data.logo_path;
+                        img.onload = () => {
+                            // Update the canvas state with the new logo image and its properties
+                            const state = getCanvasState();
+                            updateCanvasState({
+                                logo: {
+                                    ...state.logo,
+                                    image: img
+                                }
+                            });
+                            canvasDrawLogo(); // Redraw the canvas with the new logo
+                        }
                     } else {
                         console.error('Logo upload failed:', data.error);
                     }
@@ -165,23 +144,34 @@ export function initializeLogo (canvas){
 
                 const reader = new FileReader();
                 reader.onload = function(event) {
-                    logoImage.src = event.target.result;
-                    
-                    logoImage.onload = function() {
-                        canvasDrawLogo();
+                    const img = new Image();
+                    img.onload = () => {
+                        // Update the canvas state with the new logo image and its properties
+                        const state = getCanvasState();
+                        updateCanvasState({
+                            logo: {
+                                ...state.logo,
+                                image: img, // Update the logo image in the state
+                            }
+                        });
+                        canvasDrawLogo(); // Redraw the canvas with the logo
                     };
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        // Optionally reset logo position/scale or image
-        // Uncomment if desired:
-        // logoX = 100;
-        // logoY = 100;
-        // logoScale = 0.1;
-        // logoImage.src = "";  // Clear the logo image if needed
-        
+        // Optional reset logic:
+        const state = getCanvasState();
+        updateCanvasState({
+            logo: {
+                ...state.logo,
+                image: null,
+                x: 100,
+                y: 100,
+                scale: 0.1
+            }
+        });
         canvasDrawLogo(); // Redraw canvas
     });
 
@@ -202,15 +192,16 @@ export function initializeLogo (canvas){
     }
     
     // Check if the mouse is over the logo
-    function isMouseOverLogo(mouseX, mouseY) {
-        const logoWidth = logoImage.width * logoScale;
-        const logoHeight = logoImage.height * logoScale;
+    function isMouseOverLogo(mouseX, mouseY, logo) {
+        if (!logo.image) return false;
+        const logoWidth = logo.image.width  * logo.scale;
+        const logoHeight = logo.image.height * logo.scale;
 
         // Calculate the bounds of the logo
-        const logoLeft = logoX;
-        const logoRight = logoX + logoWidth;
-        const logoTop = logoY;
-        const logoBottom = logoY + logoHeight;
+        const logoLeft = logo.x;
+        const logoRight = logo.x + logoWidth;
+        const logoTop = logo.y;
+        const logoBottom = logo.y + logoHeight;
 
         return (
             mouseX >= logoLeft &&
@@ -225,12 +216,13 @@ export function initializeLogo (canvas){
         //const rect = canvas.getBoundingClientRect();
         const { mouseX, mouseY } = getScaledMouseCoordinates(canvas, e);
         //console.log("logo mousedown triggered");
-
-        if (isMouseOverLogo(mouseX, mouseY)) {
+        const state = getCanvasState();
+        const { logo } = state;
+        if (isMouseOverLogo(mouseX, mouseY, logo)) {
             //console.log("Logo mousedown triggered - isMouseOverLogo ");
             isLogoDragging = true;
-            logoDragOffsetX = mouseX - logoX;
-            logoDragOffsetY = mouseY - logoY;
+            logoDragOffsetX = mouseX - logo.x;
+            logoDragOffsetY = mouseY - logo.y;
         }
     });
 
@@ -239,10 +231,15 @@ export function initializeLogo (canvas){
         if (isLogoDragging) {
 
             const { mouseX, mouseY } = getScaledMouseCoordinates(canvas, e);
-
-            logoX = mouseX - logoDragOffsetX;
-            logoY = mouseY - logoDragOffsetY;
-
+            const state = getCanvasState();
+            updateCanvasState({
+                logo: {
+                    ...state.logo,
+                    x: mouseX - logoDragOffsetX, // Update the logo's x position
+                    y: mouseY - logoDragOffsetY, // Update the logo's y position
+                }
+            });
+        
             canvasDrawLogo(); // Redraw the canvas
         }
     });
@@ -258,15 +255,23 @@ export function initializeLogo (canvas){
 
     // Resize the logo with the mouse wheel
     canvas.addEventListener('wheel', (e) => {
-
+        // Check if the logo is being dragged   
         const { mouseX, mouseY } = getScaledMouseCoordinates(canvas, e);
+        const state = getCanvasState();
+        const { logo } = state;
 
-        if (isMouseOverLogo(mouseX, mouseY)) {
-            //console.log('Logo wheel triggered - isMouseOverLogo');
-            // Scale the logo based on the wheel direction
-            const delta = e.deltaY > 0 ? -0.01 : 0.01;
-            logoScale = Math.max(0.05, logoScale + delta); // Prevent scale from going below 0.1
-            canvasDrawLogo(); // Redraw the canvas
+        if (isMouseOverLogo(mouseX, mouseY, logo)) {
+
+            const newScale = Math.max(0.05, logo.scale + (e.deltaY > 0 ? -0.01 : 0.01)); // Prevent scale from going below 0.05
+            // Update the logo scale in the state
+            updateCanvasState({
+                logo: {
+                    ...state.logo,
+                    scale: newScale, // Update the logo's scale
+                }
+            });
+            
+            canvasDrawLogo(); // Redraw the canvas with the updated logo scale
             e.preventDefault(); // Prevent default scrolling behavior
         }
     }, { passive: false });
@@ -275,12 +280,13 @@ export function initializeLogo (canvas){
 
 
 export function canvasDrawLogo() { //export
+    const {logo} = getCanvasState(); // Get the current canvas state
     const event = new CustomEvent('canvasDrawLogo', { // canvasDrawLogo
         detail: {
-            logoImage,
-            logoX,
-            logoY,
-            logoScale,
+            logoImage: logo.image, // Use the logo image from the state
+            logoX: logo.x, // Use the logo x position from the state
+            logoY: logo.y, // Use the logo y position from the state
+            logoScale: logo.scale, // Use the logo scale from the state
         }
         
     });
