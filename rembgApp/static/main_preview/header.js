@@ -13,13 +13,8 @@ let headerColorInput = document.getElementById('header-color');
 
 
 // End New Code ---------------------
-
-
 // Update the header opacity
 headerOpacityInput.addEventListener('input', (e) => {
-    // headerOpacity = parseFloat(e.target.value);
-    // headerOpacityValue.textContent = headerOpacity;
-    
     // New code for header opacity
     const opacity = parseFloat(e.target.value);
     const state = getCanvasState();
@@ -40,10 +35,6 @@ headerOpacityInput.addEventListener('input', (e) => {
 
 // Adjust the bar height
 headerHeightInput.addEventListener('input', (e) => {
-    // headerBarHeight = parseInt(e.target.value, 10);
-    // headerHeightValue.textContent = headerBarHeight;
-
-    //new code for header height
     const height = parseInt(e.target.value, 10);
     const state = getCanvasState();
 

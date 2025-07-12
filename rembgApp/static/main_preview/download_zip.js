@@ -1,5 +1,3 @@
-// import {getLogo, setLogo} from './logo_properties.js';
-
 
 
 function download_zip() {

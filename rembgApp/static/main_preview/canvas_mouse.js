@@ -2,7 +2,7 @@ import { download_zip } from "./download_zip.js";
 
 //import { headerBarColor, headerBarHeight } from "./header.js"; //setHeaderBarValues
 //import {updateHeaderBarColor} from "./header.js"; // todo : no use for this 
-import { fetchMetadataAPI, setMetaValues, getMetaValues, getCanvasState} from "./metadata_fetch.js"; //headerBarColor, headerBarHeight, footerHeight,footerColor, footerTexts
+import { fetchMetadataAPI, getCanvasState, updateCanvasState} from "./metadata_fetch.js"; //headerBarColor, headerBarHeight, footerHeight,footerColor, footerTexts
 
 // import { footerColor, footerHeight, footerTexts} from "./footer.js";
 
@@ -47,7 +47,6 @@ function drawCanvas(ctx, img, background, imageX, imageY,
     metadataMap) {
 
     const state = getCanvasState(); // Get the current canvas state
-
 
     // Draw the background first
     ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
@@ -171,7 +170,6 @@ function drawCanvas(ctx, img, background, imageX, imageY,
         ctx.restore();
     }
 
-
 }
 
 function redrawCanvas(ctx, img, background, imageX, imageY, imageScale, 
@@ -245,15 +243,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         const img = new Image();
         const background = new Image();
 
-        initializeFooter(canvas, ctx); // Initialize footer functionality for this canvas
-        initializeLogo(canvas);// Initialize Logo functionality for this canvas
+        initializeFooter(canvas, ctx); // Initialize footer functionality for this canvas 
+        initializeLogo(canvas);// Initialize Logo functionality for this canvas 
 
         // commenting out old code
         // Load the rembg image from its path
         img.src = images[index].dataset.path;
-        let imagePath = img.src; 
-        
-        
+        let imagePath = img.src;
 
         // Load a background image (replace with your background image path)
         //if statement for default bg image "patform.jpg" if no bg selected yet
@@ -339,9 +335,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 
                 // Ensure we have corresponding metadata for this image
                 const metadata = metadataList ? metadataList[index] : null;
-            
+
                 if (metadata) {
-                    //console.log(`Applying metadata to image ${index}:`, metadata);
+                    console.log(`Applying metadata to image ${index}:`, metadata);
             
                     // Apply saved properties from database that saved in metadata
                     imageX = metadata.image_x ?? canvas.width / 2;
@@ -353,53 +349,29 @@ document.addEventListener("DOMContentLoaded", async () => {
                     shadowOffsetYInput.value = shadowOffsetY;
                     shadowBlurInput.value = shadowBlur;
                     offsetYValue.textContent = shadowOffsetY;
-                    blurValue.textContent = shadowBlur;     
-                    
-                    // new code for logo -------------------------
-                    // if (metadata.logo_path) {
-                    //     console.log("Loading logo from metadata:", metadata.logo_path);
-                    //     const logoImg = new Image();
-                    //     logoImg.src = metadata.logo_path;
-                    //     setLogo(
-                    //         logoImg,
-                    //         metadata.logo_x || 100,
-                    //         metadata.logo_y || 100,
-                    //         metadata.logo_scale || 0.1
-                    //     );
-                        
-                    //     logoImg.onload = function() {
-                    //         const logo = getLogo();
-                    //         drawCanvas(ctx, img, background, imageX, imageY, imageScale, 
-                    //             shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, 
-                    //             project_id, metadataMap, headerBarColor, headerBarHeight, 
-                    //             footerColor, footerHeight, footerTexts, 
-                    //             logo.image, logo.x, logo.y, logo.scale);
-                    //     };
-                    // }
-                    // new code for logo ends -------------------------
-
-
-                   
-                    // new code for header and footer  
-                    //console.log(metadata.project_id + " | heade height: " + metadata.header_height + " | header color: " + metadata.header_color + " | Opacity: " + metadata.header_opacity);
-                    // Setting metadata from sqlite database. setHeaderValues function called from header_encapsulation.js
-                    // setMetaValues(
-                    //     metadata.header_height, 
-                    //     metadata.header_color, 
-                    //     metadata.header_opacity, 
-                    //     metadata.footer_color, 
-                    //     metadata.footer_height,
-                    //     metadata.texts,
-                    //     metadata.logo_path,
-                    //     metadata.logo_x,
-                    //     metadata.logo_y,
-                    //     metadata.logo_scale
-                    // );
-                    //console.log("metadata for logo image: ", metadata.logo_path, metadata.logo_x, metadata.logo_y, metadata.logo_scale)
-                    // new code ends
+                    blurValue.textContent = shadowBlur;
+                    updateCanvasState({
+                        header: {
+                            height: metadata.header_height,
+                            color: metadata.header_color,
+                            opacity: metadata.header_opacity
+                        },
+                        footer: {
+                            height: metadata.footer_height,
+                            color: metadata.footer_color,
+                            opacity: metadata.footer_opacity,
+                            texts: metadata.texts || []
+                        },
+                        logo: {
+                            image: metadata.logo_path ? new Image() : null, // Load logo image if path exists
+                            x: metadata.logo_x || 100,
+                            y: metadata.logo_y || 100,
+                            scale: metadata.logo_scale || 0.1
+                        }
+                    });
 
                 }
-               
+
 
                 // Draw the canvas content
                 drawCanvas(ctx, img, background, imageX, imageY, 
