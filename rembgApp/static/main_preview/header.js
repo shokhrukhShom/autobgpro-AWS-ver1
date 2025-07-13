@@ -1,6 +1,5 @@
-
-import { drawCanvas } from "./canvas_mouse.js";
-import { getCanvasState, updateCanvasState } from './metadata_fetch.js'; //headerBarColor
+//import { drawCanvas } from "./canvas_mouse.js";
+import { getCanvasStateDesign, updateCanvasStateDesign,  } from './metadata_fetch.js'; //headerBarColor
 
 
 
@@ -17,8 +16,8 @@ let headerColorInput = document.getElementById('header-color');
 headerOpacityInput.addEventListener('input', (e) => {
     // New code for header opacity
     const opacity = parseFloat(e.target.value);
-    const state = getCanvasState();
-    updateCanvasState({
+    const state = getCanvasStateDesign();
+    updateCanvasStateDesign({
         header: {
             ...state.header,
             opacity
@@ -36,9 +35,9 @@ headerOpacityInput.addEventListener('input', (e) => {
 // Adjust the bar height
 headerHeightInput.addEventListener('input', (e) => {
     const height = parseInt(e.target.value, 10);
-    const state = getCanvasState();
+    const state = getCanvasStateDesign();
 
-    updateCanvasState({
+    updateCanvasStateDesign({
         header: {
             ...state.header,
             height
@@ -60,10 +59,10 @@ headerColorInput.addEventListener('input', () => {
     // headerBarColor = `rgba(${r}, ${g}, ${b}, ${headerOpacity})`;
     
     // NEW CODE ------------------------
-    // Update the canvas state with the new header bar colorconst state = getCanvasState();
-    const state = getCanvasState();
+    // Update the canvas state with the new header bar colorconst state = getCanvasStateDesign();
+    const state = getCanvasStateDesign();
     const newColor = `rgba(${r}, ${g}, ${b}, ${state.header.opacity})`;
-    updateCanvasState({
+    updateCanvasStateDesign({
         header: {
             ...state.header,
             color: newColor
@@ -78,7 +77,7 @@ headerColorInput.addEventListener('input', () => {
 
 headerOpacityInput.addEventListener('input', (e) => {
     const opacity = parseFloat(e.target.value);
-    const state = getCanvasState();
+    const state = getCanvasStateDesign();
 
     // Extract RGB values from existing rgba color string
     const rgbaMatch = state.header.color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
@@ -87,7 +86,7 @@ headerOpacityInput.addEventListener('input', (e) => {
     const updatedColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
 
     // Update state with both new opacity and updated color
-    updateCanvasState({
+    updateCanvasStateDesign({
         header: {
             ...state.header,
             opacity,
@@ -104,7 +103,7 @@ headerOpacityInput.addEventListener('input', (e) => {
 // Function to trigger a canvas redraw
 function triggerCanvasRedraw() {
 
-    const state = getCanvasState(); // Get the current canvas state : new code
+    const state = getCanvasStateDesign(); // Get the current canvas state : new code
 
     // Dispatch a custom event to notify canvas_mouse.js to redraw the canvas
     const event = new CustomEvent('canvasRedraw', {

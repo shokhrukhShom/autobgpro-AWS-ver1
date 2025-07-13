@@ -1,4 +1,4 @@
-import { getCanvasState, updateCanvasState } from './metadata_fetch.js';
+import { getCanvasStateDesign, updateCanvasStateDesign } from './metadata_fetch.js';
 
 
 
@@ -16,7 +16,7 @@ export function initializeLogo (canvas){
         const img = new Image();
         img.src = meta.design_data.logo_path;
         img.onload = () => {
-            updateCanvasState({
+            updateCanvasStateDesign({
                 logo: {
                     image: img,
                     x: meta.design_data.logo_x || 100,
@@ -40,8 +40,8 @@ export function initializeLogo (canvas){
                 const img = new Image();
                 img.src = event.target.result; // Set the uploaded image as the source for the logo image
                 img.onload = function() {
-                    const state = getCanvasState();
-                    updateCanvasState({
+                    const state = getCanvasStateDesign();
+                    updateCanvasStateDesign({
                         logo: {
                             ...state.logo,
                             image: img, // Update the logo image in the state
@@ -87,8 +87,8 @@ export function initializeLogo (canvas){
                         img.src = '/' + data.logo_path;
                         img.onload = () => {
                             // Update the canvas state with the new logo image and its properties
-                            const state = getCanvasState();
-                            updateCanvasState({
+                            const state = getCanvasStateDesign();
+                            updateCanvasStateDesign({
                                 logo: {
                                     ...state.logo,
                                     image: img
@@ -147,8 +147,8 @@ export function initializeLogo (canvas){
                     const img = new Image();
                     img.onload = () => {
                         // Update the canvas state with the new logo image and its properties
-                        const state = getCanvasState();
-                        updateCanvasState({
+                        const state = getCanvasStateDesign();
+                        updateCanvasStateDesign({
                             logo: {
                                 ...state.logo,
                                 image: img, // Update the logo image in the state
@@ -162,8 +162,8 @@ export function initializeLogo (canvas){
         });
 
         // Optional reset logic:
-        const state = getCanvasState();
-        updateCanvasState({
+        const state = getCanvasStateDesign();
+        updateCanvasStateDesign({
             logo: {
                 ...state.logo,
                 image: null,
@@ -216,7 +216,7 @@ export function initializeLogo (canvas){
         //const rect = canvas.getBoundingClientRect();
         const { mouseX, mouseY } = getScaledMouseCoordinates(canvas, e);
         //console.log("logo mousedown triggered");
-        const state = getCanvasState();
+        const state = getCanvasStateDesign();
         const { logo } = state;
         if (isMouseOverLogo(mouseX, mouseY, logo)) {
             //console.log("Logo mousedown triggered - isMouseOverLogo ");
@@ -231,8 +231,8 @@ export function initializeLogo (canvas){
         if (isLogoDragging) {
 
             const { mouseX, mouseY } = getScaledMouseCoordinates(canvas, e);
-            const state = getCanvasState();
-            updateCanvasState({
+            const state = getCanvasStateDesign();
+            updateCanvasStateDesign({
                 logo: {
                     ...state.logo,
                     x: mouseX - logoDragOffsetX, // Update the logo's x position
@@ -257,14 +257,14 @@ export function initializeLogo (canvas){
     canvas.addEventListener('wheel', (e) => {
         // Check if the logo is being dragged   
         const { mouseX, mouseY } = getScaledMouseCoordinates(canvas, e);
-        const state = getCanvasState();
+        const state = getCanvasStateDesign();
         const { logo } = state;
 
         if (isMouseOverLogo(mouseX, mouseY, logo)) {
 
             const newScale = Math.max(0.05, logo.scale + (e.deltaY > 0 ? -0.01 : 0.01)); // Prevent scale from going below 0.05
             // Update the logo scale in the state
-            updateCanvasState({
+            updateCanvasStateDesign({
                 logo: {
                     ...state.logo,
                     scale: newScale, // Update the logo's scale
@@ -280,7 +280,7 @@ export function initializeLogo (canvas){
 
 
 export function canvasDrawLogo() { //export
-    const {logo} = getCanvasState(); // Get the current canvas state
+    const {logo} = getCanvasStateDesign(); // Get the current canvas state
     const event = new CustomEvent('canvasDrawLogo', { // canvasDrawLogo
         detail: {
             logoImage: logo.image, // Use the logo image from the state

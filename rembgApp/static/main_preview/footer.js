@@ -1,4 +1,4 @@
-import { getCanvasState, updateCanvasState } from './metadata_fetch.js'; // Importing canvas state management functions
+import { getCanvasStateDesign, updateCanvasStateDesign } from './metadata_fetch.js'; // Importing canvas state management functions
 
 // export let footerHeight = 0; // Default footer height
 // let footerOpacity = 1; // Default footer opacity
@@ -30,9 +30,9 @@ export function initializeFooter(canvas, ctx) {
     // Update footer height
     footerHeightInput.addEventListener('input', (e) => {
         const height = parseInt(e.target.value, 10);
-        const state = getCanvasState();
+        const state = getCanvasStateDesign();
 
-        updateCanvasState({
+        updateCanvasStateDesign({
             footer: {
                 ...state.footer,
                 height
@@ -47,11 +47,11 @@ export function initializeFooter(canvas, ctx) {
     // Update footer opacity
     footerOpacityInput.addEventListener('input', (e) => {
         const opacity = parseFloat(e.target.value);
-        const state = getCanvasState();
+        const state = getCanvasStateDesign();
         const rgbaMatch = state.footer.color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
         const [r, g, b] = rgbaMatch ? rgbaMatch.slice(1, 4) : [0, 0, 0];
 
-        updateCanvasState({
+        updateCanvasStateDesign({
             footer: {
                 ...state.footer,
                 opacity,
@@ -70,9 +70,9 @@ export function initializeFooter(canvas, ctx) {
         const r = parseInt(color.slice(1, 3), 16);
         const g = parseInt(color.slice(3, 5), 16);
         const b = parseInt(color.slice(5, 7), 16);
-        const state = getCanvasState();
+        const state = getCanvasStateDesign();
 
-        updateCanvasState({
+        updateCanvasStateDesign({
             footer: {
                 ...state.footer,
                 color: `rgba(${r}, ${g}, ${b}, ${state.footer.opacity})`
@@ -89,7 +89,7 @@ export function initializeFooter(canvas, ctx) {
             //console.log("+ btn clicked");
 
             const id = footerTextIdCounter++;
-            const state = getCanvasState(); // new
+            const state = getCanvasStateDesign(); // new
 
             const textObj = {
                 id, // Unique ID
@@ -101,7 +101,7 @@ export function initializeFooter(canvas, ctx) {
                 y: 150 + id * 40, // Offset each new text vertically
                 isDraggingFooterElement: false, // Use isDraggingFooterElement
             };
-            updateCanvasState({
+            updateCanvasStateDesign({
                 footer: {
                     ...state.footer,
                     texts: [...state.footer.texts, textObj]
@@ -163,10 +163,10 @@ export function initializeFooter(canvas, ctx) {
         // document.getElementById(`remove-footer-text-${textObj.id}`).addEventListener('click', () => {
         //     //footerTexts = footerTexts.filter((text) => text.id !== textObj.id);
 
-        //     const state = getCanvasState();
+        //     const state = getCanvasStateDesign();
         //     const newTexts = state.footer.texts.filter(t => t.id !== textObj.id);
 
-        //     updateCanvasState({
+        //     updateCanvasStateDesign({
         //         footer: {
         //             ...state.footer,
         //             texts: newTexts
@@ -182,10 +182,10 @@ export function initializeFooter(canvas, ctx) {
 
         // Remove button functionality
         removeBtn.addEventListener('click', () => {
-            const state = getCanvasState();
+            const state = getCanvasStateDesign();
             const newTexts = state.footer.texts.filter(t => t.id !== textObj.id);
 
-            updateCanvasState({
+            updateCanvasStateDesign({
                 footer: {
                     ...state.footer,
                     texts: newTexts
@@ -200,12 +200,12 @@ export function initializeFooter(canvas, ctx) {
 
         // Add the new text object to the footerTexts array
         function updateFooterText(id, key, value) {
-        const state = getCanvasState();
+        const state = getCanvasStateDesign();
         const updatedTexts = state.footer.texts.map(text =>
             text.id === id ? { ...text, [key]: value } : text
         );
 
-        updateCanvasState({
+        updateCanvasStateDesign({
             footer: {
                 ...state.footer,
                 texts: updatedTexts
@@ -219,7 +219,7 @@ export function initializeFooter(canvas, ctx) {
 
     // Mouse down event for dragging footer elements
     canvas.addEventListener('mousedown', (e) => {
-        const { footer } = getCanvasState();
+        const { footer } = getCanvasStateDesign();
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
@@ -242,12 +242,12 @@ export function initializeFooter(canvas, ctx) {
 
             return text;
         });
-        updateCanvasState({ footer: { ...footer, texts: updatedTexts } });
+        updateCanvasStateDesign({ footer: { ...footer, texts: updatedTexts } });
     });
 
     // Mouse move event for dragging footer elements
     canvas.addEventListener('mousemove', (e) => {
-        const { footer } = getCanvasState();
+        const { footer } = getCanvasStateDesign();
 
         // Check if any footer text is being dragged
         if (!footer.texts.some(text => text.isDraggingFooterElement)) return;
@@ -267,7 +267,7 @@ export function initializeFooter(canvas, ctx) {
             return { ...text, x: mouseX - dragOffsetX, y: mouseY - dragOffsetY };
         });
         // Update the footer texts in the state
-        updateCanvasState({ footer: { ...footer, texts: updatedTexts } });
+        updateCanvasStateDesign({ footer: { ...footer, texts: updatedTexts } });
         // Redraw the canvas
         canvasRedrawFooter();
         
@@ -276,15 +276,15 @@ export function initializeFooter(canvas, ctx) {
 
     // Mouse up event to stop dragging
     canvas.addEventListener('mouseup', () => {
-        const { footer } = getCanvasState();
+        const { footer } = getCanvasStateDesign();
         // set isDraggingFooterElement to false for all texts
         const updatedTexts = footer.texts.map(text => ({ ...text, isDraggingFooterElement: false }));
-        updateCanvasState({ footer: { ...footer, texts: updatedTexts } });
+        updateCanvasStateDesign({ footer: { ...footer, texts: updatedTexts } });
     });
 
     // Mouse wheel event for resizing footer text
     canvas.addEventListener('wheel', (event) => {
-        const { footer } = getCanvasState();
+        const { footer } = getCanvasStateDesign();
         
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
@@ -314,7 +314,7 @@ export function initializeFooter(canvas, ctx) {
         });
 
         if (updated) {
-            updateCanvasState({ footer: { ...footer, texts: updatedTexts } });
+            updateCanvasStateDesign({ footer: { ...footer, texts: updatedTexts } });
             canvasRedrawFooter();
         }
 
@@ -325,7 +325,7 @@ export function initializeFooter(canvas, ctx) {
 // This function dispatches a custom event that can be listened to by other parts of the application
 // to redraw the footer with the current state.
 function canvasRedrawFooter() { // removed the "export:" here
-    const state = getCanvasState();
+    const state = getCanvasStateDesign();
     const event = new CustomEvent('canvasRedrawFooter', {
         detail: {
             footerHeight: state.footer.height, // Footer height

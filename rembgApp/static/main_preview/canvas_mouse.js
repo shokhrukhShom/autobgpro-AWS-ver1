@@ -2,7 +2,7 @@ import { download_zip } from "./download_zip.js";
 
 //import { headerBarColor, headerBarHeight } from "./header.js"; //setHeaderBarValues
 //import {updateHeaderBarColor} from "./header.js"; // todo : no use for this 
-import { fetchMetadataAPI, getCanvasState, updateCanvasState} from "./metadata_fetch.js"; //headerBarColor, headerBarHeight, footerHeight,footerColor, footerTexts
+import { fetchMetadataAPI, getCanvasState, getCanvasStateDesign} from "./metadata_fetch.js"; //headerBarColor, headerBarHeight, footerHeight,footerColor, footerTexts
 
 // import { footerColor, footerHeight, footerTexts} from "./footer.js";
 
@@ -12,7 +12,7 @@ import { initializeFooter } from "./footer.js";
 // import { logoImage, logoX, logoY, logoScale } from "./logo_properties.js"; removed this because it was not used
 import { initializeLogo } from "./logo_properties.js";
 import { canvasDrawLogo } from "./logo_properties.js";
-// import { getLogo, setLogo } from "./logo_properties.js"; //removed this because it was not used
+
 
 
 fetchMetadataAPI(project_id);
@@ -44,9 +44,20 @@ export let showBorder = false;
 function drawCanvas(ctx, img, background, imageX, imageY, 
     imageScale, shadowOffsetY, 
     shadowBlur, canvas, imagePath, currentBg, project_id, 
-    metadataMap) {
+    metadataMap, canvasId = null) { // Make canvasId optional
 
-    const state = getCanvasState(); // Get the current canvas state
+    let state;
+    // switching between getCanvasState and getCanvasStateDesign when in design mode
+    // check if there is selected pictures, if yes then its design mode 
+    if(selectedPicture == null){
+        //console.log("selectedPicture array is empty");
+        state = getCanvasState(canvasId); // Get state for this specific canvas
+    } else {
+        //console.log("selectedPicture array is NOT empty: ", selectedPicture);
+        state = getCanvasStateDesign();
+    }
+    //const state = getCanvasState(canvasId); // Get state for this specific canvas
+    
 
     // Draw the background first
     ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
@@ -117,7 +128,7 @@ function drawCanvas(ctx, img, background, imageX, imageY,
 
     // Draw the transparent header bar
     if (state.header.height > 0) { //headerBarHeight > 0
-
+        //console.log("header height and color recieved: ", state.header.height, state.header.color);
         // Reset shadow properties before drawing the header
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
@@ -129,11 +140,10 @@ function drawCanvas(ctx, img, background, imageX, imageY,
     }
 
     if (state.footer.height > 0) { //footerHeight > 0
-        //console.log("footer height: ", footerHeight);
+        //console.log("footer height: ", state.footer.height );
         // Draw footer 
         ctx.fillStyle = state.footer.color; //footerColor;
         ctx.fillRect(0, canvas.height - state.footer.height, canvas.width, state.footer.height);
-
     }
     
     // Draw each footer text
@@ -173,14 +183,17 @@ function drawCanvas(ctx, img, background, imageX, imageY,
 }
 
 function redrawCanvas(ctx, img, background, imageX, imageY, imageScale, 
-    shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap) {
+    shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id, 
+    metadataMap, canvasId = null) {
     drawCanvas(ctx, img, background, imageX, imageY, imageScale, shadowOffsetY, 
-        shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap);
+        shadowBlur, canvas, imagePath, currentBg, project_id, metadataMap, canvasId);
 }
 
 
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+    await fetchMetadataAPI(project_id);  // Initialize metadata after DOM is ready
 
     const canvases = document.querySelectorAll(".rembg-canvas");
     const images = document.querySelectorAll(".png-img");
@@ -239,6 +252,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ---------Canvas redraw start
     // Listen for the custom event to redraw the canvas
     canvases.forEach(async (canvas, index) => {
+        const canvasId = canvas.id || `canvas-${index}`; // Unique identifier for each canvas
         const ctx = canvas.getContext("2d");
         const img = new Image();
         const background = new Image();
@@ -336,8 +350,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Ensure we have corresponding metadata for this image
                 const metadata = metadataList ? metadataList[index] : null;
 
+                const state = getCanvasState(canvasId); // Get state for this canvas
+
                 if (metadata) {
-                    console.log(`Applying metadata to image ${index}:`, metadata);
+                    //console.log(`Applying metadata to image ${index}:`, metadata);
             
                     // Apply saved properties from database that saved in metadata
                     imageX = metadata.image_x ?? canvas.width / 2;
@@ -350,49 +366,29 @@ document.addEventListener("DOMContentLoaded", async () => {
                     shadowBlurInput.value = shadowBlur;
                     offsetYValue.textContent = shadowOffsetY;
                     blurValue.textContent = shadowBlur;
-                    updateCanvasState({
-                        header: {
-                            height: metadata.header_height,
-                            color: metadata.header_color,
-                            opacity: metadata.header_opacity
-                        },
-                        footer: {
-                            height: metadata.footer_height,
-                            color: metadata.footer_color,
-                            opacity: metadata.footer_opacity,
-                            texts: metadata.texts || []
-                        },
-                        logo: {
-                            image: metadata.logo_path ? new Image() : null, // Load logo image if path exists
-                            x: metadata.logo_x || 100,
-                            y: metadata.logo_y || 100,
-                            scale: metadata.logo_scale || 0.1
-                        }
-                    });
-
                 }
 
 
                 // Draw the canvas content
                 drawCanvas(ctx, img, background, imageX, imageY, 
                     imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, 
-                    currentBg, project_id, metadataMap);
-                
+                    currentBg, project_id, metadataMap, canvasId); // Pass canvasId
                 
 
 
                 // Listen for the custom event to redraw the canvas for footer updates
                 document.addEventListener('canvasRedrawFooter', () => {
+                    console.log('canvasRedraw event received');
                     drawCanvas(ctx, img, background, imageX, imageY, 
                     imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, 
-                    currentBg, project_id, metadataMap);
+                    currentBg, project_id, metadataMap, canvasId);
                 });
 
                 // Listen for the custom event to redraw the canvas for footer updates
                 document.addEventListener('canvasDrawLogo', () => {
                     drawCanvas(ctx, img, background, imageX, imageY, 
                     imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, 
-                    currentBg, project_id, metadataMap);
+                    currentBg, project_id, metadataMap, canvasId);
                 });
 
 
@@ -449,7 +445,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Redraw the canvas with the border visible
                 redrawCanvas(ctx, img, background, imageX, 
                     imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                    imagePath, currentBg, project_id, metadataMap);
+                    imagePath, currentBg, project_id, metadataMap, canvasId);
             }
         });
 
@@ -464,7 +460,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 redrawCanvas(ctx, img, background, imageX, 
                     imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                    imagePath, currentBg, project_id, metadataMap);
+                    imagePath, currentBg, project_id, metadataMap, canvasId);
             }
         });
 
@@ -474,7 +470,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Redraw the canvas without the border
             redrawCanvas(ctx, img, background, imageX, 
                 imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                imagePath, currentBg, project_id, metadataMap); 
+                imagePath, currentBg, project_id, metadataMap, canvasId); 
         });
 
         canvas.addEventListener('mouseleave', () => {
@@ -494,14 +490,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 showBorder = true;
                 redrawCanvas(ctx, img, background, imageX, 
                             imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                            imagePath, currentBg, project_id, metadataMap);
+                            imagePath, currentBg, project_id, metadataMap, canvasId);
                 e.preventDefault(); // Prevent default scrolling behavior
 
                 setTimeout(() => {
                     showBorder = false;
                     redrawCanvas(ctx, img, background, imageX, 
                             imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                            imagePath, currentBg, project_id, metadataMap);
+                            imagePath, currentBg, project_id, metadataMap, canvasId);
                 }, 400);
             }
         }, { passive: false });
@@ -517,7 +513,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             redrawCanvas(ctx, img, background, imageX, 
                 imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                imagePath, currentBg, project_id, metadataMap);
+                imagePath, currentBg, project_id, metadataMap, canvasId);
         });
 
         shadowBlurInput.addEventListener('input', (e) => {
@@ -526,7 +522,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             redrawCanvas(ctx, img, background, imageX, 
                 imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                imagePath, currentBg, project_id, metadataMap);
+                imagePath, currentBg, project_id, metadataMap, canvasId);
         });
 
         // Apply shadow when botton clicked
@@ -536,7 +532,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             shadowBlur = shadowBlurInput.value;    // Default value
             redrawCanvas(ctx, img, background, imageX, 
                 imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                imagePath, currentBg, project_id, metadataMap);
+                imagePath, currentBg, project_id, metadataMap, canvasId);
         })
 
         //----------------
@@ -555,14 +551,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             shadowBlur = shadowBlurInput.value;    // Default value
             redrawCanvas(ctx, img, background, imageX, 
                 imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
-                imagePath, currentBg, project_id, metadataMap);
+                imagePath, currentBg, project_id, metadataMap, canvasId);
         });
 
         // Listen for the custom event to redraw the canvas
         document.addEventListener('canvasRedraw', () => {
+            console.log('canvasRedraw event received');
             drawCanvas(ctx, img, background, imageX, imageY, imageScale, 
                 shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id,
-                metadataMap);
+                metadataMap, canvasId);
         });
 
     });
