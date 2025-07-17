@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt 
-from .models import User, Uploaded_Pictures, Metadata
+from .models import User, Uploaded_Pictures, Metadata, Template
 import json
 from rembg import remove
 from PIL import Image
@@ -534,6 +534,9 @@ def handle_design_elements(request, data):
             return JsonResponse({'error': 'Project not found or access denied'}, status=404)
 
         image_path = element.get('image_path')
+        if image_path is None:
+            print("Error: no image path!!!!")
+            
         image_path = "http://127.0.0.1:8000"+image_path 
         design_data = element.get('design_data', {})
         print("image path: ",image_path)
@@ -676,5 +679,100 @@ def get_metadata(request, project_id):
     try:
         metadata = list(Metadata.objects.filter(project_id=project_id).values())  # Convert to list immediately
         return JsonResponse(metadata, safe=False)  # Return the list directly
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+
+
+@csrf_exempt
+@login_required
+def design_template(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            if 'designMetadata' in data:
+                # Extract data from the request
+                design_metadata = data['designMetadata']
+                project_id = data.get('project_id')
+                template_name = data.get('template_name')
+                logo_path = data.get('logo_path')
+                
+                # Get the project (Uploaded_Pictures instance)
+                project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
+                
+                # Create a new Template instance
+                template = Template(
+                    author=request.user,
+                    template_name=template_name,
+                    background_path=project.background_image if design_metadata.get('include_background', True) else None,
+                    
+                    # Header settings
+                    header_height=design_metadata.get('header', {}).get('height', 0),
+                    header_color=design_metadata.get('header', {}).get('color', '#000000'),
+                    header_opacity=design_metadata.get('header', {}).get('opacity', 1.0),
+                    
+                    # Footer settings
+                    footer_height=design_metadata.get('footer', {}).get('height', 0),
+                    footer_color=design_metadata.get('footer', {}).get('color', '#000000'),
+                    footer_opacity=design_metadata.get('footer', {}).get('opacity', 1.0),
+                    
+                    # Logo settings
+                    logo_path=logo_path,
+                    logo_x=design_metadata.get('logo', {}).get('x', 100),
+                    logo_y=design_metadata.get('logo', {}).get('y', 100),
+                    logo_scale=design_metadata.get('logo', {}).get('scale', 1.0),
+                    
+                    # Texts
+                    texts=design_metadata.get('footer', {}).get('texts', []),
+                )
+                
+                # Save the template to database
+                template.save()
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Template saved successfully',
+                    'template_id': template.id
+                })
+            else:
+                return JsonResponse({'error': 'Invalid data format: designMetadata missing'}, status=400)
+                
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+@login_required
+def get_templates(request):
+    try:
+        templates = Template.objects.filter(author=request.user).values('id', 'template_name')
+        return JsonResponse({
+            'templates': [{'id': t['id'], 'name': t['template_name']} for t in templates]
+        }, status=200)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+@login_required
+def get_template_metadata(request, template_id):
+    try:
+        template = Template.objects.get(id=template_id, author=request.user)
+        return JsonResponse({
+            'header_height': template.header_height,
+            'header_color': template.header_color,
+            'header_opacity': template.header_opacity,
+            'footer_height': template.footer_height,
+            'footer_color': template.footer_color,
+            'footer_opacity': template.footer_opacity,
+            'texts': template.texts or [],
+            'logo_path': template.logo_path or '',
+            'logo_x': template.logo_x,
+            'logo_y': template.logo_y,
+            'logo_scale': template.logo_scale
+        }, status=200)
+    except Template.DoesNotExist:
+        return JsonResponse({'error': 'Template not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

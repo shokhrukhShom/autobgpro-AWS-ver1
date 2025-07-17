@@ -1,18 +1,21 @@
+window.selectedPicture = null; // Variable to store the selected picture in "background insert" page  
+window.selectedCanvas = null;
 
-window.selectedPicture = []; // Variable to store the selected picture in "background insert" page  
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM Loaded from rembg.js");
 
     // call all your functions here e.g.: myFunction();
-    Background_Insert();
+    //Background_Insert;
+    document.getElementById("Background_Insert").addEventListener("click", Background_Insert);
     Checkmark_picture();
     img_clicked();
-    backToMainBtn();
+    document.getElementById("backToMainBtn").addEventListener("click", backToMainBtn);
     updateImages(); // update image whenever page loads, can be bad practice but meh...
     toggleDropdown;
     saveImage;
     textBtn;
+    setupTemplateCreation();
 })
 
 
@@ -67,7 +70,7 @@ function img_clicked() {
 };
 
 // background insert page
-function Background_Insert(){
+window.Background_Insert = function(){
     //console.log('bg insert clicked');
     // Getting Elements and assigning it to variable
     const div_rmbg_images = document.getElementById("rmbg_images");
@@ -332,6 +335,7 @@ function hideLoadingSpinner() {
 
 
 function textBtn(){
+    window.selectedPicture = []; // Reset to empty array when entering design mode
 
     console.log("text btn working");
     document.getElementById("tool_bar").style.display = "none";
@@ -397,14 +401,21 @@ function textBtn(){
             //selectedPicture.push(filename); // Add filename to array
             let cleanSrc = "http://127.0.0.1:8000/"+src.split('?')[0];
             selectedPicture.push(cleanSrc); // get the image src //new code
+            //selectedPicture.push(src); // get the image src //new code
         });
 
         const no_container = document.getElementById("no_container");
         if(no_container) {no_container.id = "omg_container";}
-
+        
         console.log("Selected pictures:", selectedPicture); // Log the array
+        // assign selectedPictures to selectedCanvas
+        window.selectedCanvas = window.selectedPicture;
+
+        
         // Add logic to proceed to text-editing functionality
         textEditing(selectedPicture);
+        
+
     });
 
     
@@ -447,3 +458,102 @@ function textEditing(selectedPicture){
     document.getElementById("static-content").style.display = "block";
 
 }
+
+
+// Create a Template START -------------------
+function setupTemplateCreation() {
+    const createTemplateBtn = document.getElementById('create-template-btn');
+    const templateModal = document.getElementById('template-creation-modal');
+    const cancelTemplateBtn = document.getElementById('cancel-template-btn');
+    
+    // Show modal when "Create a Template" is clicked
+    createTemplateBtn.addEventListener('click', function() {
+        // Reset form
+        document.getElementById('template-title').value = '';
+        document.getElementById('include-background').checked = true;
+        templateModal.style.display = 'flex';
+    });
+    
+    // Hide modal when Cancel is clicked
+    cancelTemplateBtn.addEventListener('click', function() {
+        templateModal.style.display = 'none';
+    });
+    
+    // Save template
+    document.getElementById('save-template-btn').addEventListener('click', function() {
+        const templateTitle = document.getElementById('template-title').value.trim();
+        
+        if (!templateTitle) {
+            showError("Please enter a template title", "red");
+            return;
+        }
+        
+        // Collect template data
+        const templateData = {
+            title: templateTitle,
+            background: document.getElementById('include-background').checked
+        };
+        
+        // Here you would typically send the templateData to your server
+        console.log("Template saved:", templateData);
+        
+        // Show success message and close modal
+        showError("Template \"" + templateData.title + "\" saved successefuly!", "green");
+        
+        
+        
+        // get metadata for canvas
+        // state has current canvasStateDesignGlobal of canvas
+        const state = window.canvasStateDesignGlobal;
+        console.log("current design:", state);
+
+        // const data = {
+        //     project_id: project_id,
+        //     designMetadata: state
+        // };
+        // Prepare the data structure
+        const logo_path = state.logo.image.currentSrc;
+        const data = {
+            template_name: templateData.title,
+            project_id: project_id,
+            logo_path: logo_path,
+            designMetadata: {
+                header: state.header || {},
+                footer: state.footer || {},
+                logo: state.logo || {}
+            }
+        };
+        console.log("Logo path: ", state.logo.image.currentSrc);
+        
+        // Fetch POST to save design template to sqlite database
+
+        fetch('design_template/', {  // Adjust URL based on your Django URL structure
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken() // Include CSRF token
+            },
+            body: JSON.stringify(data) 
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Response from server:", data);
+            showError("designed template created", "green")
+            
+        })
+        .catch(error => {
+            console.error("Error saving metadata:", error);
+            showError("Error saving metadata: " + error, "red");
+        });
+
+        templateModal.style.display = 'none';
+    });
+}
+
+// Function to get CSRF token from Django's cookies
+function getCSRFToken() {
+    const cookieValue = document.cookie.match(/csrftoken=([^ ;]+)/);
+    return cookieValue ? cookieValue[1] : '';
+}
+
+// Create a Template END -------------------

@@ -192,8 +192,8 @@ export function initializeFooter(canvas, ctx) {
                 }
             });
 
-            section.style.opacity = '0';
-            setTimeout(() => section.remove(), 500);
+            textSection.style.opacity = '0';
+            setTimeout(() => textSection.remove(), 500);
             canvasRedrawFooter();
         });
 

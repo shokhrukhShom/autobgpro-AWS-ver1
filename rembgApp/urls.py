@@ -23,6 +23,8 @@ urlpatterns = [
     path("save_metadata", views.save_metadata, name="save_metadata"),
     path('get_metadata/<int:project_id>/', views.get_metadata, name='get_metadata'),
     path('upload_logo/', views.upload_logo, name='upload_logo'),
-    
+    path('design_template/', views.design_template, name='design_template'),
+    path('get_templates/', views.get_templates, name='get_templates'),
+    path('get_template/<int:template_id>/', views.get_template_metadata, name='get_template_metadata'),  
 ]
 

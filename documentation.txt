@@ -29,3 +29,10 @@ TODO
 How logo upload works
 When "Upload Logo" clicked it shows logo on canvsa only. "Save Design" button calls records two API "upload_logo" and "save_metadata". This both saves shadow and data for logoX, logoY, logoScale. 
 logo_path saved with "logo_upload" API.
+
+
+How to show error or success message on the screen
+showError("Error: Please select at least one canvas.", 'red')
+or
+showError("Success: Changes saved.", 'green')            
+

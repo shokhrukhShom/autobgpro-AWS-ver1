@@ -34,7 +34,8 @@
     <!--Tool Bar-->
     <div class="tool-bar" id="tool_bar">
         <ul>
-            <li onclick="Background_Insert()">BG Insert</li>
+            <!-- <li onclick="Background_Insert()">BG Insert</li> -->
+            <li id="Background_Insert">BG Insert</li> 
             <li onclick="textBtn()">Design</li>
             <li class="dropdown" onclick="toggleDropdown(event)">
                 <span id="shadowBtn">Shadow</span>
@@ -56,7 +57,14 @@
 
                 </div>
             </li>
-            <li>Template</li>
+            
+            <li id="template">
+                Template
+                <div id="template-dropdown" class="dropdown-content" style="display: none;">
+                    <div id="template-list"></div>
+                </div>
+            </li>
+
             <li onclick="location.href='{% url  'uploadImg' %}'">New Project</li>
             <li id="exportImages">Export</li>
         </ul>
@@ -88,7 +96,7 @@
 
     <!--Start implementing canvas shadow -->
     <div id="select-canvas" style="display: none;">
-        <h1>Select Canvas</h1>
+        <h1>Select Picture(s)</h1>
         <button class="nextBtn backToMain">Back</button>
         <button class="nextBtn" id="selectAllBtn">Select All</button>
         <button class="nextBtn" id="nextTextBtn">Next</button>
@@ -120,8 +128,36 @@
             <button id="saveTextBtn" class="nextBtn">Save Design</button>
 
             <div class="line"></div>
-            <h1>TEXT EDITOR</h1>
+            <h1 style="color:#9db7d2;">EDITOR</h1>
             
+            <!-- Create a template -->
+            <!-- Add this inside the static-content div, replacing the existing "Create a Template" text -->
+            <div id="template-creation-modal" style="display: none;">
+                <div class="template-modal-content">
+                    <h2>Create New Template</h2>
+                    
+                    <div class="template-form-group">
+                        <label for="template-title">Template Title:</label>
+                        <input type="text" id="template-title" placeholder="Enter template name" autocomplete="off">
+                    </div>
+                    
+                    <div class="template-form-group">
+                        <label>
+                            <input type="checkbox" id="include-background" checked> Background
+                        </label>
+                    </div>
+                    
+                    <div class="template-form-buttons">
+                        <button id="save-template-btn" class="template-btn">Save</button>
+                        <button id="cancel-template-btn" class="template-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <p id="create-template-btn" style="text-align:center; padding:5px; cursor: pointer;">Create a Template</p>
+            
+            <!-- End create a template -->
+
              <!-- Upload Logo Start -->
             <div class="logo-upload-container" style="text-align: center; margin: 10px auto;">
                 <label for="logo-upload">Upload Logo</label>
@@ -186,7 +222,7 @@
     <!-- background insert page -->
     <div id="bg_images" style="display: none;">
         
-        <button class="nextBtn" onclick="backToMainBtn()" >Back</button>
+        <button class="nextBtn" id="backToMainBtn" >Back</button>
         <button class="nextBtn" id="submitBtn" >Apply</button>
         
         
@@ -495,6 +531,9 @@
 
 <!--load download zip js file-->
 <script type="module" src="{% static 'main_preview/download_zip.js' %}" defer></script>
- 
+
+<!--load download zip js file-->
+<script type="module" src="{% static 'main_preview/template.js' %}" defer></script>
+
 </body>
 </html>

@@ -2,7 +2,7 @@ import { download_zip } from "./download_zip.js";
 
 //import { headerBarColor, headerBarHeight } from "./header.js"; //setHeaderBarValues
 //import {updateHeaderBarColor} from "./header.js"; // todo : no use for this 
-import { fetchMetadataAPI, getCanvasState, getCanvasStateDesign} from "./metadata_fetch.js"; //headerBarColor, headerBarHeight, footerHeight,footerColor, footerTexts
+import { fetchMetadataAPI, getCanvasState, getCanvasStateDesign, loadDesignForImage} from "./metadata_fetch.js"; //headerBarColor, headerBarHeight, footerHeight,footerColor, footerTexts
 
 // import { footerColor, footerHeight, footerTexts} from "./footer.js";
 
@@ -39,6 +39,9 @@ function drawImageBorder(ctx, imageX, imageY, imageScale, img) {
 
 export let showBorder = false;
 
+//flag system to retrive design only once
+let designModeInitialized = false;
+let designLoadingPromise = null;
 
 // Define drawCanvas at the module level
 function drawCanvas(ctx, img, background, imageX, imageY, 
@@ -49,14 +52,29 @@ function drawCanvas(ctx, img, background, imageX, imageY,
     let state;
     // switching between getCanvasState and getCanvasStateDesign when in design mode
     // check if there is selected pictures, if yes then its design mode 
-    if(selectedPicture == null){
-        //console.log("selectedPicture array is empty");
+    if(window.selectedCanvas == null){ // window.selectedPicture
+        console.log("selectedPicture array is empty");
         state = getCanvasState(canvasId); // Get state for this specific canvas
     } else {
+        // new code --------------------------------
+
+        if (!designModeInitialized) {
+            console.log("designModeInitialized entered");
+
+            const imgPath = window.selectedCanvas[0];
+            loadDesignForImage(imgPath);
+            
+
+            designModeInitialized = true;
+        }
+        
+        // end new code -----------------------------
+
         //console.log("selectedPicture array is NOT empty: ", selectedPicture);
         state = getCanvasStateDesign();
+
     }
-    //const state = getCanvasState(canvasId); // Get state for this specific canvas
+    
     
 
     // Draw the background first
