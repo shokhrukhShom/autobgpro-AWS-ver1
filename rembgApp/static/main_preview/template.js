@@ -164,7 +164,7 @@ function template_select(){
         selectedCanvases.forEach(span => {
             const src = span.src;
             let cleanSrc = "http://127.0.0.1:8000/"+src.split('?')[0];
-            selectedPicturesTemplate.push(cleanSrc); // get the image src //new code
+            selectedPicturesTemplate.push(cleanSrc); // get the image src 
         });
 
         const no_container = document.getElementById("no_container");
@@ -192,49 +192,52 @@ async function save_selected_pictures_with_new_template(selectedPicturesTemplate
     );
     console.log("(inside save func) Selected pictures without http:", selectedPicturesTemplate);
 
-    // try {
-    //     const response = await fetch('save_metadata', {
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //             'X-CSRFToken': getCookie('csrftoken'), // Ensure you have CSRF token
-    //         },
-    //         body: JSON.stringify({
-    //             elements: selectedPicturesTemplate.map(pic => ({
-    //                 image_path: pic,
-    //                 design_data: {
-                        
-    //                     height: templateMetadata.header_height,
-    //                     color: templateMetadata.header_color,
-    //                     opacity: templateMetadata.header_opacity,
-    //                     height: templateMetadata.footer_height,
-    //                     color: templateMetadata.footer_color,
-    //                     opacity: templateMetadata.footer_opacity,
-    //                     texts: (templateMetadata.texts || []),
-    //                     logo_path: templateMetadata.logo_path,
-    //                     logo_x: templateMetadata.logo_x,
-    //                     logo_y: templateMetadata.logo_y,
-    //                     logo_scale: templateMetadata.logo_scale,
-    //                 }
-    //             })),
-    //             project_id: window.project_id 
-    //         })
-    //     });
+    try {
+        const response = await fetch('save_metadata', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'), // Ensure you have CSRF token
+            },
+            body: JSON.stringify({
+                elements: selectedPicturesTemplate.map(pic => ({
+                    image_path: pic,
+                    design_data: {
+                        header: {
+                            height: templateMetadata.header_height,
+                            color: templateMetadata.header_color,
+                            opacity: templateMetadata.header_opacity,
+                        },
+                        footer: {
+                            height: templateMetadata.footer_height,
+                            color: templateMetadata.footer_color,
+                            opacity: templateMetadata.footer_opacity,
+                        },
+                        texts: (templateMetadata.texts || []),
+                        logo_path: templateMetadata.logo_path,
+                        logo_x: templateMetadata.logo_x,
+                        logo_y: templateMetadata.logo_y,
+                        logo_scale: templateMetadata.logo_scale,
+                    }
+                })),
+                project_id: window.project_id 
+            })
+        });
 
-    //     if (!response.ok) {
-    //         throw new Error(`HTTP error! status: ${response.status}`);
-    //     }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-    //     const data = await response.json();
-    //     console.log("Save response:", data);
+        const data = await response.json();
+        console.log("Save response:", data);
         
-    //     // Redirect to rmbg page with refresh
-    //     window.location.href = '/rmbg';
+        // Redirect to rmbg page with refresh
+        window.location.href = '/rmbg';
 
-    // } catch (error) {
-    //     console.error('Error saving metadata:', error);
-    //     showError("Failed to save template. Please try again.", 'red');
-    // }
+    } catch (error) {
+        console.error('Error saving metadata:', error);
+        showError("Failed to save template. Please try again.", 'red');
+    }
 
 }
 

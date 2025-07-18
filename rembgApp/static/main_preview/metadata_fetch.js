@@ -283,8 +283,8 @@ export async function loadDesignForImage(imgPath) {
         });
 
         // updating global canvas design
-        const currentState = getCanvasStateDesign();
-        window.canvasStateDesignGlobal = currentState; // it takes the design from first canvas only. Not dynamic???
+        //const currentState = getCanvasStateDesign();
+        window.canvasStateDesignGlobal = getCanvasStateDesign();; // it takes the design from first canvas only. Not dynamic???
 
         // // Trigger redraw
         // function canvasRedrawFooter() { // removed the "export:" here

@@ -54,6 +54,7 @@ function drawCanvas(ctx, img, background, imageX, imageY,
     // check if there is selected pictures, if yes then its design mode 
     if(window.selectedCanvas == null){ // window.selectedPicture
         console.log("selectedPicture array is empty");
+        console.log("window.selectedPic: ", window.selectedCanvas); // window.selectedPicture
         state = getCanvasState(canvasId); // Get state for this specific canvas
     } else {
         // new code --------------------------------
