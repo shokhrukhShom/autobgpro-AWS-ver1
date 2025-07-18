@@ -286,6 +286,11 @@ export async function loadDesignForImage(imgPath) {
         //const currentState = getCanvasStateDesign();
         window.canvasStateDesignGlobal = getCanvasStateDesign();; // it takes the design from first canvas only. Not dynamic???
 
+
+        // Force a redraw of all canvases NEW NEW NEW
+        const event = new CustomEvent('canvasRedraw');
+        document.dispatchEvent(event);
+
         // // Trigger redraw
         // function canvasRedrawFooter() { // removed the "export:" here
         //     const state = getCanvasStateDesign();
@@ -353,7 +358,8 @@ function rgbaToHex(rgba) {
 
 // end new code ----------------------------------------------
 
-
+// making the loadDesignImage global to access in rmbg.js
+window.loadDesignForImage = loadDesignForImage;
 
 export { 
     fetchMetadataAPI

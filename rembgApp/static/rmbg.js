@@ -334,8 +334,10 @@ function hideLoadingSpinner() {
 
 
 
-function textBtn(){
+function textBtn(){ // new async added
     window.selectedPicture = []; // Reset to empty array when entering design mode
+    //window.selectedCanvas = []; // Reset selected canvases // new
+
 
     console.log("text btn working");
     document.getElementById("tool_bar").style.display = "none";
@@ -388,12 +390,12 @@ function textBtn(){
         }
 
         // set disableFetchMetadata to true
-        window.disableFetchMetadata = true; // Disable metadata fetching for text editing
+        window.disableFetchMetadata = true; // Disable metadata fetching for text editing 
         console.log("disableFetchMetadata rmbg.js:", window.disableFetchMetadata);
 
-        selectedPicture = []; // Array to store selected canvas filenames
+        //selectedPicture = []; // Array to store selected canvas filenames
 
-        //console.log("Selected canvases:", selectedCanvases);
+        //console.log("Selected canvases:", selectedCanvases); // new commented out
         // Log the src of each selected canvas
         selectedCanvases.forEach(span => {
             const src = span.src;
@@ -411,6 +413,11 @@ function textBtn(){
         // assign selectedPictures to selectedCanvas
         window.selectedCanvas = window.selectedPicture;
 
+        // New
+        // Load design for the first selected canvas immediately
+        if (window.selectedCanvas.length > 0) {
+            window.loadDesignForImage(window.selectedCanvas[0]);
+        }
         
         // Add logic to proceed to text-editing functionality
         textEditing(selectedPicture);

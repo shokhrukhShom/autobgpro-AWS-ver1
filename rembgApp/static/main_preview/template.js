@@ -155,9 +155,9 @@ function template_select(){
         }
 
         // set disableFetchMetadata to true
-        window.disableFetchMetadata = true; // Disable metadata fetching for text editing
+        window.disableFetchMetadata = false; // Disable metadata fetching for text editing // it yas true
         console.log("disableFetchMetadata rmbg.js:", window.disableFetchMetadata);
-
+        window.selectedCanvas = []; // also new
 
         //console.log("Selected canvases:", selectedCanvases);
         // Log the src of each selected canvas

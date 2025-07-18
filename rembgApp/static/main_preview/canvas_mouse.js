@@ -461,6 +461,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 dragOffsetX = mouseX - imageX;
                 dragOffsetY = mouseY - imageY;
+                
+                // NEW
+                // If in design mode and first click, ensure design is loaded
+                if (window.selectedCanvas && window.selectedCanvas.length > 0 && !designModeInitialized) {
+                    loadDesignForImage(window.selectedCanvas[0]);
+                    designModeInitialized = true;
+                }
+                // END New Code    
+
                 // Redraw the canvas with the border visible
                 redrawCanvas(ctx, img, background, imageX, 
                     imageY, imageScale, shadowOffsetY, shadowBlur, canvas, 
