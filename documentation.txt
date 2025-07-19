@@ -7,32 +7,39 @@ With $20 per month ($150 per year) subscription, with potential of 1,000 users
 and 1,000 x $20 = $20,000 monthly earning potential. 
 
 
-How canvas shows background
+-How canvas shows background
 TODO
 
 
-How canvas shows png
+-How canvas shows png
 TODO
 
 
-How background removed and pictures stored
+-How background removed and pictures stored
 TODO
 
 
-Storing/saving Shadow header/footer/logo/text design
+-Storing/saving Shadow header/footer/logo/text design
 Metadata model is set up to store shadow settings as well as text design
 
 
-Showing header/footer/logo/text design design
+-Showing header/footer/logo/text design design
 TODO
 
-How logo upload works
+-How logo upload works
 When "Upload Logo" clicked it shows logo on canvsa only. "Save Design" button calls records two API "upload_logo" and "save_metadata". This both saves shadow and data for logoX, logoY, logoScale. 
 logo_path saved with "logo_upload" API.
 
 
-How to show error or success message on the screen
+-How to show error or success message on the screen
 showError("Error: Please select at least one canvas.", 'red')
 or
 showError("Success: Changes saved.", 'green')            
 
+
+-Loading design and logo etc in design mode (edit mode)
+window.loadDesignForImage = loadDesignForImage; in metadata_fetch that assigns all the properties to slider color etc. 
+it is called in rmbg.js window.loadDesignForImage(window.selectedCanvas[0]);
+todo: assign texts to text input UI
+loadDesignForImage assign stored metadata to "updateCanvasStateDesign" and then call "const event = new CustomEvent('canvasRedraw');"
+to redraw the canvas with "CanvasStateDesig" properties.

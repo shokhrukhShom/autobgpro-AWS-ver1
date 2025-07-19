@@ -94,7 +94,7 @@ async function loadTemplateMetadata(templateId) {
         
     } catch (error) {
         console.error('Error loading template metadata:', error);
-        alert('Failed to load template metadata. Please check console for details.');
+        //alert('Failed to load template metadata. Please check console for details.');
     }
 }
 

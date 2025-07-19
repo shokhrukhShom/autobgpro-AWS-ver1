@@ -605,8 +605,25 @@ def upload_logo(request):
             logo_file = request.FILES.get('logo')
             project_id = request.POST.get('project_id')  # Get the project ID from the POST data
 
+            # Handle logo reset case
             if not logo_file:
-                return JsonResponse({'error': 'No logo file provided'}, status=400)
+                selected_pictures_json = request.POST.get('selectedPictures')
+                selected_pictures = json.loads(selected_pictures_json) if selected_pictures_json else []
+                if selected_pictures:
+                    for pic in selected_pictures:
+                        metadata = Metadata.objects.filter(project__id=project_id, image_path=pic).first()
+                        if metadata:
+                            metadata.logo_path = None  # Clear the logo path
+                            metadata.save()
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Logo cleared successfully',
+                    'logo_path': None
+                })
+                
+            # End of logo reset
+       
             
             # Create logos directory if it doesn't exist
             logo_dir = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', 'logos')

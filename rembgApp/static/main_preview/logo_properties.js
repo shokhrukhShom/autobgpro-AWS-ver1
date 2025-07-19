@@ -58,10 +58,35 @@ export function initializeLogo (canvas){
     if (!logoUploadInitialized) {
         document.getElementById('saveTextBtn').addEventListener('click', function(e) {
             
+            const state = getCanvasStateDesign();
             // Check if file is selected
-            if (file === null) {
-                console.log("No file selected for upload.");
-                return; // Exit if no file is selected
+            // if (file === null) {
+            //     console.log("No file selected for upload.");
+            //     return; // Exit if no file is selected
+            // }
+            // Check if we have a logo image or if it was reset
+            if (state.logo.image === null) {
+                // Handle logo reset case
+                const formData = new FormData();
+                formData.append('selectedPictures', JSON.stringify(selectedPicture));
+                formData.append('project_id', project_id);
+                
+                fetch('/upload_logo/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Logo cleared successfully');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error clearing logo:', error);
+                });
             }
 
             if (file) {
@@ -127,53 +152,85 @@ export function initializeLogo (canvas){
     
 
     // resetting/removing logo from canvas
+    // document.getElementById('resetLogoInput').addEventListener('click', function() {
+    //     console.log("Reset clicked: logo_properties.js");
+
+    //     const oldInput = document.getElementById('logo-upload');
+    //     const newInput = oldInput.cloneNode(true);
+    //     newInput.id = 'logo-upload'; // Make sure the ID remains consistent
+
+    //     // Replace the old input with the new one
+    //     oldInput.parentNode.replaceChild(newInput, oldInput);
+
+    //     // Reattach the upload event listener to the new input
+    //     newInput.addEventListener('change', function(e) {
+    //         file = e.target.files[0];
+    //         if (file) {
+
+    //             const reader = new FileReader();
+    //             reader.onload = function(event) {
+    //                 const img = new Image();
+    //                 img.onload = () => {
+    //                     // Update the canvas state with the new logo image and its properties
+    //                     const state = getCanvasStateDesign();
+    //                     updateCanvasStateDesign({
+    //                         logo: {
+    //                             ...state.logo,
+    //                             image: img, // Update the logo image in the state
+    //                         }
+    //                     });
+    //                     canvasDrawLogo(); // Redraw the canvas with the logo
+    //                 };
+    //             };
+    //             reader.readAsDataURL(file);
+    //         }
+    //     });
+
+    //     // Optional reset logic:
+    //     const state = getCanvasStateDesign();
+    //     updateCanvasStateDesign({
+    //         logo: {
+    //             ...state.logo,
+    //             image: null,
+    //             x: 100,
+    //             y: 100,
+    //             scale: 0.1
+    //         }
+    //     });
+    //     canvasDrawLogo(); // Redraw canvas
+    // });
+
+    // resetting/removing logo from canvas
     document.getElementById('resetLogoInput').addEventListener('click', function() {
-        console.log("Reset clicked: logo_properties.js");
-
-        const oldInput = document.getElementById('logo-upload');
-        const newInput = oldInput.cloneNode(true);
-        newInput.id = 'logo-upload'; // Make sure the ID remains consistent
-
-        // Replace the old input with the new one
-        oldInput.parentNode.replaceChild(newInput, oldInput);
-
-        // Reattach the upload event listener to the new input
-        newInput.addEventListener('change', function(e) {
-            file = e.target.files[0];
-            if (file) {
-
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = new Image();
-                    img.onload = () => {
-                        // Update the canvas state with the new logo image and its properties
-                        const state = getCanvasStateDesign();
-                        updateCanvasStateDesign({
-                            logo: {
-                                ...state.logo,
-                                image: img, // Update the logo image in the state
-                            }
-                        });
-                        canvasDrawLogo(); // Redraw the canvas with the logo
-                    };
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Optional reset logic:
+        console.log("Reset logo clicked");
+        
+        // Clear the file input
+        const logoUpload = document.getElementById('logo-upload');
+        logoUpload.value = '';
+        
+        // Clear the current file reference
+        file = null;
+        
+        // Update the canvas state to remove the logo
         const state = getCanvasStateDesign();
         updateCanvasStateDesign({
             logo: {
                 ...state.logo,
-                image: null,
-                x: 100,
+                image: null,  // This clears the logo image
+                x: 100,      // Reset position if needed
                 y: 100,
                 scale: 0.1
             }
         });
-        canvasDrawLogo(); // Redraw canvas
+        
+        // Redraw the canvas without the logo
+        canvasDrawLogo();
+        
+        // Dispatch an event to indicate logo was reset
+        const event = new CustomEvent('logoReset');
+        document.dispatchEvent(event);
     });
+
 
     // logo image mouse event START------------------------------------------
     let isLogoDragging = false; // To track if the logo is being dragged

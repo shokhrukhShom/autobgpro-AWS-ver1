@@ -72,7 +72,11 @@ function drawCanvas(ctx, img, background, imageX, imageY,
         // end new code -----------------------------
 
         //console.log("selectedPicture array is NOT empty: ", selectedPicture);
+        // assigning current state to getCanvasStateDesign() in design (edit) mode
         state = getCanvasStateDesign();
+
+        // Assign current design to global cavas state that will used in rmbg.js for template design save
+        window.canvasStateDesignGlobal = state;
 
     }
     
@@ -606,10 +610,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         // Update the metadata map
         metadataMap.forEach((metadata, canvas) => {
-            metadata.design_data.logo_path = logo_path;
-            metadata.design_data.logo_x = logo_x;
-            metadata.design_data.logo_y = logo_y;
-            metadata.design_data.logo_scale = logo_scale;
+            // metadata.design_data.logo_path = logo_path;
+            // metadata.design_data.logo_x = logo_x;
+            // metadata.design_data.logo_y = logo_y;
+            // metadata.design_data.logo_scale = logo_scale;
+            // Only update if we have a logo path (null means logo was reset)
+            if (logo_path !== null) {
+                metadata.design_data.logo_path = logo_path;
+                metadata.design_data.logo_x = logo_x;
+                metadata.design_data.logo_y = logo_y;
+                metadata.design_data.logo_scale = logo_scale;
+            } else {
+                // Clear logo data
+                metadata.design_data.logo_path = null;
+                metadata.design_data.logo_x = 100; // Reset to defaults
+                metadata.design_data.logo_y = 100;
+                metadata.design_data.logo_scale = 0.1;
+            }
         });
 
         // Optionally: Save to server immediately

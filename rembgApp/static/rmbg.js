@@ -554,6 +554,8 @@ function setupTemplateCreation() {
         });
 
         templateModal.style.display = 'none';
+
+
     });
 }
 
