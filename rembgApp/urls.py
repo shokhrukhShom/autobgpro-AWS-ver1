@@ -12,7 +12,7 @@ urlpatterns = [
     path("", views.login_view, name="login"),
     path("register", views.register, name="register"),
     path("logout", views.logout_view, name="logout"),
-    path("mainPage", views.mainPage, name="mainPage"),
+    #path("mainPage", views.mainPage, name="mainPage"), # this path not being used currently todo: delete/remove?
 
     path("uploadImg", views.uploadImg, name="uploadImg"), #uploadImag.html
     path("rmbg", views.rmbg, name="rmbg"), #uploadImag.html

@@ -36,7 +36,7 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
-            return HttpResponseRedirect(reverse("mainPage"))
+            return HttpResponseRedirect(reverse("rmbg"))
         else:
             return render(request, "rembgApp/login.html", {
                 "message": "Invalid username and/or password."
@@ -72,7 +72,7 @@ def register(request):
                 "message": "Username already taken."
             })
         login(request, user)
-        return HttpResponseRedirect(reverse("mainPage"))
+        return HttpResponseRedirect(reverse("rmbg"))
     else:
         return render(request, "rembgApp/register.html")
 
@@ -81,84 +81,84 @@ def logout_view(request):
     return HttpResponseRedirect(reverse("login"))
 
 
-
-@login_required
-def mainPage(request):
-    if request.method == "GET":
+#  This view mainPage not being used. TODO: delete/remove also mainPage.html 
+# @login_required
+# def mainPage(request):
+#     if request.method == "GET":
         
-        # Get the objects by -date by author = request.user aka current user
-        queryset = Uploaded_Pictures.objects.filter(author = request.user).order_by('-createdDate')
+#         # Get the objects by -date by author = request.user aka current user
+#         queryset = Uploaded_Pictures.objects.filter(author = request.user).order_by('-createdDate')
         
-        return render(request, 'rembgApp/mainPage.html', {'queryset' : queryset})
+#         return render(request, 'rembgApp/mainPage.html', {'queryset' : queryset})
     
-    if request.method == "POST":
-        user_id = str(request.user.id)
-        # Access the uploaded files directly from request.FILES
-        images = request.FILES.getlist('image')
+#     if request.method == "POST":
+#         user_id = str(request.user.id)
+#         # Access the uploaded files directly from request.FILES
+#         images = request.FILES.getlist('image')
         
-        print(images)
+#         print(images)
         
-        if not images:
-            print("no file uploaded")
-            return render(request, 'rembgApp/mainPage.html', {
-                "message": "You have not selected images, choose a files first then click upload"
-            }) 
+#         if not images:
+#             print("no file uploaded")
+#             return render(request, 'rembgApp/mainPage.html', {
+#                 "message": "You have not selected images, choose a files first then click upload"
+#             }) 
        
-        # Getting latest post_id to create inside the folder of the user
-        try:
-            queryset = Uploaded_Pictures.objects.latest('id')
-            folder_inside_user_id = queryset.id
-            folder_inside_user_id = int(folder_inside_user_id) + 1
+#         # Getting latest post_id to create inside the folder of the user
+#         try:
+#             queryset = Uploaded_Pictures.objects.latest('id')
+#             folder_inside_user_id = queryset.id
+#             folder_inside_user_id = int(folder_inside_user_id) + 1
             
-        except Uploaded_Pictures.DoesNotExist:
-            folder_inside_user_id = 0
+#         except Uploaded_Pictures.DoesNotExist:
+#             folder_inside_user_id = 0
             
 
-        # Creating directory for uploaded pictures
-        path_save_uploaded_picture = "/home/sh/Desktop/django-rembg-2v/rembg_w_python/media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id)
+#         # Creating directory for uploaded pictures
+#         path_save_uploaded_picture = "/home/sh/Desktop/django-rembg-2v/rembg_w_python/media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id)
 
-        # Check if the directory exists
-        if not os.path.exists(path_save_uploaded_picture):
-            # If the directory doesn't exist, create it
-            os.makedirs(path_save_uploaded_picture)
+#         # Check if the directory exists
+#         if not os.path.exists(path_save_uploaded_picture):
+#             # If the directory doesn't exist, create it
+#             os.makedirs(path_save_uploaded_picture)
         
-        counter = 0
-        image_names = ""
+#         counter = 0
+#         image_names = ""
 
-        for image in images:
+#         for image in images:
 
             
-            print(str(counter) + " : " + f"{image}")
+#             print(str(counter) + " : " + f"{image}")
            
             
-            with open(path_save_uploaded_picture +"/"+ str(counter)+".jpg", 'wb+') as destination:
-                image_names = image_names + str(counter)+ ".jpg "
-                counter = int(counter) + 1  
-                for chunk in image.chunks():
-                    destination.write(chunk)
+#             with open(path_save_uploaded_picture +"/"+ str(counter)+".jpg", 'wb+') as destination:
+#                 image_names = image_names + str(counter)+ ".jpg "
+#                 counter = int(counter) + 1  
+#                 for chunk in image.chunks():
+#                     destination.write(chunk)
 
-        #print(image_names)
+#         #print(image_names)
         
-        # Converting/splittin text into array
-        #image_array = image_names.split()
-        #for img in image_array:
-            #print(img)
+#         # Converting/splittin text into array
+#         #image_array = image_names.split()
+#         #for img in image_array:
+#             #print(img)
         
-        # pushing image_names string to sqlite3 database
-        current_user = request.user
+#         # pushing image_names string to sqlite3 database
+#         current_user = request.user
         
-        instance = Uploaded_Pictures()
-        instance.author = current_user
-        instance.images_text = image_names
+#         instance = Uploaded_Pictures()
+#         instance.author = current_user
+#         instance.images_text = image_names
         
-        instance.save()
-        images = ""
+#         instance.save()
+#         images = ""
             
 
-        print("_______SUCCESS__________")
+#         print("_______SUCCESS__________")
         
-        return redirect('mainPage') 
-        #return render(request, 'rembgApp/mainPage.html')
+#         return redirect('mainPage') 
+#         #return render(request, 'rembgApp/mainPage.html')
   
 @csrf_exempt
 @login_required

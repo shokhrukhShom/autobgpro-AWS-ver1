@@ -76,7 +76,6 @@ export function getCanvasState(canvasId) {
 
 // Function to update the canvas state for a specific canvas
 export function updateCanvasState(canvasId, newState) {
-    //const currentState = getCanvasState(canvasId);
     canvasStates.set(canvasId, {...getCanvasState(canvasId), ...newState});
 }
 
@@ -283,7 +282,6 @@ export async function loadDesignForImage(imgPath) {
         });
 
         // updating global canvas design
-        //const currentState = getCanvasStateDesign();
         window.canvasStateDesignGlobal = getCanvasStateDesign();; // it takes the design from first canvas only. Not dynamic???
 
 
