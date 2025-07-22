@@ -1,0 +1,65 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    text-align: center;
+}
+
+.image-wrapper {
+    position: relative;
+    display: inline-block;
+    margin: 10px;  
+}
+
+.image-wrapper img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border: 1px dotted #2175c9;
+    border-radius: 8px;
+}
+
+.image-wrapper img:hover {
+    cursor: move;
+    
+}
+
+.remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgb(242, 242, 242);
+    color: rgb(78, 78, 78);
+    border: none;
+    cursor: pointer;
+}
+.remove-btn:hover {
+    background: rgb(193, 193, 193);
+}
+.dragging {
+    opacity: 0.5;
+}
+
+.over {
+    border: 2px dashed #000;
+}
+
+
+.uploadBtn {
+    border: 1px solid gray;
+    border-radius: 5px;
+    padding: 8px;
+    background-color: #225985;
+    font-family: 'Arial, sans-serif';
+    color: #ffffff;
+    font-size: medium;
+    margin: 5px;  
+    transition: background-color 0.3s;
+}
+
+.uploadBtn:hover {
+    background-color: #5fa1d6;
+}
+
+.uploadBtn:active{
+    background-color: #042e5b;
+}

@@ -1,0 +1,105 @@
+/* Grid Layout */
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Auto-fill for dynamic rows */
+    gap: 10px; /* Spacing between images */
+    z-index: 1; /* Lower z-index than the enlarged image */
+}
+
+/* Image Styles */
+.image-grid img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: 1px solid #2c5ca4;
+    border-radius: 1px;
+    transition: transform 0.3s ease; /* Smooth scaling */
+}
+
+
+
+/* Image Hover Effect */
+.image-grid img:hover {
+    transform: scale(0.98); /* Slightly enlarge the image on hover */
+}
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+    .image-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns for smaller screens */
+    }
+}
+
+@media (max-width: 480px) {
+    .image-grid {
+        grid-template-columns: 1fr; /* 1 column for very small screens */
+    }
+}
+
+/* button start*/
+
+.nextBtn {
+    margin-top: 30px;
+    border: 1px solid gray;
+    border-radius: 5px;
+    padding: 10px 30px 10px 30px;
+    background-color: #225985;
+    font-family: 'Arial, sans-serif';
+    color: #ffffff;
+    font-size: medium;  
+    transition: background-color 0.3s;
+}
+.nextBtn:hover {
+    background-color: #173c5a;
+}
+.nextBtn:active {
+    background-color: #377ab1;
+}
+
+/* end button */
+
+/* ---start chatgpt code--- */
+/* Image Styles */
+.picture {
+    position: relative;
+    border: 1px solid #2c5ca4;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.picture img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 3px;
+}
+
+/* Checkmark Styles */
+.picture .checkmark {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid gray;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    color: transparent;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.selected {
+    border-color: blue;
+}
+
+.selected .checkmark {
+    background-color: blue;
+    color: white;
+}
+
+/* ---end chatgpt code--- */

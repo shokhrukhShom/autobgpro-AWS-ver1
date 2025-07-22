@@ -1,0 +1,119 @@
+
+#field {
+    margin: 0px;
+    place-items: center;
+    margin: 0;
+    display: grid;
+    background-color: gray;
+    padding: 30px;
+}
+
+canvas {
+    margin-top: 30px;
+    box-shadow: -3px 2px 9px 6px black;
+    place-items: center;
+    
+}
+
+/* chatgpt code */
+
+/* chatgpt code end */
+.buttonSave {
+    padding: 15px;
+    border: none;
+    border-radius: 50px;
+    background-color: rgb(69, 68, 68);
+    color: white;
+    margin: 0 5px;
+    transition: background-color 0.3s ease, opacity 0.3s ease; 
+} 
+
+.buttonSave:hover {
+    background-color: rgb(80, 174, 97);
+    opacity: 0.9;
+}
+
+.dontsave:hover {
+    background-color: rgb(187, 99, 99);
+    opacity: 0.9;
+}
+
+
+
+.top-tools .button {
+    width: 60px;
+    height: 40px;
+    border: none;
+    border-radius: 50px;
+    background-color: rgb(69, 68, 68);
+    color: white;
+    margin: 0 5px;
+    transition: background-color 0.3s ease, opacity 0.3s ease; 
+}
+
+.top-tools .button:hover {
+    background-color: rgb(80, 129, 174);
+    opacity: 0.9;
+}
+
+
+.tools {
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    margin-top: 15px;
+    margin-bottom: 15px;
+
+}
+
+.tools .color-field {
+    height: 40px;
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    cursor: pointer;
+    display: inline-block;
+    box-sizing: border-box;
+    border-radius: 50%;
+    border: 2px solid white;
+    align-self: center;
+    margin: 0 5px;
+}
+
+.tools .button {
+    align-self: center;
+    width: 100px;
+    height: 40px;
+    border: none;
+    border-radius: 5px;
+    background-color: rgb(69, 68, 68);
+    color: white;
+    margin: 0 5px;
+    transition: background-color 0.3s ease, opacity 0.3s ease; 
+}
+
+.tools .button:hover {
+    background-color: rgb(80, 129, 174);
+    opacity: 0.9;
+}
+
+.color-picker {
+    align-self: center;
+    margin: 0 15px;
+    height: 50px;
+}
+
+.pen-range {
+    align-self: center;
+    margin: 0 5px;
+}
+
+
+#rmbg_images {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 columns */
+    gap: 10px; /* Adjust the spacing as needed */
+    align-items: center;
+    justify-items: center;
+}
+

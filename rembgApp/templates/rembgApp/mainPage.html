@@ -1,0 +1,91 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remove Background</title>
+</head>
+<body>
+    <div>
+        {% if user.is_authenticated %}
+            Signed in as <strong>{{ user.username }}</strong>.
+        {% endif %}
+        <li >
+            <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
+        </li>
+        <li >
+            <a class="nav-link" href="{% url 'uploadImg' %}">Upload Images</a>
+        </li>
+        <li >
+            <a class="nav-link" href="{% url 'rmbg' %}">RMBG</a>
+        </li>
+    </div>
+    <hr>
+
+    <h1>Hello <strong>{{ user.username }}</strong></h1>
+
+    <form action="/mainPage" method="POST" enctype=multipart/form-data >
+        {% csrf_token %}
+        <input id="imageUploadBtn" type="file" name="image" accept=".jpeg, .png, .jpg " multiple> 
+        <input type="submit" value="Upload"/>
+    </form>
+    {% if message %}
+    <div style="color: red;">{{ message }}</div>
+    {% endif %}
+
+    <hr>
+        
+        <ul>
+            
+            {% for i in queryset  %}
+              
+                <hr>
+                <li>author id: {{ i.author.id }}, post id: {{i.id}}, image src: {{i.images_text}}</li>
+                
+                
+                
+                <h3>js loop through imgs</h3>
+                <div id="img-{{i.id}}"></div>
+
+                <script>
+                    (function() {
+
+                        let str = "{{i.images_text}}";
+                        const img_array = [];
+                        let word = "";
+
+                        for (let i = 0; i < str.length; i++) {
+                            const char = str[i];
+                            if (char === " ") {
+                                if (word !== "") {
+                                    img_array.push(word);
+                                    word = "";
+                                }
+                            } else {
+                                word += char;
+                            }
+                        }
+
+                        // Add the last word if there is one
+                        if (word !== "") {
+                            img_array.push(word);
+                        }
+
+                        //console.log(img_array);
+
+                        const galleryDiv = document.getElementById("img-{{i.id}}");
+                        galleryDiv.innerHTML = img_array.map(src => `<img src="media/images/user_id_{{i.author.id }}/post_id_{{i.id}}/${src}" alt="Image" width="200">`).join('');
+                        })();
+                </script> 
+                <hr>
+            {% endfor  %}
+        </ul>
+        
+   
+
+
+
+</body>
+</html>

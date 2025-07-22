@@ -1,0 +1,40 @@
+/* Default canvas style */
+.canvas-item {
+    position: relative;
+    display: inline-block;
+    padding: 5px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+    border: 2px solid #ccc;
+    border-radius: 5px; 
+}
+
+/* Highlight selected canvas */
+.canvas-item.selected {
+    border-color: blue;
+}
+
+/* Checkmark Styling */
+.canvas-item .checkmark {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid gray;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    color: transparent;  /* Hidden by default */
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Show Checkmark When Selected */
+.canvas-item.selected .checkmark {
+    background-color: blue;
+    color: white;
+    display: flex;
+}

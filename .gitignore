@@ -1,0 +1,56 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environment variables and secrets
+.env
+.env.*
+*.env
+
+# Django specific
+db.sqlite3
+media/
+
+# Migrations - keep the migrations folder, but ignore pyc files inside
+**/migrations/*.pyc
+**/migrations/__pycache__/
+
+# Logs
+*.log
+
+# Static files (only if collected via collectstatic, otherwise commit your own static files)
+staticfiles/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE/editor settings
+.vscode/
+.idea/
+
+# Test output
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Docker and deployment
+*.pid
+*.seed
+*.bak
+
+# Node (if you have frontend stuff)
+node_modules/
+
+# ignore staticfiles from collectStatic
+staticfiles/
+
+# Ignore all files inside media/images/
+rembg_w_python/media/images/*

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rmbg website</title>
+    <link href="canvasStyle.css" type="text/css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="field">
+
+        <div class="top-save-control"
+        style="display: flex; justify-content: right; flex-direction: row;  margin: 5px; flex-direction: row;">
+            <p style="display: flex;  align-items: center; color: white; margin: 10px; font-size: 14px;">Exit without saving</p>
+            
+            <button onclick="saveImage()" type="button" class="buttonSave" 
+            style="
+            display: flex; 
+            width: 100px;
+            align-items: center;
+            align-self: center;
+            
+            
+            "
+            >Save</button>
+        </div>
+        
+
+
+        <div class="top-toolbar-container"
+        style="
+        display: flex;
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 15px;
+        ">
+            <div class="top-tools" style="display: inline-block;">
+                <button onclick="redo_last()" type="button" class="button"> redo <b>↺ </b></button>
+                <button onclick="undo_last()" type="button" class="button">undo <b>↻</b> </button>
+                <button onclick="clear_canvas()" type="button" class="button">clear</button>
+    
+            </div>
+    
+            <div class="backgroundSelect" style="display: inline-block;">
+                <select id="background-color" onchange="changeBackgroundColor(this.value)"
+                style="background-color: gray;"
+                >
+                    <option value="#252525" selected>Dark Gray</option>
+                    <option value="lightgray">Light Gray</option>
+                    <option value="white">White</option>
+                    <option value="black">Black</option>
+                </select>
+            </div>
+        </div>
+
+        <canvas id="canvas" width="800" ></canvas>
+
+        <div class="tools">
+
+            <button onclick="useEraser()" type="button" class="button">Erase</button>
+            <button onclick="useRestore()" type="button" class="button">Restore </button>
+
+            <input 
+                oninput="updateCursorWidth(this.value)"
+                type="range" 
+                min="2" max="100" 
+                class="pen-range"
+                value = "50"
+                >
+
+            <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg" 
+            style="
+            display: none;
+            /*display: flex;*/
+            background-color: black; 
+            border:2px dotted white; 
+            justify-content: center;
+            margin-top: 15px;
+            ">
+                <circle cx="20" cy="20" r="20" stroke="white" stroke-width="2" fill="none" />
+            </svg>
+            
+
+        </div>
+    </div>
+
+    
+    
+    
+    
+    <script src="canvas.js"></script>
+    <script src="canvasJavascript.js"></script>
+</body>
+</html>

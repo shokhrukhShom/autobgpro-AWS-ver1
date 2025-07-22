@@ -1,0 +1,304 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+body {
+    padding: 0px;
+    margin: 0px;
+}
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    justify-content: center;
+    position: relative; /* Position relative for positioning the enlarged image */
+}
+
+/* Enlarged Image Styles */
+.enlarged-container {
+    position: fixed; /* Use fixed to cover the entire viewport */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10; /* Ensure it's on top of other content */
+    background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent background */
+    text-align: center; /* Center align enlarged image */
+    display: none; /* Initially hidden */
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+}
+
+/* Close Button */
+.close-button {
+    position: absolute; /* Position it absolutely within the enlarged container */
+    top: 10px; /* Distance from the top */
+    right: 10px; /* Distance from the right */
+    background-color: rgba(255, 255, 255, 0.7); /* Slightly transparent background */
+    border: none; /* Remove default button styles */
+    border-radius: 50%; /* Make it circular */
+    width: 30px; /* Width of the button */
+    height: 30px; /* Height of the button */
+    font-size: 20px; /* Font size of the "X" */
+    cursor: pointer; /* Change cursor to pointer */
+    z-index: 20; /* Ensure it's above the enlarged image */
+}
+
+/* Enlarged Image */
+#enlarged-image {
+    max-width: 90%; /* Limit width to prevent overflow */
+    max-height: 90%; /* Limit height to prevent overflow */
+    height: auto; /* Maintain aspect ratio */
+    margin-bottom: 55px;
+}
+
+
+
+
+
+/* Tool Bar Styles */
+/* Image Edit Page */
+
+/* Image Edit Page */
+#image-edit-page {
+    position: fixed; /* Make it fixed on the screen */
+    bottom: 0; /* Align to the top */
+    left: 0; /* Align to the left */
+    right: 0; /* Stretch to the right */
+    z-index: 20; /* Ensure it's above the image grid */
+    display: flex; /* Initially hidden */
+    overflow-y: auto; /* Allow scrolling if content exceeds viewport height */
+    padding: 20px; /* Add padding around the content */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Optional: shadow effect */
+    background-color: rgb(179, 214, 245);
+    flex-direction: column; /* Arrange items in a column */
+    align-items: center; /* Center items horizontally */
+    
+}
+
+#img_tool_bar {
+    display: flex; /* Use flexbox for the toolbar */
+    justify-content: center; /* Center the toolbar items horizontally */
+    text-align: center; /* Center the text */
+    margin-top: 10px; /* Space above the toolbar */
+    z-index: 20; /* Ensure it's above the enlarged image */
+}
+
+/* Tool Bar List Styles */
+#img_tool_bar ul {
+    list-style: none; /* Remove bullet points */
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margin */
+    display: flex; /* Flex layout for list items */
+    gap: 10px; /* Space between items */
+}
+
+/* Tool Bar List Item Styles */
+#img_tool_bar li {
+    cursor: pointer; /* Change cursor to pointer */
+    padding: 5px 10px; /* Padding for list items */
+    border: 1px solid #2c5ca4; /* Border around items */
+    border-radius: 3px; /* Rounded corners */
+    transition: background 0.3s; /* Transition for hover effect */
+}
+
+#img_tool_bar li:hover {
+    background: #2c5ca4; /* Change background on hover */
+    color: white; /* Change text color on hover */
+}
+/* End tool bar */
+
+
+/* tool/nav bar */
+
+.tool-bar {
+    background-color: #1b5e95; /* Background color for the nav bar */
+    padding: 10px 0; /* Padding around the nav bar */
+    width: 900px;
+    margin: 20px auto; 
+    border-radius: 15px;
+}
+
+.tool-bar ul {
+    list-style: none; /* Remove default list bullets */
+    display: flex; /* Align items horizontally */
+    justify-content: space-around; /* Space items evenly */
+    padding: 0;
+    margin: 0;
+}
+
+.tool-bar li {
+    color: white; /* Text color */
+    font-size: 16px; /* Font size */
+    padding: 8px 10px; /* Padding around each item */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.5s; /* Smooth background color transition */
+    border-radius: 10px;
+}
+
+.tool-bar li:hover {
+    background-color: #042e5b; /* Background color on hover */
+    border-radius: 10px;
+}
+/* navigation END*/
+
+
+
+/* Error msg Start */
+
+/* Error message styling */
+/* Error message styling */
+#error-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    /* background-color: #f44336; /* Red background */
+    color: white;
+    padding: 15px 40px 15px 15px; /* Extra padding for the button */
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  
+  /* Show the error message */
+  #error-message.visible {
+    opacity: 1;
+  }
+  
+  /* Hide the error message */
+  #error-message.hidden {
+    opacity: 0;
+  }
+  
+  /* Dismiss button styling */
+  .dismiss-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  
+  .dismiss-btn:hover {
+    color: #ccc;
+  }
+
+  /* Error msg END */
+
+
+  /* Shadow  Start */
+
+  /* Dropdown Content Styling */
+.dropdown-content {
+    display: none; /* Hidden by default */
+    position: absolute; /* Position relative to the parent */
+    top: 100%; /* Align just below the parent item */
+    left: 50%; /* Center align with parent */
+    transform: translateX(-50%); /* Center alignment correction */
+    background-color: #ffffff; /* White background for contrast */
+    border: 1px solid #ccc; /* Light border for separation */
+    padding: 10px; /* Padding inside dropdown */
+    border-radius: 10px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    z-index: 10; /* Ensure it appears above other elements */
+    min-width: 200px; /* Minimum width for dropdown */
+}
+
+/* Dropdown Content Inputs and Buttons */
+.dropdown-content label {
+    display: block; /* Make label block-level for spacing */
+    color: #1b5e95; /* Match the toolbar theme */
+    margin-bottom: 5px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.dropdown-content input {
+    width: 100%; /* Full width */
+    margin-bottom: 10px;
+}
+
+.dropdown-content button {
+    width: 100%; /* Full width */
+    padding: 5px; /* Padding inside button */
+    background-color: #1b5e95; /* Match toolbar theme */
+    color: white; /* White text color */
+    border: none; /* Remove default border */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.dropdown-content button:hover {
+    background-color: #042e5b; /* Darker shade on hover */
+}
+
+/* Dropdown Parent Positioning */
+.tool-bar .dropdown {
+    position: relative; /* Parent relative for absolute child */
+}
+
+/* Shadow End */
+
+
+/* Start . Improving quality of the canvas pictures */
+canvas {
+    image-rendering: optimizeQuality; /* Enhance rendering for better quality */
+    image-rendering: -webkit-optimize-contrast; /* For Webkit browsers */
+}
+
+/* END . Improving quality of the canvas pictures */
+
+/* Save Changes Button */
+#saveChanges {
+    width: 20%; /* Full width */
+    padding: 5px; /* Padding inside button */
+    background-color: #1b5e95; /* Match toolbar theme */
+    color: white; /* White text color */
+    border: none; /* Remove default border */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+#saveChanges:hover {
+    background-color: #042e5b; /* Darker shade on hover */
+}
+
+
+
+/* template btn style START*/
+#template {
+    position: relative;
+    cursor: pointer;
+}
+
+#template-dropdown {
+    position: absolute;
+    background-color: white;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.template-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    color: #1b5e95;
+    margin-bottom: 5px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.template-item:hover {
+    background-color: #f1f1f1;
+}
+
+/* template btn style END*/
