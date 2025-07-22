@@ -180,7 +180,7 @@ async function fetchMetadataAPI(project_id) { // export new added
                         document.dispatchEvent(event);
                     };
                     logoImg.onerror = () => {
-                        console.error('Failed to load logo:', metadata.logo_path);
+                        console.log('Failed to load logo (logo not set):', metadata.logo_path);
                         updateCanvasState(canvasId, newState);
                     };
                 } else {
@@ -216,7 +216,7 @@ export async function fetchMetadataForImage(imgPath, project_id) {
         const metadata = metadataList.find(item => {
             // Handle both full URLs and relative paths
             const dbPath = item.image_path;
-            return dbPath.includes(imgPath) //|| imgPath.includes(dbPath);
+            return dbPath.includes(imgPath.replace(window.location.origin, '').replace(/^\/media\//, '').split('?')[0]) //|| imgPath.includes(dbPath);
         });
 
         if (!metadata) {

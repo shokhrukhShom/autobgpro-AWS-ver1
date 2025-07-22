@@ -68,7 +68,7 @@ export function initializeLogo (canvas){
             if (state.logo.image === null) {
                 // Handle logo reset case
                 const formData = new FormData();
-                formData.append('selectedPictures', JSON.stringify(selectedPicture));
+                formData.append('selectedPictures', JSON.stringify(selectedPicture)); //selectedPicture
                 formData.append('project_id', project_id);
                 
                 fetch('/upload_logo/', {
@@ -92,13 +92,20 @@ export function initializeLogo (canvas){
             if (file) {
                 console.log("File to be uploaded:", file); // Debug log
 
+                // loop through the array and Normalized path
+                const cleanPaths = selectedPicture.map(pic => 
+                    pic.replace(window.location.origin, '')
+                    .replace(/^\/media\//, '')
+                    .split('?')[0]
+                );
+
                 // Prepare form data
                 const formData = new FormData();
                 formData.append('logo', file); // Append the file to the form data 
-                formData.append('selectedPictures', JSON.stringify(selectedPicture)); // Append selected pictures
+                formData.append('selectedPictures', JSON.stringify(cleanPaths)); // Append selected pictures
                 formData.append('project_id', project_id); // Append the project ID to the form data
                 // Send to server for saving
-                fetch('/upload_logo/', {
+                fetch('/upload_logo/', { // '/upload_logo/'
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -110,6 +117,7 @@ export function initializeLogo (canvas){
                     if (data.status === 'success') {
                         const img = new Image();
                         img.src = '/' + data.logo_path;
+                        //img.src = data.logo_path; // Frontend should handle full URL construction if needed
                         img.onload = () => {
                             // Update the canvas state with the new logo image and its properties
                             const state = getCanvasStateDesign();

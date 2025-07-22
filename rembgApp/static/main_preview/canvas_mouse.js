@@ -53,14 +53,14 @@ function drawCanvas(ctx, img, background, imageX, imageY,
     // switching between getCanvasState and getCanvasStateDesign when in design mode
     // check if there is selected pictures, if yes then its design mode 
     if(window.selectedCanvas == null){ // window.selectedPicture
-        console.log("selectedPicture array is empty");
-        console.log("window.selectedPic: ", window.selectedCanvas); // window.selectedPicture
+        // console.log("selectedPicture array is empty");
+        // console.log("window.selectedPic: ", window.selectedCanvas); // window.selectedPicture
         state = getCanvasState(canvasId); // Get state for this specific canvas
     } else {
         // new code --------------------------------
 
         if (!designModeInitialized) {
-            console.log("designModeInitialized entered");
+            // console.log("designModeInitialized entered");
 
             const imgPath = window.selectedCanvas[0];
             loadDesignForImage(imgPath);
@@ -111,7 +111,7 @@ function drawCanvas(ctx, img, background, imageX, imageY,
         project_id: project_id,
         canvasWidth: canvas.width,
         canvasHeight: canvas.height,
-        imagePath:  imagePath, // Save absolute path
+        imagePath:  imagePath.replace(window.location.origin, '').replace(/^\/media\//, '').split('?')[0], // Normalized path, // Save absolute path
         backgroundPath: currentBg, // Save absolute path
         shadowOffsetY: shadowOffsetY,
         shadowBlur: shadowBlur,
@@ -401,7 +401,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 // Listen for the custom event to redraw the canvas for footer updates
                 document.addEventListener('canvasRedrawFooter', () => {
-                    console.log('canvasRedraw event received');
+                    // console.log('canvasRedraw event received');
                     drawCanvas(ctx, img, background, imageX, imageY, 
                     imageScale, shadowOffsetY, shadowBlur, canvas, imagePath, 
                     currentBg, project_id, metadataMap, canvasId);
@@ -559,7 +559,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Apply shadow when botton clicked
         shadowBtn.addEventListener('click', function(){
-            console.log("shadowBtn clicked!")
+            // console.log("shadowBtn clicked!")
             shadowOffsetY = shadowOffsetYInput.value; // Default value
             shadowBlur = shadowBlurInput.value;    // Default value
             redrawCanvas(ctx, img, background, imageX, 
@@ -570,7 +570,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         //----------------
 
         cancelShadow.addEventListener('click', function(){
-            console.log('cancelShadow btn clicked!')
+            // console.log('cancelShadow btn clicked!')
             //updating slider to 0
             shadowOffsetYInput.value = 0;
             shadowBlurInput.value = 0;
@@ -588,7 +588,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Listen for the custom event to redraw the canvas
         document.addEventListener('canvasRedraw', () => {
-            console.log('canvasRedraw event received');
+            // console.log('canvasRedraw event received');
             drawCanvas(ctx, img, background, imageX, imageY, imageScale, 
                 shadowOffsetY, shadowBlur, canvas, imagePath, currentBg, project_id,
                 metadataMap, canvasId);
@@ -600,7 +600,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     // Event listener Click the Export button run download_zip function
     document.getElementById('exportImages').addEventListener('click', () => {
-        console.log("exportImages initiated next download_zip function");
+        // console.log("exportImages initiated next download_zip function");
         download_zip();  
     });
 

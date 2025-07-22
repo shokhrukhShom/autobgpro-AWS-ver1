@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 
 from django.urls import path
 from . import views
-
+from django.conf import settings
 
 
 urlpatterns = [
@@ -26,5 +26,5 @@ urlpatterns = [
     path('design_template/', views.design_template, name='design_template'),
     path('get_templates/', views.get_templates, name='get_templates'),
     path('get_template/<int:template_id>/', views.get_template_metadata, name='get_template_metadata'),  
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

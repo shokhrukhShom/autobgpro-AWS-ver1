@@ -221,24 +221,34 @@ function Edit_Image(imageSrc) {
     canvasPage.style.display = "block"; //show
 
     // removing data-path
-    imageSrc = imageSrc.split('?')[0]; 
-
+    //imageSrc = imageSrc.split('?')[0]; 
+    // Normalize the image source
+    imageSrc = new URL(imageSrc.split('?')[0], window.location.origin).href;
     
 
     // replacing given path ".../output/..." with ".../rembg/..."
-    let givenImageSrc = imageSrc.replace("output", "rembg");
-
+    //let givenImageSrc = imageSrc.replace("output", "rembg");
+    // Get the path relative to media root
+    let givenImageSrc = new URL(imageSrc);
+    // Replace hardcoded path manipulations with more robust handling:
+    givenImageSrc = givenImageSrc.pathname.replace("/media/", "").replace("output", "rembg");
 
     // replacing given path ".../output/..." with ".../initialUpload/..." and also updating format to ".jpg"
-    let originalImageSrc = imageSrc.replace("output", "initialUpload").replace(".png", ".jpg").replace("rembg", "initialUpload");
-    //let originalImageSrc = 'http://127.0.0.1:8000/media/images/user_id_2/post_id_76/initialUpload/1.png';
+    //let originalImageSrc = imageSrc.replace("output", "initialUpload").replace(".png", ".jpg").replace("rembg", "initialUpload");
+    let originalImageSrc = new URL(imageSrc);
+    originalImageSrc = originalImageSrc.pathname.replace("/media/", "")
+        .replace("output", "initialUpload")
+        .replace(".png", ".jpg")
+        .replace("rembg", "initialUpload");
+
+
     // Pass on the image source to canvasEdit
     // it take two variables canvasEdit (givenImageSrc, originalImageSrc)
 
     //debugging
-    console.log("imageSrc: ", imageSrc);
-    console.log("givenImageSrc: ", givenImageSrc);
-    console.log("originalImageSrc: ", originalImageSrc);
+    // console.log("imageSrc: ", imageSrc);
+    // console.log("givenImageSrc: ", givenImageSrc);
+    // console.log("originalImageSrc: ", originalImageSrc);
 
     canvasEdit(givenImageSrc, originalImageSrc);
 
@@ -401,7 +411,8 @@ function textBtn(){ // new async added
             const src = span.src;
             //const filename = src.substring(src.lastIndexOf('/') + 1).split('?')[0];
             //selectedPicture.push(filename); // Add filename to array
-            let cleanSrc = "http://127.0.0.1:8000/"+src.split('?')[0];
+            // let cleanSrc = "http://127.0.0.1:8000/"+src.split('?')[0];
+            let cleanSrc = window.location.origin +"/"+ src.split('?')[0];
             selectedPicture.push(cleanSrc); // get the image src //new code
             //selectedPicture.push(src); // get the image src //new code
         });

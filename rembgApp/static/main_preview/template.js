@@ -163,7 +163,8 @@ function template_select(){
         // Log the src of each selected canvas
         selectedCanvases.forEach(span => {
             const src = span.src;
-            let cleanSrc = "http://127.0.0.1:8000/"+src.split('?')[0];
+            // let cleanSrc = "http://127.0.0.1:8000/"+src.split('?')[0];
+            let cleanSrc = window.location.origin + src.split('?')[0];
             selectedPicturesTemplate.push(cleanSrc); // get the image src 
         });
 
@@ -188,7 +189,8 @@ async function save_selected_pictures_with_new_template(selectedPicturesTemplate
     console.log("(inside save func) Template metadata: ", templateMetadata);
 
     selectedPicturesTemplate = selectedPicturesTemplate.map(url => 
-        url.replace('http://127.0.0.1:8000', '')
+        //url.replace('http://127.0.0.1:8000', '')
+        url.replace(window.location.origin, '')
     );
     console.log("(inside save func) Selected pictures without http:", selectedPicturesTemplate);
 

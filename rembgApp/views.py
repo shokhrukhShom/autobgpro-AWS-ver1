@@ -186,8 +186,8 @@ def rmbg(request):
         current_bg = picture.background_image
         
         # PNG images ----------Start-----------
-        
         path_rembg = "media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(latest_upload_id) + "/cropped"
+        
         
         rembg_files_path = []
         
@@ -196,6 +196,7 @@ def rmbg(request):
             if filename.endswith(('.png')):
                 file_path = os.path.join(path_rembg, filename)
                 rembg_files_path.append(file_path)
+                
         
         # Sort by the numeric part of the filenames (code from chatgpt)
         sorted_rembg_files_path = sorted(rembg_files_path, key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
@@ -203,12 +204,16 @@ def rmbg(request):
 
         #Loop through Background Image Folder (media/bg-templates)
         bg_img_paths = []
-        bg_img_templates_path = "media/bg-templates/"
+        # bg_img_templates_path = "media/bg-templates/"
+        bg_img_templates_path = settings.BG_TEMPLATES_ROOT
+        
         for filename in os.listdir(bg_img_templates_path):
             if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                file_path = os.path.join(bg_img_templates_path, filename)
+                # file_path = os.path.join(bg_img_templates_path, filename)
+                # bg_img_paths.append(file_path)
+                file_path = f"{settings.MEDIA_URL}bg-templates/{filename}"
                 bg_img_paths.append(file_path)
-
+        
         context = {
             "latest_upload_id" : latest_upload_id,
             'current_bg' : current_bg,
@@ -271,8 +276,14 @@ def imageProcessing(request): #API Processing
             
 
         # Creating directory for uploaded pictures
-        path_save_uploaded_picture = "/home/sh/Desktop/django-rembg-2v/rembg_w_python/media/images/user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id) + "/initialUpload/"
-
+        # path_save_uploaded_picture = "/home/sh/Desktop/django-rembg-3v/rembg_w_python/media/images/user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id) + "/initialUpload/"
+        path_save_uploaded_picture = os.path.join(
+            settings.IMAGE_UPLOAD_ROOT,
+            f"user_id_{user_id}",
+            f"post_id_{folder_inside_user_id}",
+            "initialUpload"
+        )
+        
         # Check if the directory exists
         if not os.path.exists(path_save_uploaded_picture):
             # If the directory doesn't exist, create it
@@ -310,8 +321,13 @@ def imageProcessing(request): #API Processing
         #------------under this line rembg library  codes --------------
 
         # Create directory for bg removed pictures
-        path_save_processed_rembg = "/home/sh/Desktop/django-rembg-2v/rembg_w_python/media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id) + "/rembg"
-        
+        # path_save_processed_rembg = "/home/sh/Desktop/django-rembg-3v/rembg_w_python/media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id) + "/rembg"
+        path_save_processed_rembg = os.path.join(
+            settings.IMAGE_UPLOAD_ROOT,
+            f"user_id_{user_id}",
+            f"post_id_{folder_inside_user_id}",
+            "rembg"
+        )
         
         # Check if the directory exists
         if not os.path.exists(path_save_processed_rembg):
@@ -348,7 +364,14 @@ def imageProcessing(request): #API Processing
         # Cropping png section ---------
 
         # Create a path
-        path_save_cropped_rembg = "/home/sh/Desktop/django-rembg-2v/rembg_w_python/media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id) + "/cropped"
+        # path_save_cropped_rembg = "/home/sh/Desktop/django-rembg-3v/rembg_w_python/media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id) + "/cropped"
+        path_save_cropped_rembg = os.path.join(
+            settings.IMAGE_UPLOAD_ROOT,
+            f"user_id_{user_id}",
+            f"post_id_{folder_inside_user_id}",
+            "cropped"
+        )
+        
         
         # Check if the directory exists
         if not os.path.exists(path_save_cropped_rembg):
@@ -537,7 +560,10 @@ def handle_design_elements(request, data):
         if image_path is None:
             print("Error: no image path!!!!")
             
-        image_path = "http://127.0.0.1:8000"+image_path 
+        # image_path = "http://127.0.0.1:8000"+image_path 
+        image_path = settings.MEDIA_URL + image_path
+        image_path = image_path.replace('media/', '').lstrip('/')
+        
         design_data = element.get('design_data', {})
         print("image path: ",image_path)
         
@@ -671,10 +697,11 @@ def upload_logo(request):
                     
                     if not created:
                         # Update existing metadata
-                        metadata.logo_path = 'http://127.0.0.1:8000/'+relative_path
-                        # metadata.logo_x = 100  # Reset position on new upload
-                        # metadata.logo_y = 100
-                        # metadata.logo_scale = 0.1
+                        # metadata.logo_path = 'http://127.0.0.1:8000/'+relative_path
+                        # Update existing metadata with proper URL construction
+                        # metadata.logo_path = request.build_absolute_uri('/')[:-1] + relative_path
+                        # Alternative: If you want just the path without domain (recommended if you're using MEDIA_URL in templates)
+                        metadata.logo_path = relative_path
                         metadata.save()
 
             # End new code
