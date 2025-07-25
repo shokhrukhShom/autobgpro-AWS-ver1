@@ -17,12 +17,13 @@
     <link rel="stylesheet" href="{% static 'css/canvasStyle.css' %}">
     <link rel="stylesheet" href="{% static 'css/canvas-selection.css' %}">
     <link rel="stylesheet" href="{% static 'css/text_edit.css' %}">
+    
 
 </head>
 <body>
     {% if user.is_authenticated %}
         <span id="latest_upload_id" style="float: left; overflow: hidden; position: relative; font-size: 11px;">Project No.{{latest_upload_id}} </span>
-        <span style="float: right;"><a href="/">Sign Out</a> | User: <strong>{{ user.username }}</strong> and ID <strong> {{user.id}} </strong>.</span> 
+        <span style="float: right;"><a href="{% url 'logout' %}">Sign Out</a> | User: <strong>{{ user.username }}</strong> and ID <strong> {{user.id}} </strong>.</span> 
     {% endif %}
     <br>
     <hr style="margin-top: 30px; margin-bottom: 2px;">
@@ -238,8 +239,6 @@
             </div>
         </div>  
     </div>  
-
-
 
     <!--Error message Start-->
     <div id="error-message" class="hidden">

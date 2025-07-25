@@ -9,7 +9,11 @@ from django.conf import settings
 
 
 urlpatterns = [
-    path("", views.login_view, name="login"),
+    
+    #landing page
+    path("", views.landing_page, name="landing_page"),
+    path("q", views.layout_landing, name="layout_landing"),
+    path("auth", views.login_view, name="login"),
     path("register", views.register, name="register"),
     path("logout", views.logout_view, name="logout"),
     #path("mainPage", views.mainPage, name="mainPage"), # this path not being used currently todo: delete/remove?
