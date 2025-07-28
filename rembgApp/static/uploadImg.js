@@ -1,7 +1,5 @@
 document.getElementById('fileInput').addEventListener('change', handleFileSelect);
 
-document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-
 let fileArray = [];
 
 async function handleFileSelect(event) {
