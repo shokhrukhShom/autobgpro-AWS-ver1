@@ -1,203 +1,151 @@
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM Loaded");
+document.getElementById('fileInput').addEventListener('change', handleFileSelect);
 
+let fileArray = [];
 
-    // Ensure the SaveButton exists before adding event listener
-    const saveButton = document.getElementById('SaveButton');
-    if (!saveButton) {
-        console.error("SaveButton not found in the DOM");
-        return;
+async function handleFileSelect(event) {
+    const files = Array.from(event.target.files);
+    const imageContainer = document.getElementById('imageContainer');
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        fileArray.push(file);
+
+        await readFile(file, fileArray.length - 1, imageContainer);
     }
 
-    saveButton.addEventListener('click', async function(event) {
-        event.preventDefault();
-        console.log("SaveButton clicked!!!: ===>>>");
-        
-        if (!fileArray || fileArray.length === 0) {
-            console.error("No files to process");
-            //alert("Please select files first");
-            showError("No image file found. Please, add image(s)", "red");
+    updateIndices();
+    updateFileArray();
+}
 
-            return;
-        }
+function readFile(file, index, container) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
 
-        // Validation constraints
-        const MAX_FILES = 20;
-        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
-        const MAX_TOTAL_SIZE = 30 * 1024 * 1024; // 30MB
+        reader.onload = function(e) {
+            const imageWrapper = document.createElement('div');
+            imageWrapper.className = 'image-wrapper';
+            imageWrapper.draggable = true;
+            imageWrapper.setAttribute('data-index', index);
 
-        // Validate file count
-        if (fileArray.length > MAX_FILES) {
-            //alert(`Maximum ${MAX_FILES} files allowed per upload (you selected ${fileArray.length})`);
-            showError(`Maximum ${MAX_FILES} files allowed per upload (you selected ${fileArray.length})`, "red");
-            return;
-        }
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.alt = file.name;
 
-         // In your click handler:
-        let totalSize = 0;
-        for (const file of fileArray) {
-            totalSize += file.size;
-            if (file.size > MAX_FILE_SIZE) {
-                //alert(`File ${file.name} is too large (max ${MAX_FILE_SIZE/1024/1024}MB)`);
-                showError(`File ${file.name} is too large (max ${MAX_FILE_SIZE/1024/1024}MB)`, "red");
-                return;
-            }
-        }
-        if (totalSize > MAX_TOTAL_SIZE) {
-            //alert(`Total upload size too large (max ${MAX_TOTAL_SIZE/1024/1024}MB)`);
-            showError(`Total upload size too large (max ${MAX_TOTAL_SIZE/1024/1024}MB)`, "red")
-            return;
-        }
-
-        console.log("File sizes:", fileArray.map(f => f.size));
-        console.log("Total size:", totalSize);
-
-        console.log("fileArray from handleImg.js:", fileArray.map(file => file.name));
-        
-        let formData = new FormData();
-        fileArray.forEach(file => {
-            formData.append('images', file);
-        });
-
-        try {
-            showLoadingSpinner();
-            
-            const response = await fetch('/imageProcessing', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': getCSRFToken()
-                }
+            const removeButton = document.createElement('button');
+            removeButton.className = 'remove-btn';
+            removeButton.innerHTML = 'X';
+            removeButton.addEventListener('click', function() {
+                const fileIndex = Array.from(container.children).indexOf(imageWrapper);
+                fileArray.splice(fileIndex, 1);
+                container.removeChild(imageWrapper);
+                updateIndices();
+                updateFileArray();
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Server error response:', errorText);
-                
-                if (response.status === 413) {
-                    alert('File size too large. Please reduce image sizes or upload fewer images at once.');
-                } else {
-                    alert('An error occurred: ' + response.statusText);
-                }
-                return;
-            }
+            imageWrapper.appendChild(img);
+            imageWrapper.appendChild(removeButton);
+            container.appendChild(imageWrapper);
 
-            const result = await response.json();
-            console.log(result["Backend message"]);
-            
-            if (result.redirect_url) {
-                window.location.href = result.redirect_url;
-            }
+            addDragAndDropHandlers(imageWrapper);
+            resolve();
+        };
 
-        } catch (error) {
-            console.error('Unexpected error:', error);
-            alert(`Unexpected error: ${error.message}`);
-        } finally {
-            // Remove spinner when done (whether success or error)
-            const spinner = document.getElementById('spinner-container');
-            if (spinner) {
-                spinner.remove();
-            }
-        }
+        reader.onerror = reject;
+
+        reader.readAsDataURL(file);
     });
+}
+
+function addDragAndDropHandlers(element) {
+    element.addEventListener('dragstart', handleDragStart);
+    element.addEventListener('dragover', handleDragOver);
+    element.addEventListener('dragenter', handleDragEnter);
+    element.addEventListener('dragleave', handleDragLeave);
+    element.addEventListener('drop', handleDrop);
+    element.addEventListener('dragend', handleDragEnd);
+}
+
+let dragSrcEl = null;
+
+function handleDragStart(e) {
+    dragSrcEl = this;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+
+    this.classList.add('dragging');
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    if (this !== dragSrcEl) {
+        this.classList.add('over');
+    }
+}
+
+function handleDragLeave(e) {
+    this.classList.remove('over');
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+
+    if (dragSrcEl !== this) {
+        const parent = this.parentNode;
+
+        if (dragSrcEl.nextSibling === this) {
+            parent.insertBefore(this, dragSrcEl);
+        } else if (this.nextSibling === dragSrcEl) {
+            parent.insertBefore(dragSrcEl, this);
+        } else {
+            parent.insertBefore(dragSrcEl, this.nextSibling);
+            parent.insertBefore(this, dragSrcEl);
+        }
+
+        updateIndices();
+        updateFileArray();
+    }
+    return false;
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    const items = document.querySelectorAll('.image-wrapper');
+    items.forEach(function(item) {
+        item.classList.remove('over');
+    });
+}
+
+function updateIndices() {
+    const items = document.querySelectorAll('.image-wrapper');
+    items.forEach((item, index) => {
+        item.setAttribute('data-index', index);
+    });
+}
+
+function updateFileArray() {
+    const items = document.querySelectorAll('.image-wrapper img');
+    const newArray = Array.from(items).map(img => {
+        return fileArray.find(file => file.name === img.alt);
+    });
+    fileArray.length = 0;
+    Array.prototype.push.apply(fileArray, newArray);
+    console.log("Updated fileArray:", fileArray.map(file => file.name));
+}
+
+// this function not used in the app at the moment
+document.getElementById('sanityCheckButton').addEventListener('click', function() {
+    
+
+    console.log("Sanity check fileArray:", fileArray.map(file => file.name));
 });
 
-// Single CSRF token function
-function getCSRFToken() {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-    if (csrfToken) {
-        return csrfToken.value;
-    }
-    console.error("CSRF token not found in the document.");
-    return '';
-}
 
-function showLoadingSpinner() {
-    // Remove existing spinner if present
-    const existingSpinner = document.getElementById('spinner-container');
-    if (existingSpinner) {
-        existingSpinner.remove();
-    }
-
-    // Create spinner container
-    const spinnerContainer = document.createElement("div");
-    spinnerContainer.id = "spinner-container";
-    spinnerContainer.style.position = "fixed";
-    spinnerContainer.style.top = "0";
-    spinnerContainer.style.left = "0";
-    spinnerContainer.style.width = "100%";
-    spinnerContainer.style.height = "100%";
-    spinnerContainer.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-    spinnerContainer.style.display = "flex";
-    spinnerContainer.style.flexDirection = "column";
-    spinnerContainer.style.justifyContent = "center";
-    spinnerContainer.style.alignItems = "center";
-    spinnerContainer.style.zIndex = "9999";
-
-    // Create spinner
-    const spinner = document.createElement("div");
-    spinner.style.border = "8px solid #f3f3f3";
-    spinner.style.borderTop = "8px solid #3498db";
-    spinner.style.borderRadius = "50%";
-    spinner.style.width = "60px";
-    spinner.style.height = "60px";
-    spinner.style.animation = "spin 1s linear infinite";
-    spinnerContainer.appendChild(spinner);
-
-    // Create message
-    const message = document.createElement("p");
-    message.textContent = "   Processing... Please do not reload the page. It may take few minutes";
-    message.style.color = "white";
-    message.style.marginTop = "20px";
-    message.style.fontSize = "16px";
-    message.style.textAlign = "center";
-    message.style.maxWidth = "300px";
-    spinnerContainer.appendChild(message);
-
-    // Add spinner container to the body
-    document.body.appendChild(spinnerContainer);
-
-    // Add CSS animation for spinner
-    const style = document.createElement("style");
-    style.innerHTML = `
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-
-function showError(message, color) {
-    const errorMessage = document.getElementById('error-message');
-    const errorText = document.getElementById('error-text');
-    const dismissBtn = document.getElementById('dismiss-btn');
-  
-    // Set the custom error message
-    errorText.textContent = message;
-  
-    // Setting background color
-    errorMessage.style.backgroundColor = color;
-
-    // Show the error message
-    errorMessage.classList.remove('hidden');
-    errorMessage.classList.add('visible');
-  
-    // Automatically hide the error message after 4 seconds
-    const timeoutId = setTimeout(() => {
-      hideError();
-    }, 5000);
-  
-    // Allow the user to dismiss the message manually
-    dismissBtn.onclick = () => {
-      clearTimeout(timeoutId); // Cancel the automatic hide
-      hideError();
-    };
-};
-  
-  function hideError() {
-    const errorMessage = document.getElementById('error-message');
-    errorMessage.classList.remove('visible');
-    errorMessage.classList.add('hidden');
-};

@@ -25,6 +25,15 @@ def custom_404_view(request, exception):
     return redirect('login')  # Assuming 'login' is the name of your login URL pattern
 
 
+def landing_page(request):
+    if request.method == "GET":
+        return render(request, "rembgApp/landingFolder/landing_page.html")
+
+def layout_landing(request):
+    if request.method == "GET":
+        return render(request, "rembgApp/landingFolder/layout_landing.html")
+
+
 def login_view(request):
     if request.method == "POST":
 

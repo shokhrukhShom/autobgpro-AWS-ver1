@@ -1,0 +1,1330 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoBG Pro - Professional Vehicle Photography</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Global Styles */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --light-gray: #e2e8f0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        section {
+            padding: 80px 0;
+        }
+        
+        h1, h2, h3, h4 {
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+            color: var(--gray);
+        }
+        
+        .btn {
+            color: var(--light);
+            align-items: center;
+            display: inline-block;
+            padding: 8px 12px;
+            background-color: var(--primary);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .grid {
+            display: grid;
+            gap: 30px;
+        }
+        
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        /* Header */
+        header {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+        
+        .logo {
+            font-size: 1.89rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-link-a {
+            color: var(--dark);
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-links  .nav-link-a:hover {
+            color: var(--primary);
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 150px 0 80px;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 60px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        /* Features Section */
+        .features {
+            background-color: white;
+        }
+        
+        .features h2 {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .feature-card {
+            background-color: var(--light);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        /* Gallery Section */
+        .gallery {
+            background-color: #f8fafc;
+        }
+        
+        .gallery h2 {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .before-after {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .comparison {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .comparison-images {
+            position: relative;
+            height: 250px;
+            overflow: hidden;
+        }
+        
+        .before, .after {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .after {
+            clip-path: polygon(0 0, 50% 0, 50% 100%, 0% 100%);
+        }
+        
+        .comparison-label {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid var(--light-gray);
+        }
+        
+        .label {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        /* Testimonials */
+        .testimonials {
+            background-color: white;
+        }
+        
+        .testimonials h2 {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .testimonial-card {
+            background-color: var(--light);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .testimonial-text::before {
+            content: '"';
+            font-size: 3rem;
+            color: var(--light-gray);
+            position: absolute;
+            top: -20px;
+            left: -15px;
+            z-index: 0;
+        }
+        
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+        }
+        
+        .author-info {
+            margin-left: 15px;
+        }
+        
+        .author-name {
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .author-title {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        /* Pricing */
+        .pricing {
+            background-color: #f8fafc;
+        }
+        
+        .pricing h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .pricing p.subtitle {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+        
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        
+        .pricing-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 40px 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .pricing-card.popular {
+            border: 2px solid var(--primary);
+            position: relative;
+        }
+        
+        .popular-badge {
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background-color: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+        
+        .price span {
+            font-size: 1rem;
+            color: var(--gray);
+            font-weight: 400;
+        }
+        
+        .pricing-features {
+            list-style: none;
+            margin: 30px 0;
+        }
+        
+        .pricing-features li {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .pricing-features li:last-child {
+            border-bottom: none;
+        }
+        
+        /* CTA Section */
+        .cta {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            text-align: center;
+            padding: 100px 0;
+        }
+        
+        .cta h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .cta p {
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+        
+        .cta .btn {
+            background-color: white;
+            color: var(--primary);
+        }
+        
+        .cta .btn:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        
+        /* Form Section */
+        .form-section {
+            background-color: white;
+        }
+        
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--light);
+            border-radius: 10px;
+            padding: 50px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .form-group input, 
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .form-footer {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 60px 0 30px;
+        }
+        
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .footer-description {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+        }
+        
+        .footer-links h4 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        
+        .footer-links ul {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 1024px) {
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .before-after {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .pricing-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .pricing-card:last-child {
+                grid-column: span 2;
+                max-width: 400px;
+                margin: 0 auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            section {
+                padding: 60px 0;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .grid-2, 
+            .grid-3,
+            .before-after,
+            .pricing-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .pricing-card:last-child {
+                grid-column: span 1;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            } 
+        }
+
+        /**/
+            /* Main section styling - Side by side layout */
+            .photo-section {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 60px 20px;
+                display: flex;
+                align-items: center;
+                gap: 60px;
+                margin-top:30px;
+            }
+            
+            .content-side {
+                flex: 1;
+                max-width: 500px;
+            }
+            
+            .image-side {
+                flex: 1;
+                max-width: 600px;
+            }
+            
+            .photo-section h1 {
+                margin-top:40px;
+                font-size: 2.5rem;
+                margin-bottom: 20px;
+                color: #222;
+                font-weight: 700;
+                text-align: left;
+            }
+            
+            .photo-section p {
+                font-size: 1.2rem;
+                margin-bottom: 40px;
+                color: #555;
+                text-align: left;
+            }
+        
+            /* Comparison slider */
+            .comparison {
+                background-color: white;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+                position: relative;
+            }
+            
+            .comparison-main-image {
+                position: relative;
+                height: 400px;
+                overflow: hidden;
+            }
+            
+            .comparison-main-image img {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            
+            .comparison-main-image .after {
+                clip-path: polygon(0 0, 50% 0, 50% 100%, 0% 100%);
+            }
+            
+            .comparison-labels {
+                color: #222;
+                position: absolute;
+                top: 20px;
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                padding: 0 20px;
+                z-index: 2;
+            }
+            
+            .comparison-labels .label {
+                padding: 5px 15px;
+                background-color: rgba(0, 0, 0, 0.6);
+                color: white;
+                border-radius: 20px;
+                font-size: 0.9rem;
+            }
+            
+            .comparison-divider {
+                position: absolute;
+                top: 0;
+                left: 50%;
+                width: 4px;
+                height: 100%;
+                background-color: white;
+                z-index: 10;
+                cursor: ew-resize;
+                transform: translateX(-50%);
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            }
+            
+            .comparison-divider::after {
+                content: "↔";
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 40px;
+                height: 40px;
+                background-color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                color: #0066ff;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            }
+            
+            /* Responsive adjustments */
+            @media (max-width: 900px) {
+
+                .photo-section .content-side .btn {
+                    align-items: center;
+                }
+            
+
+                .photo-section {
+                    flex-direction: column;
+                    gap: 40px;
+                    margin: 0;
+                }
+                
+                .content-side, .image-side {
+                    max-width: 100%;
+                }
+                
+                .photo-section h1, 
+                .photo-section p,
+                .trust-badge {
+                    text-align: center;
+                }
+                
+                .comparison-main-image {
+                    height: 50px;
+                }
+            }
+            
+            @media (max-width: 600px) {
+                .photo-section h1 {
+                    font-size: 2rem;
+                }
+                
+                .photo-section p {
+                    font-size: 1rem;
+                }
+                
+                .comparison-main-image {
+                    height: 50px;
+                }
+                
+                .comparison-labels {
+                    top: 10px;
+                }
+            }
+            
+                /* Comparison slider */
+    </style>
+</head>
+<body>
+    
+    <!-- Header -->
+    <header>
+        <div class="container"> 
+            <nav>
+                <a href="{% url 'logout' %}" class="nav-link-a" style="float:left;"> <i class="fa fa-user"></i> Sign-In</a>
+                
+                <a href="{% url 'landing_page' %}" class="logo">AutoBG Pro</a>
+                
+        
+                <div class="nav-links">
+                    <a class="nav-link-a" href="#features">Features</a>
+                    <a class="nav-link-a" href="#gallery">Gallery</a>
+                    <a class="nav-link-a" href="#pricing">Pricing</a>
+                    <a class="nav-link-a" href="#contact">Contact</a>
+                    <a href="{% url 'register' %}" class="btn">Get Started</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section 
+    <section class="hero">-->
+
+    <section class="photo-section">
+        <div class="image-side">
+            <div class="comparison">
+                <div class="comparison-main-image">
+                    <img src="{% static 'images/after.png' %}" alt="Before" class="before">
+                    <img src="{% static 'images/before.jpg' %} " alt="After" class="after">
+                    <div class="comparison-labels">
+                        <span class="label">BEFORE</span>
+                        <span class="label">AFTER</span>
+                    </div>
+                    <div class="comparison-divider"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-side ">
+            <h1>Professional Vehicle Photography Made Perfect</h1>
+            <p>Remove backgrounds and add stunning showroom environments to your car photos in seconds. </p>
+            <a href="#form" class="btn">Try For Free </a>
+            <a href="#form" class="btn"><i style="font-size:18px" class="fa">&#xf01d;</i> Watch Demo</a>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" style="display: none;">500+</div>
+                    <div class="stat-label" style="display: none;">Dealerships</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">10K+</div>
+                    <div class="stat-label">Photos Processed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">30s</div>
+                    <div class="stat-label">Average Process Time</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">99.5%</div>
+                    <div class="stat-label">Accuracy Rate</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2>Everything Your Dealership Needs</h2>
+            <p class="text-center">Professional-grade tools designed specifically for automotive businesses to create stunning vehicle presentations.</p>
+            
+            <div class="grid grid-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-rocket" style="color: red;"></i>
+                    </div>
+                    <h3>AI-Powered Removal</h3>
+                    <p>Trained AI module automatically detects and removes backgrounds with precision, handling complex edges and reflections.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-images" style="color: rgb(31, 244, 39);"></i>
+                    </div>
+                    <h3>Studio Backgrounds</h3>
+                    <p>Choose from 50+ professional showroom and studio backgrounds designed for automotive photography.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt" style="color: rgb(243, 243, 44);"></i>
+                    </div>
+                    <h3>Instant Processing</h3>
+                    <p>Process multiple vehicle photos in seconds with our optimized pipeline built for dealership workflows.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-layer-group" style="color: rgb(243, 44, 210);"></i>
+                    </div>
+                    <h3>Bulk Processing</h3>
+                    <p>Upload and process entire vehicle inventories at once with our batch processing system.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i style="font-size:40px" class="fa" >&#xf031;</i>
+                    </div>
+                    <h3>Custom Branding</h3>
+                    <p>Add your dealership's logo, text, and colors to create fully branded, studio-quality images.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-plug" style="color: rgb(240, 130, 35);"></i>
+                    </div>
+                    <h3>Simple Workflow</h3>
+                    <p>Start using instantly — just snap, edit, and export in minutes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section class="gallery" id="gallery">
+        <div class="container">
+            <h2>See the Difference</h2>
+            <p class="text-center">Real results from dealerships using AutoBG Pro to transform their vehicle photography.</p>
+            
+            <div class="before-after">
+                <div class="comparison">
+                    <div class="comparison-images">
+                        <img src="{% static 'images/1before.jpg' %}" alt="Before" class="before">
+                        <img src="{% static 'images/1after.png' %}" alt="After" class="after">
+                    </div>
+                    <div class="comparison-label">
+                        <span class="label">BEFORE</span>
+                        <span class="label">AFTER</span>
+                    </div>
+                    <div class="comparison-title" style="display: none;">Luxury Sedan</div>
+                </div>
+                
+                <div class="comparison">
+                    <div class="comparison-images">
+                        <img src="{% static 'images/2before.jpg' %}" alt="Before" class="before">
+                        <img src="{% static 'images/2after.png' %}" alt="After" class="after">
+                    </div>
+                    <div class="comparison-label">
+                        <span class="label">BEFORE</span>
+                        <span class="label">AFTER</span>
+                    </div>
+                    <div class="comparison-title" style="display: none;">Premium SUV</div>
+                </div>
+                
+                <div class="comparison">
+                    <div class="comparison-images">
+                        <img src="{% static 'images/3before.jpg' %}" alt="Before" class="before">
+                        <img src="{% static 'images/3after.png' %}" alt="After" class="after">
+                    </div>
+                    <div class="comparison-label">
+                        <span class="label">BEFORE</span>
+                        <span class="label">AFTER</span>
+                    </div>
+                    <div class="comparison-title" style="display: none;">Classic Muscle</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <div class="container">
+            <h2 style="display: none;">Trusted by Dealerships Nationwide</h2>
+            <h2 >Testimonials</h2>
+            <p class="text-center">See why automotive professionals choose AutoBG Pro for their photography needs.</p>
+            
+            <div class="grid grid-3">
+                <div class="testimonial-card">
+                    <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <br>
+                    <div class="testimonial-text">                    
+                        AutoBG Pro has revolutionized our online listings. We've seen a 40% increase in online inquiries since using their service.
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <i class="fas fa-user-circle" style="font-size: 3rem; color: var(--light-gray);"></i>
+                        </div>
+                        <div class="author-info">
+                            <div class="author-name">Mike Johnson</div>
+                            <div class="author-title">Sales Manager, Premium Auto</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <br>
+                    <div class="testimonial-text">
+                        The time savings are incredible. What used to take our photography team hours now takes minutes.
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <i class="fas fa-user-circle" style="font-size: 3rem; color: var(--light-gray);"></i>
+                        </div>
+                        <div class="author-info">
+                            <div class="author-name">Sarah Chen</div>
+                            <div class="author-title">Marketing Director, City Motors</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <i class='fas fa-star' style='font-size:11px; color:gold;'></i>
+                        <br>
+                    <div class="testimonial-text">
+                        Professional results every time. Our customers comment on how great our photos look compared to competitors.
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <i class="fas fa-user-circle" style="font-size: 3rem; color: var(--light-gray);"></i>
+                        </div>
+                        <div class="author-info">
+                            <div class="author-name">David Rodriguez</div>
+                            <div class="author-title">Owner, Elite Automotive</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <h2>Simple, Transparent Pricing</h2>
+            <p class="subtitle">Choose the plan that fits your dealership's needs. No hidden fees, cancel anytime.</p>
+            
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <h3>Starter</h3>
+                    <div class="price">$12 <span>/month</span></div>
+                    <ul class="pricing-features">
+                        <li>Up to 500 photos/month</li>
+                        
+                    </ul>
+                    <a href="#form" class="btn btn-outline">Buy Now</a>
+                </div>
+                
+                <div class="pricing-card popular">
+                    <div class="popular-badge">Most Popular</div>
+                    <h3>Professional</h3>
+                    <div class="price">$18 <span>/month</span></div>
+                    <ul class="pricing-features">
+                        <li>Up to 1000 photos/month</li>
+                        
+                    </ul>
+                    <a href="#form" class="btn">Buy Now</a>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <div class="price">Custom</div>
+                    <ul class="pricing-features">
+                        <li>Over 1000 photos/month</li>
+                        <li>Custom backgrounds</li>
+                        <li>Dedicated support</li>
+                    </ul>
+                    <a href="#contact" class="btn btn-outline">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta" id="cta">
+        <div class="container">
+            <h2>Ready to Transform Your Vehicle Photography?</h2>
+            <p>Join AutoBG Pro to create stunning vehicle presentations that drive sales.</p>
+            <p>First 10 days Money-Back Garanteed! Don't like it, Don't pay! </p>
+            <a href="{% url 'register' %}" class="btn">Get Started Now</a>
+        </div>
+    </section>
+
+    <!-- Form Section -->
+    <section class="form-section" id="form">
+        <div class="container">
+            <div class="form-container">
+                <h2 class="text-center">Ask a Question</h2>
+                <p class="text-center" >We will be happy to assist with any questions</p>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="full-name">Dealership Name / Full Name</label>
+                        <input type="text" id="full-name" placeholder="Enter Dealership Name / Full Name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" placeholder="Enter your email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dealership">Your Question</label>
+                        <input type="text" id="dealership" placeholder="My question is ...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="volume">Monthly Photo Volume</label>
+                        <select id="volume">
+                            <option value="">Select volume range</option>
+                            <option value="1-100">1-100 photos</option>
+                            <option value="101-500">101-500 photos</option>
+                            <option value="501-1000">501-1000 photos</option>
+                            <option value="1000+">1000+ photos</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn" style="width: 100%;">SEND</button>
+                
+                <div class="form-footer">
+                    By clicking "SEND", you agree to our Terms of Service and Privacy Policy.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-about">
+                    <a href="#" class="footer-logo">AutoBG Pro</a>
+                    <p class="footer-description">
+                        Professional background removal and replacement service designed specifically for automotive dealerships.
+                    </p>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#contact">Contact Support</a></li>
+                        <li><a href="#">Video Tutorials</a></li>
+                        <li><a href="#">System Status</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="{% url 'layout_landing' %}#about">About Us</a></li>
+                        <li><a href="{% url 'layout_landing' %}#privacy">Privacy Policy</a></li>
+                        <li><a href="{% url 'layout_landing' %}#term">Terms of Service</a></li>
+                        <li><a href="{% url 'layout_landing' %}#career">Careers</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                © 2024 AutoBG Pro. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.comparison-main-image');
+            const after = container.querySelector('.after');
+            const divider = container.querySelector('.comparison-divider');
+            let isDragging = false;
+            
+            // Animate divider on page load
+            function animateDivider() {
+                const containerWidth = container.offsetWidth;
+                const center = containerWidth / 2;
+                const animationDuration = 3000; // Total 3 seconds for full animation
+                const startTime = performance.now();
+                
+                function step(currentTime) {
+                    const elapsedTime = currentTime - startTime;
+                    const progress = elapsedTime / animationDuration;
+                    
+                    // First half: move from left to right
+                    if (progress < 0.5) {
+                        const position = easeInOutQuad(progress * 2) * containerWidth;
+                        updateSlider(position);
+                    } 
+                    // Second half: move back to center
+                    else {
+                        const position = easeInOutQuad(1 - (progress - 0.5) * 2) * containerWidth;
+                        updateSlider(position);
+                    }
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        // Final position at center
+                        updateSlider(center);
+                    }
+                }
+                
+                requestAnimationFrame(step);
+            }
+            
+            // Easing function for smooth animation
+            function easeInOutQuad(t) {
+                return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+            }
+            
+            // Set initial position
+            function initSlider() {
+                const containerWidth = container.offsetWidth;
+                updateSlider(containerWidth / 2);
+            }
+            
+            // Update slider position
+            function updateSlider(x) {
+                const containerWidth = container.offsetWidth;
+                const percentage = (x / containerWidth) * 100;
+                
+                after.style.clipPath = `polygon(0 0, ${percentage}% 0, ${percentage}% 100%, 0% 100%)`;
+                divider.style.left = `${percentage}%`;
+            }
+            
+            // Mouse events
+            divider.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                
+                const containerRect = container.getBoundingClientRect();
+                const x = e.clientX - containerRect.left;
+                updateSlider(x);
+            });
+            
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+            
+            // Touch events for mobile
+            divider.addEventListener('touchstart', function(e) {
+                isDragging = true;
+                e.preventDefault();
+            });
+            
+            document.addEventListener('touchmove', function(e) {
+                if (!isDragging) return;
+                
+                const containerRect = container.getBoundingClientRect();
+                const x = e.touches[0].clientX - containerRect.left;
+                updateSlider(x);
+                e.preventDefault();
+            });
+            
+            document.addEventListener('touchend', function() {
+                isDragging = false;
+            });
+            
+            // Initialize and animate
+            initSlider();
+            setTimeout(animateDivider, 500); // Start animation after slight delay
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+        
+        // Before/After image slider functionality
+        document.querySelectorAll('.comparison-images').forEach(container => {
+            const before = container.querySelector('.before');
+            const after = container.querySelector('.after');
+            
+            container.addEventListener('mousemove', (e) => {
+                const x = e.clientX - container.getBoundingClientRect().left;
+                const width = container.offsetWidth;
+                const percentage = (x / width) * 100;
+                
+                after.style.clipPath = `polygon(0 0, ${percentage}% 0, ${percentage}% 100%, 0% 100%)`;
+            });
+            
+            container.addEventListener('mouseleave', () => {
+                after.style.clipPath = 'polygon(0 0, 50% 0, 50% 100%, 0% 100%)';
+            });
+        });
+        
+        // Form submission
+        const form = document.querySelector('.form-container');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Get form values
+            const fullName = document.getElementById('full-name').value;
+            const email = document.getElementById('email').value;
+            const dealership = document.getElementById('dealership').value;
+            const volume = document.getElementById('volume').value;
+            
+            // Simple validation
+            if (!fullName || !email || !dealership || !volume) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // In a real app, you would send this data to your server
+            console.log('Form submitted:', { fullName, email, dealership, volume });
+            
+            // Show success message
+            alert('Thank you for signing up! Your free trial has started.');
+            
+            // Reset form
+            form.reset();
+        });
+    </script>
+</body>
+</html>

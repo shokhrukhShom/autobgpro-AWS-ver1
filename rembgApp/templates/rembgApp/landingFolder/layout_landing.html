@@ -1,0 +1,385 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoBG Pro - Professional Vehicle Photography</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Global Styles */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .content-wrapper {
+            flex: 1 0 auto;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        h1, h2, h3, h4 {
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+            color: var(--gray);
+        }
+        
+        .btn {
+            color: var(--light);
+            display: inline-block;
+            padding: 8px 12px;
+            background-color: var(--primary);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        /* Header */
+        header {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+        
+        .logo {
+            font-size: 1.89rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-link-a {
+            color: var(--dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-links .nav-link-a:hover {
+            color: var(--primary);
+        }
+        
+        /* Body Section */
+        .body-section {
+            max-width: 1200px;
+            margin: 170px auto;
+            padding: 20px 20px 60px;
+            display: block;
+            align-items: center;
+            justify-content: center;
+            
+        }
+        
+        /* Footer */
+        footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 60px 0 30px;
+            flex-shrink: 0;
+        }
+        
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .footer-description {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+        }
+        
+        .footer-links h4 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        
+        .footer-links ul {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .body-section {
+                padding: 80px 20px 40px;
+                min-height: calc(100vh - 120px);
+            }
+            
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+
+        hr {
+            margin-top:200px;
+            margin-bottom:100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <!-- Header -->
+        <header>
+            <div class="container"> 
+                <nav>
+                    <a href="{% url 'logout' %}" class="nav-link-a" style="float:left;"> <i class="fa fa-user"></i> Sign-In</a>
+                    <a href="{% url 'landing_page' %}" class="logo">AutoBG Pro</a>
+                    <div class="nav-links">
+                        <a href="#cta" class="btn">Get Started</a>
+                    </div>
+                </nav>
+            </div>
+        </header>
+        
+        <div id="about"></div>
+        <!-- Body Section -->
+        <section class="body-section">
+            <div>
+                <h1>about us</h1>
+                <p>AutoBG Pro was built with one clear mission: to help car dealerships make their vehicle photos stand out. In a competitive market where first impressions matter, clean, professional-looking images can make all the difference. That’s where we come in.</p>
+                <p> I'm a solo developer with a passion for building practical, high-impact tools. After working with dealers and seeing how much time and effort goes into image editing, I created AutoBG Pro — a streamlined web app that removes backgrounds and lets you add studio-like custom scenes in seconds.</p>
+                <p>Whether you're listing one car or managing a full inventory, AutoBG Pro helps your photos look consistent, modern, and ready to sell — without needing Photoshop skills or extra staff.</p>
+                <p>If you're ready to level up your dealership visuals, you're in the right place.</p>
+            </div>
+            <br>
+            <br>
+            <p><strong> <a href="{% url 'landing_page' %}" class="nav-link-a"> <i class='fas fa-angle-left'></i> back to AutoBF Pro </a></strong><p>
+            <hr id="privacy">
+            <div >
+                <h2>Privacy Policy</h2>
+
+                <p>At AutoBG Pro, your privacy is important to us. This Privacy Policy outlines how we collect, use, and protect your information when you use our background removal web application.</p>
+
+                <p><strong>Information We Collect</strong></p>
+                <p>We may collect basic information such as your name, email address, and dealership name when you create an account or contact us. Additionally, we may store the images you upload for processing, but only temporarily and solely to complete the requested task.</p>
+
+                <p><strong>How We Use Your Information</strong></p>
+                <p>Your information is used to provide and improve our services. We do not sell or share your personal data with third parties. Uploaded images are processed and then deleted after a short retention period unless explicitly saved by you.</p>
+
+                <p><strong>Data Security</strong></p>
+                <p>We take appropriate measures to secure your data. All communications between your browser and our servers are encrypted using SSL. We also regularly monitor our systems for vulnerabilities and attacks.</p>
+
+                <p><strong>Cookies</strong></p>
+                <p>AutoBG Pro uses cookies to enhance user experience and improve functionality. These cookies do not track your activity outside our platform and can be cleared through your browser settings.</p>
+
+                <p><strong>Third-Party Services</strong></p>
+                <p>We may use third-party tools for analytics or payment processing. These services have their own privacy policies which we encourage you to review.</p>
+
+                <p><strong>Your Rights</strong></p>
+                <p>You have the right to access, update, or delete your personal data. If you wish to do so, please contact us at the email provided below.</p>
+
+                <p><strong>Changes to This Policy</strong></p>
+                <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated revision date.</p>
+
+                <p><strong>Contact Us</strong></p>
+                <p>If you have any questions or concerns about this Privacy Policy, please contact us at: support@autobgpro.com</p>
+
+            </div>
+            <br>
+            <br>
+            <p><strong> <a href="{% url 'landing_page' %}" class="nav-link-a"> <i class='fas fa-angle-left'></i> back to AutoBF Pro </a></strong><p>
+
+            <hr id="term">
+            <div >
+                <h2>Terms of Use</h2>
+
+                <p>Welcome to AutoBG Pro. By accessing or using our website and services, you agree to be bound by the following Terms of Use. If you do not agree to these terms, please do not use the platform.</p>
+
+                <p><strong>1. Use of Service</strong></p>
+                <p>AutoBG Pro is a web-based tool that allows users to remove and customize image backgrounds, primarily for car dealerships. You agree to use the service only for lawful purposes and in accordance with these Terms.</p>
+
+                <p><strong>2. Account Responsibility</strong></p>
+                <p>You are responsible for maintaining the confidentiality of your account information and for all activity that occurs under your account. Please notify us immediately of any unauthorized use.</p>
+
+                <p><strong>3. Image Content</strong></p>
+                <p>By uploading images to AutoBG Pro, you confirm that you have the legal right to use and 
+                    edit those images. We do not claim ownership over your images, and processed images are deleted after a 
+                    short retention period unless you choose to save them on your personal machine.</p>
+
+                <p><strong>4. Prohibited Use</strong></p>
+                <p>You may not use AutoBG Pro to process or distribute content that is illegal, offensive, or infringes on the rights of others. We reserve the right to suspend accounts that violate these rules.</p>
+
+                <p><strong>5. Intellectual Property</strong></p>
+                <p>All content and software on AutoBG Pro — excluding user-uploaded images — is the property of the developer and may not be copied, modified, or distributed without permission.</p>
+
+                <p><strong>6. Availability and Changes</strong></p>
+                <p>We strive to keep AutoBG Pro online and functional, but we do not guarantee uninterrupted access. We may update or discontinue parts of the service at any time without notice.</p>
+
+                <p><strong>7. Limitation of Liability</strong></p>
+                <p>AutoBG Pro is provided "as is" without warranties of any kind. We are not liable for any damages arising from the use or inability to use the service, including data loss or image errors.</p>
+
+                <p><strong>8. Changes to Terms</strong></p>
+                <p>We may update these Terms of Use occasionally. Continued use of AutoBG Pro after changes are posted means you accept the new terms.</p>
+
+                <p><strong>9. Contact Us</strong></p>
+                <p>If you have questions or concerns about these Terms, contact us at: support@autobgpro.com</p>
+
+            </div>
+            <br>
+            <br>
+            <p><strong> <a href="{% url 'landing_page' %}" class="nav-link-a"> <i class='fas fa-angle-left'></i> back to AutoBF Pro </a></strong><p>
+
+            <hr id="career">
+            <div >
+                <h2>Careers</h2>
+
+                <p>AutoBG Pro is a lean and ambitious project built by a solo developer with a passion for solving real-world problems in the automotive industry. Our mission is to help car dealerships present their inventory in the best possible light through smart, easy-to-use background editing tools.</p>
+
+                <p>While the platform is currently a one-person effort, the vision is big — and the journey is just beginning. As we grow, we’ll be looking for passionate, creative individuals who want to be part of something from the ground up.</p>
+
+                <p>If you're a developer, designer, marketer, or someone who just loves clean UI, smart automation, or solving dealership problems, we’d love to hear from you.</p>
+
+                <p>There are no open positions right now, but we’re always open to collaboration, feedback, or future partnership opportunities.</p>
+
+                <p>Feel free to reach out: <strong>support@autobgpro.com</strong></p>
+            
+            <br>
+            <br>
+            <p><strong> <a href="{% url 'landing_page' %}" class="nav-link-a"> <i class='fas fa-angle-left'></i> back to AutoBF Pro </a></strong><p>
+
+            </div>
+
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-about">
+                    <a href="{% url 'landing_page' %}" class="footer-logo">AutoBG Pro</a>
+                    <p class="footer-description">
+                        Professional background removal and replacement service designed specifically for automotive dealerships.
+                    </p>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="{% url 'landing_page' %}#features">Features</a></li>
+                        <li><a href="{% url 'landing_page' %}#pricing">Pricing</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="{% url 'landing_page' %}#contact">Contact Support</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                        <li><a href="#term">Terms of Service</a></li>
+                        <li><a href="#career">Careers</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                © 2024 AutoBG Pro. All rights reserved.
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
