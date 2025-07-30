@@ -772,6 +772,10 @@
             }
             
                 /* Comparison slider */
+            .label {
+            transition: opacity 0.5s ease;
+            opacity: 1;
+            }
     </style>
 </head>
 <body>
@@ -806,8 +810,8 @@
                     <img src="{% static 'images/after.png' %}" alt="Before" class="before">
                     <img src="{% static 'images/before.jpg' %} " alt="After" class="after">
                     <div class="comparison-labels">
-                        <span class="label">BEFORE</span>
-                        <span class="label">AFTER</span>
+                        <span class="label" id="before">BEFORE</span>
+                        <span class="label" id="after">AFTER</span>
                     </div>
                     <div class="comparison-divider"></div>
                 </div>
@@ -908,8 +912,8 @@
             <div class="before-after">
                 <div class="comparison">
                     <div class="comparison-images">
-                        <img src="{% static 'images/1before.jpg' %}" alt="Before" class="before">
-                        <img src="{% static 'images/1after.png' %}" alt="After" class="after">
+                        <img src="{% static 'images/1after.png' %}" alt="Before" class="before">
+                        <img src="{% static 'images/1before.jpg'%}" alt="After" class="after">
                     </div>
                     <div class="comparison-label">
                         <span class="label">BEFORE</span>
@@ -920,8 +924,8 @@
                 
                 <div class="comparison">
                     <div class="comparison-images">
-                        <img src="{% static 'images/2before.jpg' %}" alt="Before" class="before">
-                        <img src="{% static 'images/2after.png' %}" alt="After" class="after">
+                        <img src="{% static 'images/2after.png' %}" alt="Before" class="before">
+                        <img src="{% static 'images/2before.jpg'  %}" alt="After" class="after">
                     </div>
                     <div class="comparison-label">
                         <span class="label">BEFORE</span>
@@ -932,8 +936,8 @@
                 
                 <div class="comparison">
                     <div class="comparison-images">
-                        <img src="{% static 'images/3before.jpg' %}" alt="Before" class="before">
-                        <img src="{% static 'images/3after.png' %}" alt="After" class="after">
+                        <img src="{% static 'images/3after.png' %}" alt="Before" class="before">
+                        <img src="{% static 'images/3before.jpg' %}" alt="After" class="after">
                     </div>
                     <div class="comparison-label">
                         <span class="label">BEFORE</span>
@@ -1033,7 +1037,7 @@
                         <li>Up to 500 photos/month</li>
                         
                     </ul>
-                    <a href="#form" class="btn btn-outline">Buy Now</a>
+                    <a href="{% url 'register' %}"  class="btn btn-outline">Buy Now</a>
                 </div>
                 
                 <div class="pricing-card popular">
@@ -1044,7 +1048,7 @@
                         <li>Up to 1000 photos/month</li>
                         
                     </ul>
-                    <a href="#form" class="btn">Buy Now</a>
+                    <a href="{% url 'register' %}"  class="btn">Buy Now</a>
                 </div>
                 
                 <div class="pricing-card">
@@ -1072,6 +1076,7 @@
     </section>
 
     <!-- Form Section -->
+    <a id="contact"></a>
     <section class="form-section" id="form">
         <div class="container">
             <div class="form-container">
@@ -1116,7 +1121,7 @@
     </section>
 
     <!-- Footer -->
-    <footer id="contact">
+    <footer>
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-about">
@@ -1172,7 +1177,7 @@
             function animateDivider() {
                 const containerWidth = container.offsetWidth;
                 const center = containerWidth / 2;
-                const animationDuration = 3000; // Total 3 seconds for full animation
+                const animationDuration = 6000; // Total 3 seconds for full animation
                 const startTime = performance.now();
                 
                 function step(currentTime) {
@@ -1216,10 +1221,27 @@
             function updateSlider(x) {
                 const containerWidth = container.offsetWidth;
                 const percentage = (x / containerWidth) * 100;
-                
+
+                updateBeforeAfterOpacity(Math.floor(percentage));
                 after.style.clipPath = `polygon(0 0, ${percentage}% 0, ${percentage}% 100%, 0% 100%)`;
                 divider.style.left = `${percentage}%`;
             }
+            // Opacity Before After Slide
+            const beforeId = document.getElementById("before");
+            const afterId = document.getElementById("after");
+            function updateBeforeAfterOpacity(percentage){
+                if (percentage < 27){
+                    beforeId.style.opacity = "0";
+                } else {
+                    beforeId.style.opacity = "1";
+                }
+                if (percentage > 75){
+                    afterId.style.opacity = "0";
+                } else {
+                    afterId.style.opacity = "1";
+                }
+            }
+           
             
             // Mouse events
             divider.addEventListener('mousedown', function(e) {
