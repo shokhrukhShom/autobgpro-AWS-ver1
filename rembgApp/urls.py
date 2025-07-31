@@ -29,6 +29,10 @@ urlpatterns = [
     path('upload_logo/', views.upload_logo, name='upload_logo'),
     path('design_template/', views.design_template, name='design_template'),
     path('get_templates/', views.get_templates, name='get_templates'),
-    path('get_template/<int:template_id>/', views.get_template_metadata, name='get_template_metadata'),  
+    path('get_template/<int:template_id>/', views.get_template_metadata, name='get_template_metadata'),
+    path('upload-background/', views.upload_background, name='upload_background'),  
+    path('background_upload_page/', views.background_upload_page, name='background_upload_page'),  
+    path('delete-background/<str:image_id>/', views.delete_background, name='delete_background'),
+ 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

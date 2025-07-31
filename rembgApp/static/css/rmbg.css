@@ -8,6 +8,22 @@ body {
     padding: 0px;
     margin: 0px;
 }
+
+h1 {
+    margin: 30px auto;
+    color: #7794aa;
+}
+
+hr {
+    margin-top: 120px;
+    margin-bottom: 20px;
+    height: 4px; /* controls thickness */
+    background-color: #abc7df; /* visible line color */
+    border: none; /* remove default border */
+    border-radius: 2px; /* optional: rounded edges */
+}
+
+
 /* Container */
 .container {
     max-width: 1200px;
@@ -302,3 +318,54 @@ canvas {
 }
 
 /* template btn style END*/
+
+
+/* user bg deletion prompt*/
+/* Confirmation Modal Styles */
+.modal {
+  position: fixed;
+  top: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  width: 80%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content #modalMessage{
+  margin-bottom: 60px;
+  margin: 10px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+/* END of user bg deletion prompt*/
