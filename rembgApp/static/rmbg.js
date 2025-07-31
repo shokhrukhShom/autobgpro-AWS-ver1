@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     saveImage;
     textBtn;
     setupTemplateCreation();
+    delete_bg_image();
 })
 
 
@@ -96,45 +97,249 @@ function backToMainBtn(){
     const rmbg_images = document.getElementById('rmbg_images');
     const tool_bar = document.getElementById('tool_bar');
     const canvasPage = document.getElementById('canvasPage');
+    const main_preview = document.getElementById('main_preview');
 
     bg_images.style.display = "none";
     rmbg_images.style.display = "block";
     tool_bar.style.display = "block";
-    canvasPage.style.display = "none"
+    canvasPage.style.display = "none";
+    main_preview.style.display = "block";
 
 
 }
 
 // checkmarking selected picture in "background insert"
+// Old Code - going to rewrite for event delegation
+// function Checkmark_picture() {
+//     const pictures = document.querySelectorAll('.picture');
+//         selectedPicture = null;
+
+//         pictures.forEach(picture => {
+//             picture.addEventListener('click', () => {
+//                 if (selectedPicture) {
+//                     selectedPicture.classList.remove('selected');
+//                 }
+//                 selectedPicture = picture;
+//                 picture.classList.add('selected');
+//             });
+//         });
+
+//         document.getElementById('submitBtn').addEventListener('click', () => {
+//             if (selectedPicture) {
+
+//                 const srcText = selectedPicture.getElementsByTagName('img')[0];
+//                 const srcAlt = srcText.alt;
+//                 console.log("fetch post: ", srcAlt);
+                
+//                 Fetch_post_bg_path(srcAlt);
+
+//             } else {
+//                 showError("You have not selected picture. Please select a picture.", 'red');
+                
+//             }
+//         });
+// };
+
+// Event delegation version of checkmarking selected picture
 function Checkmark_picture() {
-    const pictures = document.querySelectorAll('.picture');
-        selectedPicture = null;
+    const bgContainer = document.getElementById('bg_images');
+    let selectedPicture = null;
 
-        pictures.forEach(picture => {
-            picture.addEventListener('click', () => {
-                if (selectedPicture) {
-                    selectedPicture.classList.remove('selected');
-                }
-                selectedPicture = picture;
-                picture.classList.add('selected');
-            });
-        });
+    if (!bgContainer) return;
 
-        document.getElementById('submitBtn').addEventListener('click', () => {
+    bgContainer.addEventListener('click', (event) => {
+        const picture = event.target.closest('.picture');
+        if (!picture || !bgContainer.contains(picture)) return;
+
+        // Remove 'selected' class from previously selected picture
+        if (selectedPicture && selectedPicture !== picture) {
+            selectedPicture.classList.remove('selected');
+        }
+
+        // Toggle current picture selection
+        if (picture.classList.contains('selected')) {
+            picture.classList.remove('selected');
+            selectedPicture = null;
+        } else {
+            picture.classList.add('selected');
+            selectedPicture = picture;
+        }
+    });
+
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', () => {
             if (selectedPicture) {
-
-                const srcText = selectedPicture.getElementsByTagName('img')[0];
-                const srcAlt = srcText.alt;
-                console.log("fetch post: ", srcAlt);
-                
+                const img = selectedPicture.querySelector('img');
+                const srcAlt = img?.alt;
+                console.log("fetch post:", srcAlt);
                 Fetch_post_bg_path(srcAlt);
-
             } else {
-                showError("You have not selected picture. Please select a picture.", 'red');
-                
+                showError("You have not selected a picture. Please select one.", 'red');
             }
         });
-};
+    }
+}
+
+
+// function delete_bg_image() {
+//     const bgContainer = document.getElementById('bg_images');
+
+//     if (!bgContainer) return;
+
+//     bgContainer.addEventListener('click', function(event) {
+//         // DELETE button clicked
+//         if (event.target.classList.contains('delete-btn')) {
+//             event.stopPropagation(); // Prevent event bubbling
+//             const pictureDiv = event.target.closest('.picture');
+//             if (!pictureDiv) return;
+
+//             const imageId = pictureDiv.dataset.imageId;
+//             const imagePath = pictureDiv.querySelector('img').src;
+
+//             if (confirm("Are you sure you want to delete this background image?")) {
+//                 showLoadingSpinner();
+                
+//                 fetch(`/delete-background/${imageId}/`, {
+//                     method: 'POST',
+//                     headers: {
+//                         'X-CSRFToken': getCookie('csrftoken'),
+//                         'Content-Type': 'application/json'
+//                     },
+//                     body: JSON.stringify({
+//                         image_path: imagePath
+//                     })
+//                 })
+//                 .then(response => {
+//                     hideLoadingSpinner();
+//                     if (response.ok) {
+//                         pictureDiv.remove(); // Remove from DOM
+//                         showError("Background image deleted successfully", "green");
+//                     } else {
+//                         return response.json().then(err => {
+//                             throw new Error(err.error || 'Failed to delete image');
+//                         });
+//                     }
+//                 })
+//                 .catch(err => {
+//                     hideLoadingSpinner();
+//                     console.error("Error deleting image:", err);
+//                     showError(err.message || "Error deleting image", "red");
+//                 });
+//             }
+//         }
+//     });
+
+//     // CSRF token helper function
+//     function getCookie(name) {
+//         let cookieValue = null;
+//         if (document.cookie && document.cookie !== '') {
+//             const cookies = document.cookie.split(';');
+//             for (let i = 0; i < cookies.length; i++) {
+//                 const cookie = cookies[i].trim();
+//                 if (cookie.startsWith(name + '=')) {
+//                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+//                     break;
+//                 }
+//             }
+//         }
+//         return cookieValue;
+//     }
+// }
+
+
+function delete_bg_image() {
+    const bgContainer = document.getElementById('bg_images');
+    if (!bgContainer) return;
+
+    // Modal elements
+    const modal = document.getElementById('confirmationModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const confirmBtn = document.getElementById('confirmDelete');
+    const cancelBtn = document.getElementById('cancelDelete');
+
+    // Variables to store the current deletion context
+    let currentPictureDiv = null;
+    let currentImageId = null;
+    let currentImagePath = null;
+
+    bgContainer.addEventListener('click', function(event) {
+        if (event.target.classList.contains('delete-btn')) {
+            event.stopPropagation();
+            currentPictureDiv = event.target.closest('.picture');
+            if (!currentPictureDiv) return;
+
+            currentImageId = currentPictureDiv.dataset.imageId;
+            currentImagePath = currentPictureDiv.querySelector('img').src;
+
+            // Show the modal
+            modalMessage.textContent = "Are you sure you want to delete this background image?";
+            modal.classList.remove('hidden');
+        }
+    });
+
+    // Confirm deletion
+    confirmBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+        if (currentPictureDiv) {
+            showLoadingSpinner();
+            
+            fetch(`/delete-background/${currentImageId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    image_path: currentImagePath
+                })
+            })
+            .then(response => {
+                hideLoadingSpinner();
+                if (response.ok) {
+                    currentPictureDiv.remove();
+                    showError("Background image deleted successfully", "green");
+                } else {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to delete image');
+                    });
+                }
+            })
+            .catch(err => {
+                hideLoadingSpinner();
+                console.error("Error deleting image:", err);
+                showError(err.message || "Error deleting image", "red");
+            });
+        }
+    });
+
+    // Cancel deletion
+    cancelBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+        // Reset current deletion context
+        currentPictureDiv = null;
+        currentImageId = null;
+        currentImagePath = null;
+    });
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+}
+
+
 
 function Fetch_post_bg_path(textData) {
 

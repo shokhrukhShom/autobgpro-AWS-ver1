@@ -9,6 +9,7 @@
    /* No Container for the layout */
    #no_container{
     display: flex;
+
   }
   
   /* Left Side: Scrollable Canvases */

@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="{% static 'css/canvasStyle.css' %}">
     <link rel="stylesheet" href="{% static 'css/canvas-selection.css' %}">
     <link rel="stylesheet" href="{% static 'css/text_edit.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     
 
 </head>
@@ -72,8 +73,8 @@
     </div>
 
     <div id="main_preview" style="display: block;">
-        <h1>Main Preview</h1>
         <button id="saveChanges" onclick="saveChanges()"> Save Changes</button>
+        <h1>Preview</h1>
     </div>
 
     <div  style="display:none ;"> <!-- Preview for Edit TODO -->
@@ -108,16 +109,37 @@
 
     <div id="no_container" >
         <!-- Main Preview of Canvases -->
-        <div id="rmbg_images" class="canvas-container" style="display: block;"> 
-            {% for rembg_path in sorted_rembg_files_path %}
-                        <span class="clickable-image canvas-item canvas-wrapper" data-path="{{ rembg_path }}">
-                            <canvas class="rembg-canvas"  style=" border: 1px solid #ccc; box-shadow: none;"></canvas>
-                            <img src="{{ rembg_path}}" alt="image"  class="png-img" data-path="{{ rembg_path }}"
-                            style="display:none; width: 500px;" /><!-- getting image src with data-path on Canvases-->  
-                            <div class="checkmark" style="display: none;">✔</div> <!-- Checkmark -->
-                        </span> 
-            {% endfor %} 
-        </div>
+        {%if sorted_rembg_files_path%}
+            <div id="rmbg_images" class="canvas-container" style="display: block;"> 
+                {% for rembg_path in sorted_rembg_files_path %}
+                            <span class="clickable-image canvas-item canvas-wrapper" data-path="{{ rembg_path }}">
+                                <canvas class="rembg-canvas"  style=" border: 1px solid #ccc; box-shadow: none;"></canvas>
+                                <img src="{{ rembg_path}}" alt="image"  class="png-img" data-path="{{ rembg_path }}"
+                                style="display:none; width: 500px;" /><!-- getting image src with data-path on Canvases-->  
+                                <div class="checkmark" style="display: none;">✔</div> <!-- Checkmark -->
+                            </span>
+                {% endfor %} 
+            </div>
+        {% else %}
+             <div style="margin: 100px auto; text-align: center;">
+                    <p style="font-size: 1.4rem; color: #333; margin-bottom: 30px;">
+                       Please upload an image to begin.
+                    </p>
+                    <a href="{% url 'uploadImg' %}" 
+                    style="background-color: #1b5e95;
+                            color: white;
+                            padding: 14px 28px;
+                            font-size: 1.2rem;
+                            font-weight: 600;
+                            text-decoration: none;
+                            border-radius: 8px;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                            transition: background-color 0.3s ease;">
+                        🚀 CLICK HERE TO GET STARTED
+                    </a>
+                </div>
+
+        {% endif %}
 
         <!-- Text Edit Right Side: Static Content -->
         <div id="static-content" style="display: none;">
@@ -229,6 +251,102 @@
         
        <!--"Background insert" pictures -->
         <h1>Choose your backgrond</h1>
+
+        <hr>
+        <!-- templates/upload_background.html -->
+        <div id="upload_your_bg" style="cursor:pointer;">
+            <label for="bgUpload" class="custom-upload" style="color:#7794aa; cursor:pointer;"> <i class="fa fa-upload"></i><u>Upload your background </u> </label>
+            <input type="file" id="bgUpload" accept="image/*" multiple style="display: none;"/>
+            <br>
+            <br>
+            <!-- Preview for uploaded bg image-->
+        
+            <div class="container">
+                <div class="image-grid">
+                    {% for bg_path in user_backgrounds %}
+                    <div class="picture">
+                        <img src="{{ bg_path }}" alt="{{ bg_path }}">
+                        <div class="checkmark">✔</div>
+                        <button class="delete-btn" style="color: rgb(212, 143, 143); background:white; border:aquamarine; cursor:pointer;">X</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Handling deletion of user BG image-->
+            <!-- Confirmation Modal -->
+            <div id="confirmationModal" class="modal hidden">
+            <div class="modal-content">
+                <p id="modalMessage">Are you sure you want to delete this background image?</p>
+                <div class="modal-buttons">
+                <button id="confirmDelete" class="btn btn-danger">Delete</button>
+                <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+            </div>
+            <!-- END Handling deletion of user BG image-->
+
+            <script>
+            document.getElementById('bgUpload').addEventListener('change', function () {
+                const files = this.files;
+                const container = document.querySelector('.image-grid');
+
+               // Loop over each selected file
+                Array.from(files).forEach(file => {
+                    const formData = new FormData();
+                    formData.append('image', file);
+
+                    fetch('/upload-background/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': getCSRFToken(), // protect against CSRF
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.url) {
+                            // Create <div class="picture"> element
+                            const div = document.createElement('div');
+                            div.className = 'picture';
+                           
+
+                            const img = document.createElement('img');
+                            img.src = data.url;
+                            img.alt = data.url;
+
+                            const checkmark = document.createElement('div');
+                            checkmark.className = 'checkmark';
+                            checkmark.textContent = '✔';
+
+                            const delete_btn = document.createElement('button')
+                            delete_btn.className = 'delete-btn';
+                            delete_btn.textContent  = 'X';
+                            delete_btn.style.color = 'rgb(212, 143, 143)';
+                            delete_btn.style.background = 'white';
+                            delete_btn.style.border = 'aquamarine';
+                            delete_btn.style.cursor = 'pointer';
+
+                            div.appendChild(img);
+                            div.appendChild(checkmark);
+                            div.appendChild(delete_btn);
+                            container.appendChild(div); // ✅ Add new image to the container
+                            
+                        }
+                    });
+                });
+
+                function getCSRFToken() {
+                    const cookieValue = document.cookie
+                        .split('; ')
+                        .find(row => row.startsWith('csrftoken='));
+                    return cookieValue ? cookieValue.split('=')[1] : '';
+                }
+            });
+            </script>
+        </div>    
+        <!-- END templates/upload_background.html -->
+        <hr>
+        
         <div class="container">
             <div class="image-grid">
                 {% for bg_path in bg_img_paths %}
@@ -237,7 +355,31 @@
                         </div> 
                 {% endfor %}
             </div>
-        </div>  
+        </div>
+        <hr>
+        <h1>Garage</h1>
+        <div class="container">
+            <div class="image-grid">
+                {% for bg_path in bg_img_paths_garage %}
+                        <div class="picture"><img src={{bg_path}} alt={{bg_path}} /> 
+                            <div class="checkmark">✔</div>
+                        </div> 
+                {% endfor %}
+            </div>
+        </div>
+
+        <hr>
+        <h1>Road</h1>
+        <div class="container">
+            <div class="image-grid">
+                {% for bg_path in bg_img_paths_road %}
+                        <div class="picture"><img src={{bg_path}} alt={{bg_path}} /> 
+                            <div class="checkmark">✔</div>
+                        </div> 
+                {% endfor %}
+            </div>
+        </div>
+        <hr>
     </div>  
 
     <!--Error message Start-->
@@ -387,7 +529,7 @@
             .then(response => response.json())
             .then(data => {
                 console.log("Response from server:", data);
-                showError("Shadow Setting are saved", "green")
+                showError("Saved", "green")
              
             })
             .catch(error => {

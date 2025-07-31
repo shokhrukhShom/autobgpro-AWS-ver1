@@ -18,8 +18,7 @@ from django.core.files.base import ContentFile
 import re
 import time
 from django.conf import settings
-
-
+import uuid
 
 def custom_404_view(request, exception):
     return redirect('login')  # Assuming 'login' is the name of your login URL pattern
@@ -185,8 +184,53 @@ def uploadImg(request):
 def rmbg(request):
     # getting latest post_id by current user
     latest_upload = Uploaded_Pictures.objects.filter(author = request.user).order_by('-id').first()
-    latest_upload_id = latest_upload.id
+    
     user_id = str(request.user.id) # Get the current user
+    
+    # if user has not uploaded images yet
+    if latest_upload:
+        latest_upload_id = latest_upload.id
+    else:
+        bg_img_paths = []
+        # bg_img_templates_path = "media/bg-templates/"
+        bg_img_templates_path = settings.BG_TEMPLATES_ROOT+"/default"
+        
+        for filename in os.listdir(bg_img_templates_path):
+            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                # file_path = os.path.join(bg_img_templates_path, filename)
+                # bg_img_paths.append(file_path)
+                file_path = f"{settings.MEDIA_URL}bg-templates/default/{filename}"
+                bg_img_paths.append(file_path)
+        
+        # Garage Folder BG
+        bg_img_paths_garage = []
+        bg_img_templates_path_garage = settings.BG_TEMPLATES_ROOT+"/garage"        
+        for filename in os.listdir(bg_img_templates_path_garage):
+            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                # file_path = os.path.join(bg_img_templates_path, filename)
+                # bg_img_paths.append(file_path)
+                file_path = f"{settings.MEDIA_URL}bg-templates/garage/{filename}"
+                bg_img_paths_garage.append(file_path)
+        
+        # Road Folder BG        
+        bg_img_paths_road = []
+        bg_img_templates_path_road = settings.BG_TEMPLATES_ROOT+"/road"        
+        for filename in os.listdir(bg_img_templates_path_road):
+            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                # file_path = os.path.join(bg_img_templates_path, filename)
+                # bg_img_paths.append(file_path)
+                file_path = f"{settings.MEDIA_URL}bg-templates/road/{filename}"
+                bg_img_paths_road.append(file_path)        
+        
+        context = {
+            
+            # 'sorted_rembg_files_path': sorted_rembg_files_path,
+            "bg_img_paths" : bg_img_paths,
+            "bg_img_paths_garage": bg_img_paths_garage,
+            "bg_img_paths_road": bg_img_paths_road,
+            }
+        return render(request, "rembgApp/rmbg.html", context)
+
 
     if request.method == "GET":
 
@@ -214,21 +258,54 @@ def rmbg(request):
         #Loop through Background Image Folder (media/bg-templates)
         bg_img_paths = []
         # bg_img_templates_path = "media/bg-templates/"
-        bg_img_templates_path = settings.BG_TEMPLATES_ROOT
+        bg_img_templates_path = settings.BG_TEMPLATES_ROOT+"/default"
         
         for filename in os.listdir(bg_img_templates_path):
             if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
                 # file_path = os.path.join(bg_img_templates_path, filename)
                 # bg_img_paths.append(file_path)
-                file_path = f"{settings.MEDIA_URL}bg-templates/{filename}"
+                file_path = f"{settings.MEDIA_URL}bg-templates/default/{filename}"
                 bg_img_paths.append(file_path)
+        
+        # Garage Folder BG
+        bg_img_paths_garage = []
+        bg_img_templates_path_garage = settings.BG_TEMPLATES_ROOT+"/garage"        
+        for filename in os.listdir(bg_img_templates_path_garage):
+            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                # file_path = os.path.join(bg_img_templates_path, filename)
+                # bg_img_paths.append(file_path)
+                file_path = f"{settings.MEDIA_URL}bg-templates/garage/{filename}"
+                bg_img_paths_garage.append(file_path)
+        
+        # Road Folder BG        
+        bg_img_paths_road = []
+        bg_img_templates_path_road = settings.BG_TEMPLATES_ROOT+"/road"        
+        for filename in os.listdir(bg_img_templates_path_road):
+            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                # file_path = os.path.join(bg_img_templates_path, filename)
+                # bg_img_paths.append(file_path)
+                file_path = f"{settings.MEDIA_URL}bg-templates/road/{filename}"
+                bg_img_paths_road.append(file_path)   
+                
+                
+        # User uploaded background
+        bg_img_paths_user = []
+        bg_img_templates_path_user = os.path.join(settings.MEDIA_ROOT, "images", f"user_id_{user_id}", "user_backgrounds")     
+        for filename in os.listdir(bg_img_templates_path_user):
+            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                # file_path = os.path.join(bg_img_templates_path, filename)
+                # bg_img_paths.append(file_path)
+                file_path = f"{settings.MEDIA_URL}/images/user_id_{user_id}/user_backgrounds/{filename}"
+                bg_img_paths_user.append(file_path)                
         
         context = {
             "latest_upload_id" : latest_upload_id,
             'current_bg' : current_bg,
             'sorted_rembg_files_path': sorted_rembg_files_path,
             "bg_img_paths" : bg_img_paths,
-
+            "bg_img_paths_garage": bg_img_paths_garage,
+            "bg_img_paths_road": bg_img_paths_road,
+            "user_backgrounds": bg_img_paths_user,
             }
         
 
@@ -237,7 +314,6 @@ def rmbg(request):
     
     # inserting background picture
     if request.method == "POST":
-
         
         print("_____Post request processing_______")
         data = json.loads(request.body)
@@ -254,6 +330,89 @@ def rmbg(request):
 
 
 
+@csrf_exempt  # Optional if you handle CSRF token manually in JS
+@login_required
+def upload_background(request):
+    if request.method == 'POST' and request.FILES.get('image'):
+        
+        user_id = str(request.user.id)
+        uploaded_file = request.FILES['image']
+        
+        # Create a unique filename using uuid to avoid overwriting
+        file_ext = os.path.splitext(uploaded_file.name)[1]
+        file_name = f"{uuid.uuid4().hex}{file_ext}"
+        
+        # Define upload path: media/images/user_id_X/user_backgrounds/
+        upload_path = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}','user_backgrounds')
+        os.makedirs(upload_path, exist_ok=True)
+
+        file_path = os.path.join(upload_path, file_name)
+        
+        # Save uploaded image to disk
+        with open(file_path, 'wb+') as f:
+            for chunk in uploaded_file.chunks():
+                f.write(chunk)
+                
+        # Return image URL so frontend can display it
+        file_url = f"{settings.MEDIA_URL}images/user_id_{user_id}/user_backgrounds/{file_name}"
+        return JsonResponse({'url': file_url})
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@login_required
+def background_upload_page(request):
+    user_id = request.user.id
+    user_folder = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', 'user_backgrounds')
+
+    bg_paths = []
+    if os.path.exists(user_folder):
+        for file in os.listdir(user_folder):
+            url_path = f"{settings.MEDIA_URL}images/user_id_{user_id}/user_backgrounds/{file}"
+            bg_paths.append(url_path)
+
+    return render(request, 'upload_background.html', {
+        'user_backgrounds': bg_paths
+    })
+
+@csrf_exempt
+@login_required
+def delete_background(request, image_id):
+    if request.method == 'POST':
+        try:
+            user_id = request.user.id
+            data = json.loads(request.body)
+            image_path = data.get('image_path', '')
+
+            # Extract filename from path safely
+            filename = os.path.basename(image_path)
+            
+            # Build the full file path securely
+            user_folder = os.path.join(
+                settings.MEDIA_ROOT,
+                'images',
+                f'user_id_{user_id}',
+                'user_backgrounds'
+            )
+            
+            # Protect against path traversal
+            safe_path = os.path.normpath(os.path.join(user_folder, filename))
+            if not safe_path.startswith(user_folder):
+                return JsonResponse({'error': 'Invalid file path'}, status=400)
+
+            if os.path.exists(safe_path):
+                os.remove(safe_path)
+                return JsonResponse({'success': True})
+            else:
+                return JsonResponse({'error': 'File does not exist'}, status=404)
+                
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+ 
+    
 # Saving images from uploadImg.html
 @csrf_exempt
 @login_required
