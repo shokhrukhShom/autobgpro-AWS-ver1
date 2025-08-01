@@ -11,6 +11,22 @@ class User(AbstractUser):
     def __str__(self):
         return f" Username: {self.username} | Email: {self.email} | Password: {self.password}"
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    subscription_status = models.CharField(max_length=20, default='inactive')
+    plan_type = models.CharField(max_length=20, choices=[('starter', 'Starter'), ('pro', 'Pro')], null=True)
+    images_used_this_month = models.IntegerField(default=0)
+    monthly_image_limit = models.IntegerField(default=0)
+    current_period_end = models.DateTimeField(null=True, blank=True)
+    current_period_start = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name_plural = "User Profile"
+        
+    def __str__(self):
+        return f"upload User Profile: {self.user.username} | Status: {self.subscription_status}"
+    
 # Create your models here.
 class Uploaded_Pictures(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)

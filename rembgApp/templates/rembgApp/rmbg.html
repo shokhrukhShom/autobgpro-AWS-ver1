@@ -22,12 +22,61 @@
 
 </head>
 <body>
-    {% if user.is_authenticated %}
+    <!-- {% if user.is_authenticated %}
         <span id="latest_upload_id" style="float: left; overflow: hidden; position: relative; font-size: 11px;">Project No.{{latest_upload_id}} </span>
         <span style="float: right;"><a href="{% url 'logout' %}">Sign Out</a> | User: <strong>{{ user.username }}</strong> and ID <strong> {{user.id}} </strong>.</span> 
+        <a href="{% url 'billing_portal' %}" class="btn btn-primary"> Manage Subscription </a>
     {% endif %}
-    <br>
-    <hr style="margin-top: 30px; margin-bottom: 2px;">
+    -->
+    {% if user.is_authenticated %}
+        <div class="user-nav">
+            <!-- Debug info (left side) -->
+            <div class="debug-info">
+                <span id="latest_upload_id">Project No.{{latest_upload_id}}</span>
+                <span> • User: <strong>{{ user.username }}</strong> (ID: <strong>{{user.id}}</strong>)</span>
+            </div>
+            
+            <!-- Navigation buttons (right side) -->
+            <div class="nav-actions">
+                <!-- Recent Projects button -->
+                <a href="#" class="nav-btn nav-btn-secondary">
+                    <i class="fa fa-history"></i>Recent Projects
+                </a>
+                
+                <!-- Account dropdown -->
+                <div class="account-dropdown">
+                    <button class="nav-btn nav-btn-primary">
+                        <i class="fa fa-user-circle"></i>{{ user.username }}
+                    </button>
+                    <div class="account-dropdown-content">
+                        <div class="dropdown-header">
+                            <div id="usage-display">
+                                sample - This Month: 3/500 images
+                            </div>
+                        </div>
+                        <div class="dropdown-items-container">
+                            <a href="{% url 'billing_portal' %}" class="dropdown-item">
+                                <i class="fa fa-credit-card"></i>Manage Subscription
+                            </a>
+                            <a href="{% url 'logout' %}" class="dropdown-item">
+                                <i class="fa fa-sign-out"></i>Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if messages %}
+    <div class="alert alert-danger">
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+   
         
     {% if message %}
     <div style="color: red;">{{ message }}</div>

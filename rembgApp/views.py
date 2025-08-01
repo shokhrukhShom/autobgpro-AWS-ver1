@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt 
-from .models import User, Uploaded_Pictures, Metadata, Template
+from .models import User, Uploaded_Pictures, Metadata, Template, UserProfile
 import json
 from rembg import remove
 from PIL import Image
@@ -19,6 +19,15 @@ import re
 import time
 from django.conf import settings
 import uuid
+import stripe
+import re
+from django.contrib.auth import views as auth_views
+from django.core.mail import send_mail
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from django.utils import timezone
+from django.utils.timezone import make_aware
+
 
 def custom_404_view(request, exception):
     return redirect('login')  # Assuming 'login' is the name of your login URL pattern
@@ -58,37 +67,271 @@ def logout_view(request):
     return HttpResponseRedirect(reverse("/"))
 
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
 def register(request):
     if request.method == "POST":
-        username = request.POST["username"]
-        email = request.POST["email"]
-
-        # Ensure password matches confirmation
-        password = request.POST["password"]
-        confirmation = request.POST["confirmation"]
+        email = request.POST.get("email")
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        confirmation = request.POST.get("confirmation")
+        # Get selected plan            
+        plan = request.POST.get("plan")
+        
+        
         if password != confirmation:
             return render(request, "rembgApp/register.html", {
-                "message": "Passwords must match."
+                "message": "Sorry, passwords did not match. Please, notice Password and Confirm Password must match.",
+                "form_data":{
+                    "username" : username,
+                    "email" : email,
+                    "plan" : plan,
+                    "focus": "password"
+                }
+            })
+            
+         # Check if username or email is taken
+        if User.objects.filter(username=username).exists():
+            return render(request, "rembgApp/register.html", {
+                "message": "Sorry, Username \""+ username +"\" is already taken. Please, choose different username.",
+                "form_data" : {
+                    "email" : email,
+                    "plan" : plan,
+                    "password" : password,
+                    "focus": "username"
+                }
+            })
+            
+        if User.objects.filter(email=email).exists():
+            return render(request, "rembgApp/register.html", {
+                "message": "Sorry, An account with this email \""+ email +"\" already exists. Please, click forgot password. Or use different email",
+                "form_data" : {
+                    "username" : username,
+                    "plan" : plan,
+                    "password" : password,
+                    "focus": "email"
+                }
+            })
+            
+        if len(password) < 1:
+            return render(request, "rembgApp/register.html", {
+                "message": "Sorry, password must be at least 8 characters. Please, create longer password",
+                "form_data": {
+                    "username": username,
+                    "email": email,
+                    "plan": plan,
+                    "focus": "password"
+                }
+            })    
+        
+        if " " in username or not re.match(r'^\w+$', username):
+            return render(request, "rembgApp/register.html", {
+                "message": "Sorry, username must be one word with no spaces. Please, create a username with no space",
+                "form_data": {
+                    "username": username,
+                    "email": email,
+                    "plan": plan,
+                    "focus": "username"
+                }
+            })    
+            
+        print("PLAN: ",plan)
+        
+        
+
+        try:
+            
+            # Assign the plan to correct PRICE_ID
+            if plan == "starter":
+                price_id = settings.STRIPE_PRICE_ID_STARTER
+            elif plan == "pro":
+                price_id = settings.STRIPE_PRICE_ID_PRO
+            else:
+                return render(request, "rembgApp/register.html", {
+                    "message": "Invalid plan selected."
+                })
+                
+            # Create Stripe Checkout Session
+            session = stripe.checkout.Session.create(
+                payment_method_types=["card"],
+                mode="subscription",
+                line_items=[{
+                    "price": price_id,
+                    "quantity": 1,
+                }],
+                customer_email=email,
+                # success_url=request.build_absolute_uri("/register/success?session_id={CHECKOUT_SESSION_ID}"),
+                success_url = f"http://{request.get_host()}/register/success?session_id={{CHECKOUT_SESSION_ID}}",
+
+                cancel_url=request.build_absolute_uri("/register/cancel"),
+            )
+            
+            
+            # Temporarily store registration data in session
+            request.session["pending_user"] = {
+                "username": username,
+                "email": email,
+                "password": password,
+                "plan": plan,
+            }
+            
+            return redirect(session.url)
+
+        except Exception as e:
+            return render(request, "rembgApp/register.html", {
+                "message": f"Error creating Stripe session: {str(e)}"
             })
 
-        # Attempt to create new user
-        try:
-            user = User.objects.create_user(username, email, password)
-            user.save()
-        except IntegrityError:
-            return render(request, "rembgApp/register.html", {
-                "message": "Username already taken."
-            })
+    return render(request, "rembgApp/register.html")
+
+
+
+def register_success(request):
+    try:
+        session_id = request.GET.get("session_id")
+        if not session_id or "pending_user" not in request.session:
+            return redirect("/register")
+        
+        session = stripe.checkout.Session.retrieve(session_id)
+        pending = request.session.pop("pending_user")
+        plan_type = pending.get("plan", "")
+        
+        
+        
+        print("Pending user session:", pending)
+        print("userprofile plan:", plan_type)
+        
+        # Create user
+        user = User.objects.create_user(
+            username=pending["username"],
+            email=pending["email"],
+            password=pending["password"]
+        )
+        
+        
+        
+        
+        now_utc = timezone.now()  
+        current_period_start = now_utc.date()
+        current_period_end = current_period_start + relativedelta(months=1)
+
+
+        # Create profile with actual plan details
+        UserProfile.objects.create(
+            user=user,
+            stripe_customer_id=session.customer,
+            plan_type=plan_type,
+            monthly_image_limit=1000 if plan_type == 'pro' else 500,
+            subscription_status='active',
+            current_period_start=current_period_start,
+            current_period_end=current_period_end,
+            images_used_this_month=0
+        )
+        
+        
+        
         login(request, user)
-        return HttpResponseRedirect(reverse("rmbg"))
-    else:
-        return render(request, "rembgApp/register.html")
+        return render(request, "rembgApp/register_success.html")
+        
+    except Exception as e:
+        print(f"Registration error: {str(e)}")
+        return redirect("/register")
+
+
+def register_cancel(request):
+    return render(request, "rembgApp/register_cancel.html")    
+
+def forgot_username(request):
+    message = None
+
+    if request.method == "POST":
+        email = request.POST.get("email")
+        users = User.objects.filter(email=email)
+
+        if users.exists():
+            usernames = ", ".join(users.values_list("username", flat=True))
+            send_mail(
+                subject="Your AutoBG Pro Username",
+                message=f"Your username(s): {usernames}",
+                from_email="noreply@autobgpro.com",
+                recipient_list=[email],
+            )
+        # Always show same message for security
+        message = "If that email exists in our system, your username has been sent. Thank you."
+
+    return render(request, "rembgApp/forgot_username.html", {"message": message})
+
+
 
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("login"))
 
 
+
+# @login_required
+# def billing_portal(request):
+#     session = stripe.billing_portal.Session.create(
+#         customer=request.user.userprofile.stripe_customer_id,  # You must save Stripe customer ID when user subscribes
+#         return_url="http://127.0.0.1:8000/rmbg",  # Where user goes after managing subscription
+#     )
+#     return redirect(session.url)
+
+@login_required
+def billing_portal(request):
+    try:
+        # Get or create profile
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        
+        if not profile.stripe_customer_id:
+            # This should never happen for new users, but just in case:
+            raise ValueError("No Stripe customer ID - please contact support")
+        
+        session = stripe.billing_portal.Session.create(
+            customer=profile.stripe_customer_id,
+            return_url=request.build_absolute_uri('/rmbg')
+        )
+        return redirect(session.url)
+        
+    except Exception as e:
+        from django.contrib import messages
+        messages.error(request, "Could not access billing portal. Please contact support.")
+        return redirect('/rmbg')
+    
+    
+
+@login_required
+def track_image_usage(request):
+    profile = request.user.userprofile
+    if profile.images_used_this_month >= profile.monthly_image_limit:
+        return JsonResponse({'error': 'Monthly limit exceeded'}, status=403)
+    
+    profile.images_used_this_month += 1
+    profile.save()
+    return JsonResponse({'success': True}) 
+    
+    
+@login_required
+def api_usage(request):
+    profile = request.user.userprofile
+    
+    # Set default reset date to next month if not set
+    reset_date = profile.current_period_end
+    if not reset_date:
+        from datetime import datetime, timedelta
+        reset_date = datetime.now() + timedelta(days=30)
+    
+    return JsonResponse({
+        'used': profile.images_used_this_month,
+        'limit': profile.monthly_image_limit,
+        'reset_date': reset_date.strftime('%b %-d'),
+        'plan': profile.plan_type or 'error, plan not found'  # Fallback to starter
+    })
+    
+    
+    
+
+"""
 #  This view mainPage not being used. TODO: delete/remove also mainPage.html 
 # @login_required
 # def mainPage(request):
@@ -167,7 +410,10 @@ def logout_view(request):
         
 #         return redirect('mainPage') 
 #         #return render(request, 'rembgApp/mainPage.html')
-  
+"""
+
+
+
 @csrf_exempt
 @login_required
 def uploadImg(request):
@@ -290,7 +536,9 @@ def rmbg(request):
                 
         # User uploaded background
         bg_img_paths_user = []
-        bg_img_templates_path_user = os.path.join(settings.MEDIA_ROOT, "images", f"user_id_{user_id}", "user_backgrounds")     
+        bg_img_templates_path_user = os.path.join(settings.MEDIA_ROOT, "images", f"user_id_{user_id}", "user_backgrounds")
+        # Create the folder if it doesn't exist
+        os.makedirs(bg_img_templates_path_user, exist_ok=True)     
         for filename in os.listdir(bg_img_templates_path_user):
             if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
                 # file_path = os.path.join(bg_img_templates_path, filename)
