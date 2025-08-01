@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', function() {
     textBtn;
     setupTemplateCreation();
     delete_bg_image();
+    accountDropdown();
+    getUsage();
+
 })
 
 
@@ -782,3 +785,61 @@ function getCSRFToken() {
 }
 
 // Create a Template END -------------------
+
+
+// function for hover dropdown for account in top nav
+
+function accountDropdown() {
+    const accountDropdown = document.querySelector('.account-dropdown');
+    const dropdownContent = document.querySelector('.account-dropdown-content');
+    
+    if (accountDropdown) {
+        // Toggle dropdown on click
+        accountDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.classList.toggle('active');
+        });
+        
+        // Close when clicking elsewhere
+        document.addEventListener('click', function(e) {
+            if (!accountDropdown.contains(e.target)) {
+                accountDropdown.classList.remove('active');
+            }
+        });
+        
+        // Prevent dropdown from closing when clicking inside it
+        dropdownContent.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+}
+
+
+// Now you can query your own DB instead of Stripe
+async function getUsage() {
+    try {
+        console.log("getUsage started!!!")
+        const response = await fetch('/api/usage/');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load usage data');
+        }
+        
+        const data = await response.json();
+        console.log(data);
+        const display = document.getElementById('usage-display');
+        if (display) {
+            display.innerHTML = `
+                <strong>Plan:</strong> ${data.plan}<br>
+                <strong>Usage:</strong> ${data.used}/${data.limit} images<br>
+                <strong>Resets:</strong> ${data.reset_date}
+            `;
+        }
+    } catch (error) {
+        console.error('Usage error:', error);
+        const display = document.getElementById('usage-display');
+        if (display) {
+            display.innerHTML = 'Usage data unavailable';
+        }
+    }
+}
