@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
-from . import webhooks
+from rembgApp import webhooks
 
 
 from django.urls import path
@@ -47,6 +47,7 @@ urlpatterns = [
     path("billing_portal", views.billing_portal, name="billing_portal"),
     path('webhooks/stripe/', webhooks.stripe_webhook, name='stripe_webhook'),
     path('api/usage/', views.api_usage, name='api_usage'),
+    path('test_renewal/', views.test_renewal, name='test_renewal'),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
