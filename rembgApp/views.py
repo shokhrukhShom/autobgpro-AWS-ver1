@@ -313,6 +313,7 @@ def track_image_usage(request):
     
 @login_required
 def api_usage(request):
+    
     profile = request.user.userprofile
     
     # Set default reset date to next month if not set
@@ -413,6 +414,71 @@ def api_usage(request):
 """
 
 
+
+# TEST -----------
+
+
+# views.py
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from rembgApp.models import UserProfile
+
+@csrf_exempt  # Temporarily disable CSRF for testing
+@login_required
+def test_renewal(request):
+    try:
+        now = datetime.now()
+        test_data = {
+            "id": "sub_1RrQyzCaEGsYhfdv8itJ11nW",
+            "object": "subscription",
+            "customer": "cus_Sn109L11STRr3n",
+            "status": "active",
+            "current_period_start": int((now - timedelta(days=30)).timestamp()),
+            "current_period_end": int(now.timestamp()),
+            "items": {
+                "data": [{
+                    "id": "si_test123",
+                    "object": "subscription_item",
+                    "price": {
+                        "id": "price_1RqoTCCaEGsYhfdvPijlMlir",
+                        "object": "price"
+                    },
+                    "quantity": 1
+                }]
+            }
+        }
+
+        # Get or create user profile
+        profile, created = UserProfile.objects.get_or_create(
+            stripe_customer_id="cus_Sn109L11STRr3n",
+            defaults={
+                "user": request.user,
+                "plan_type": "starter",
+                "monthly_image_limit": 500,
+                "images_used_this_month": 300,
+                "current_period_end": timezone.now() - timedelta(days=1)
+            }
+        )
+
+        from .webhooks import handle_subscription_update
+        handle_subscription_update(test_data)
+        
+        profile.refresh_from_db()
+        return JsonResponse({
+            "status": "success",
+            "images_used": profile.images_used_this_month,
+            "period_end": profile.current_period_end.strftime('%Y-%m-%d')
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    
+    
+    
+# END Test-----------------
 
 @csrf_exempt
 @login_required
@@ -666,6 +732,18 @@ def delete_background(request, image_id):
 @login_required
 def imageProcessing(request): #API Processing
     if request.method == "POST":
+        
+        # First check usage limits before processing # New code
+        profile = request.user.userprofile
+        files_count = len(request.FILES.getlist('images'))
+        
+        if profile.images_used_this_month + files_count > profile.monthly_image_limit:
+            return JsonResponse({
+                "error": f"You've reached your monthly limit of {profile.monthly_image_limit} images. Upgrade your plan or wait until next month."
+            }, status=403)
+        
+        # End New code  
+            
         user_id = str(request.user.id) # save user id in user_id variable
         images = request.FILES.getlist('images')  # 'images' should match the key in FormData
         
@@ -817,6 +895,19 @@ def imageProcessing(request): #API Processing
         
 
         print("_______SUCCESS__________")
+        
+        
+        print("Current number of images: ", counter)
+        # New CODE for tracking
+        # After successful processing, track the usage
+        try:
+            profile.images_used_this_month += counter
+            profile.save()
+        except Exception as e:
+            print(f"Error tracking image usage: {str(e)}")
+            # Don't fail the request, just log the error
+        # end NEw
+        
           
 
         return JsonResponse({"Backend message": "image added",
