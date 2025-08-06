@@ -60,6 +60,7 @@ FILES=(
     # html templates
     "rembgApp/templates/rembgApp/uploadImg.html"
     "rembgApp/templates/rembgApp/canvasPage.html"
+    "rembgApp/templates/rembgApp/recentProject.html"
     
 
 

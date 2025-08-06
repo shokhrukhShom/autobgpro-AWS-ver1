@@ -1720,3 +1720,102 @@ def delete_logo(request):
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+
+
+
+# Recent Projects
+
+from django.core.paginator import Paginator
+from django.http import JsonResponse
+import os
+from django.conf import settings
+from django.http import HttpResponse
+import zipfile
+import io
+
+@login_required
+def recent_projects(request):
+    # Get user's projects ordered by creation date
+    projects = Uploaded_Pictures.objects.filter(author=request.user).order_by('-createdDate')
+    
+    # Pagination
+    offset = int(request.GET.get('offset', 0))
+    limit = int(request.GET.get('limit', 10))
+    paginator = Paginator(projects, limit)
+    page = (offset // limit) + 1
+    page_projects = paginator.get_page(page)
+    
+    # Prepare project data
+    project_data = []
+    for project in page_projects:
+        # Get image paths for this project
+        user_id = project.author.id
+        project_id = project.id
+        cropped_path = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', f'post_id_{project_id}', 'cropped')
+        
+        images = []
+        if os.path.exists(cropped_path):
+            for filename in sorted(os.listdir(cropped_path)):
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    file_path = os.path.join(settings.MEDIA_URL, 'images', f'user_id_{user_id}', f'post_id_{project_id}', 'cropped', filename)
+                    images.append(file_path)
+        
+        project_data.append({
+            'id': project.id,
+            'createdDate': project.createdDate.strftime("%Y-%m-%d %H:%M:%S"),
+            'images': images[:5]  # Show max 5 thumbnails
+        })
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'projects': project_data,
+            'has_more': page_projects.has_next()
+        })
+    
+    return render(request, 'rembgApp/recentProject.html', {
+        'recent_projects': project_data,
+        'offset': offset,
+        'limit': limit,
+        'has_more': page_projects.has_next()
+    })
+
+@login_required
+def download_project(request, project_id):
+    try:
+        # Verify the project belongs to the user
+        project = Uploaded_Pictures.objects.get(id=project_id, author=request.user)
+        
+        # Create a zip file in memory
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # Add cropped images
+            user_id = request.user.id
+            cropped_path = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', f'post_id_{project_id}', 'cropped')
+            
+            if os.path.exists(cropped_path):
+                for filename in os.listdir(cropped_path):
+                    if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                        file_path = os.path.join(cropped_path, filename)
+                        zip_file.write(file_path, f'images/{filename}')
+            
+            # Add metadata if exists
+            metadata = Metadata.objects.filter(project=project).first()
+            if metadata:
+                metadata_content = f"""Project ID: {project_id}
+Created: {project.createdDate}
+Background: {metadata.background_path or 'None'}
+Header: Height={metadata.header_height}, Color={metadata.header_color}
+Footer: Height={metadata.footer_height}, Color={metadata.footer_color}
+"""
+                zip_file.writestr('metadata.txt', metadata_content)
+        
+        # Prepare response
+        response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+        response['Content-Disposition'] = f'attachment; filename="project_{project_id}_images.zip"'
+        return response
+        
+    except Uploaded_Pictures.DoesNotExist:
+        return HttpResponse('Project not found', status=404)
+    except Exception as e:
+        return HttpResponse(f'Error creating zip file: {str(e)}', status=500)
