@@ -1,185 +1,178 @@
 function download_zip() {
     const canvases = document.querySelectorAll(".rembg-canvas");
     const images = document.querySelectorAll(".png-img");
-
-    const zip = new JSZip();  // Create a new zip file
+    const zip = new JSZip();
 
     console.log('download btn clicked - download_zip');
 
-    canvases.forEach((canvas, index) => {
-        let imageScale, 
-            imageX, 
-            imageY, 
-            shadowOffsetX, 
-            shadowOffsetY, 
-            shadowBlur, 
-            imagePath;
-            
+    // Track completed canvases
+    let completedCanvases = 0;
 
+    canvases.forEach((canvas, index) => {
         let finalMetadataArray = Array.from(metadataMap.values());
         let metadata = finalMetadataArray[index];
+        console.log("Metadata download_zip: ", metadata);
 
-        if (metadata) {
-            imageScale = metadata.imageScale;
-            imageX = metadata.imageX;
-            imageY = metadata.imageY;
-            shadowOffsetX = metadata.shadowOffsetX;
-            shadowOffsetY = metadata.shadowOffsetY;
-            shadowBlur = metadata.shadowBlur;
-            imagePath = metadata.imagePath;
+        if (!metadata) {
+            console.error('No metadata found for canvas', index);
+            return;
         }
+
+        // Extract design data with defaults
+        const designData = metadata.design_data || {};
+        const header = designData.header || { height: 0, color: '#000000' };
+        const footer = designData.footer || { height: 0, color: '#000000' };
+        const texts = designData.texts || [];
+        const logo = {
+            path: designData.logo_path,
+            scale: designData.logo_scale || 1,
+            x: designData.logo_x || 0,
+            y: designData.logo_y || 0
+        };
 
         const visibleCanvasWidth = canvas.width;
         const visibleCanvasHeight = canvas.height;
 
-        // Create a temporary canvas for high-resolution export
+        // Create temporary canvas
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
-
-        // Set temporary canvas dimensions to the original image resolution
         tempCanvas.width = visibleCanvasWidth;
         tempCanvas.height = visibleCanvasHeight;
 
-        // Redraw the background
+        // Load background
         const background = new Image();
+        background.src = currentBg !== "None" ? currentBg : '/media/bg-templates/patform.jpg';
 
-        if (currentBg !== "None") {
-            background.src = currentBg;
-        } else {
-            background.src = '/media/bg-templates/patform.jpg';
-        }
-
-        //Synchronize drawing with background load
         background.onload = () => {
-            // Draw the background image
+            // Draw background
             tempCtx.drawImage(background, 0, 0, visibleCanvasWidth, visibleCanvasHeight);
 
-            // Now load the image (PNG) dynamically for each canvas
+            // Draw header if it exists
+            if (header.height > 0) {
+                tempCtx.fillStyle = header.color;
+                tempCtx.globalAlpha = header.opacity || 1;
+                tempCtx.fillRect(0, 0, visibleCanvasWidth, header.height);
+                tempCtx.globalAlpha = 1;
+            }
+
+            // Load main image
             const img = new Image();
-            img.src = images[index].dataset.path; // Assuming this holds the PNG image path
+            img.src = images[index].dataset.path;
 
             img.onload = () => {
-                // Calculate the scaled PNG dimensions
-                const imgWidth = img.naturalWidth * imageScale;
-                const imgHeight = img.naturalHeight * imageScale;
+                // Calculate scaled dimensions
+                const imgWidth = img.naturalWidth * metadata.imageScale;
+                const imgHeight = img.naturalHeight * metadata.imageScale;
 
-                // Set the shadow properties
+                // Set shadow properties
                 tempCtx.shadowOffsetX = 0;
-                tempCtx.shadowOffsetY = shadowOffsetY;
-                tempCtx.shadowBlur = shadowBlur;
-                tempCtx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                tempCtx.shadowOffsetY = metadata.shadowOffsetY || 0;
+                tempCtx.shadowBlur = metadata.shadowBlur || 0;
+                tempCtx.shadowColor = metadata.shadowColor || 'rgba(0, 0, 0, 0.7)';
 
-
-                // Draw the PNG image on top of the background
+                // Draw main image
                 tempCtx.drawImage(
                     img,
-                    imageX - (imgWidth / 2),
-                    imageY - (imgHeight / 2),
+                    metadata.imageX - (imgWidth / 2),
+                    metadata.imageY - (imgHeight / 2),
                     imgWidth,
                     imgHeight
                 );
 
-                // New Code ---------------------------------------------
-                // Reset shadow properties before drawing other elements
+                // Reset shadow
                 tempCtx.shadowOffsetX = 0;
                 tempCtx.shadowOffsetY = 0;
                 tempCtx.shadowBlur = 0;
                 tempCtx.shadowColor = 'transparent';
 
-                // Draw header if it exists
-                if (metadata.design_data.header.height > 0) {
-                    tempCtx.fillStyle = metadata.design_data.header.color;
-                    tempCtx.fillRect(0, 0, visibleCanvasWidth, metadata.design_data.header.height);
-                }
-
                 // Draw footer if it exists
-                if (metadata.design_data.footer.height > 0) {
-                    tempCtx.fillStyle = metadata.design_data.footer.color;
+                if (footer.height > 0) {
+                    tempCtx.fillStyle = footer.color;
+                    tempCtx.globalAlpha = footer.opacity || 1;
                     tempCtx.fillRect(
                         0, 
-                        visibleCanvasHeight - metadata.design_data.footer.height, 
+                        visibleCanvasHeight - footer.height, 
                         visibleCanvasWidth, 
-                        metadata.design_data.footer.height
+                        footer.height
                     );
+                    tempCtx.globalAlpha = 1;
                 }
 
-                // Draw footer texts if they exist
-                if (metadata.design_data.texts && metadata.design_data.texts.length > 0) {
-                    metadata.design_data.texts.forEach((text) => {
-                        console.log("font family:", text.fontFamily);
+                // Draw texts if they exist
+                texts.forEach((text) => {
+                    tempCtx.font = `${text.fontSize}px ${text.fontFamily || 'Arial'}`;
+                    tempCtx.fillStyle = text.color;
+                    tempCtx.textAlign = text.align || 'center';
+                    tempCtx.fillText(text.content, text.x, text.y);
+                });
+
+                // Handle logo if it exists
+                const handleLogo = () => {
+                    if (logo.path) {
+                        const logoImg = new Image();
+                        logoImg.src = logo.path.currentSrc;
                         
-                        tempCtx.font = `${text.fontSize}px ${text.fontFamily || 'Arial'}`;
-                        tempCtx.fillStyle = text.color;
-                        tempCtx.textAlign = 'center';
-                        tempCtx.fillText(text.content, text.x, text.y);
-                    });
-                }
-
-                // Draw logo if it exists
-                if (metadata.design_data.logo_path) {
-                    const logoImg = new Image();
-                    logoImg.src = metadata.design_data.logo_path;
-                    
-                    logoImg.onload = () => {
-                        tempCtx.save();
-                        tempCtx.translate(metadata.design_data.logo_x, metadata.design_data.logo_y);
-                        tempCtx.scale(metadata.design_data.logo_scale, metadata.design_data.logo_scale);
-                        tempCtx.drawImage(logoImg, 0, 0);
-                        tempCtx.restore();
-
-                        // Convert canvas to base64 PNG and add to zip
-                        const imageData = tempCanvas.toDataURL('image/png', 1.0);
-                        const imageName = `canvas-image-${index + 1}.png`;
-                        zip.file(imageName, imageData.split('base64,')[1], { base64: true });
-
-                        // Check if all images are processed and then trigger download
-                        if (index === canvases.length - 1) {
-                            zip.generateAsync({ type: 'blob' }).then(function(content) {
-                                const link = document.createElement('a');
-                                link.href = URL.createObjectURL(content);
-                                link.download = `images_${Date.now()}.zip`;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                            });
-                        }
-                    };
-
-                } else {
-                    console.log("No logo found for this canvas, proceeding without logo.");
-                    // If no logo, just proceed with the export
-                    // Convert canvas to base64 PNG
-                    const imageData = tempCanvas.toDataURL('image/png', 1.0); // Maximum quality
-
-                    // Add the image to the zip file
-                    const imageName = `canvas-image-${index + 1}.png`; // Unique file name for each image
-                    zip.file(imageName, imageData.split('base64,')[1], { base64: true });
-
-                    // Check if all images are processed and then trigger download
-                    if (index === canvases.length - 1) {
-                        zip.generateAsync({ type: 'blob' }).then(function(content) {
-                            // Download the zip file
-                            const link = document.createElement('a');
-                            link.href = URL.createObjectURL(content);
-                            link.download = `images_${Date.now()}.zip`; // Name of the zip file
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                        });
+                        logoImg.onload = () => {
+                            tempCtx.save();
+                            tempCtx.translate(logo.x, logo.y);
+                            tempCtx.scale(logo.scale, logo.scale);
+                            tempCtx.drawImage(logoImg, 0, 0);
+                            tempCtx.restore();
+                            finalizeCanvas(index);
+                        };
+                        
+                        logoImg.onerror = () => {
+                            console.error('Logo failed to load');
+                            finalizeCanvas(index);
+                        };
+                    } else {
+                        finalizeCanvas(index);
                     }
-                }
+                };
 
-                // End new code ---------------------------------------------
+                // Finalize the canvas and add to zip
+                const finalizeCanvas = (idx) => {
+                    const imageData = tempCanvas.toDataURL('image/png', 1.0);
+                    const imageName = `canvas-image-${idx + 1}.png`;
+                    zip.file(imageName, imageData.split('base64,')[1], { base64: true });
+                    
+                    completedCanvases++;
+                    if (completedCanvases === canvases.length) {
+                        generateZip();
+                    }
+                };
+
+                handleLogo();
             };
 
-            // In case the image fails to load, handle the error
             img.onerror = () => {
-                console.error('Image failed to load');
+                console.error('Main image failed to load');
+                completedCanvases++;
+                if (completedCanvases === canvases.length) {
+                    generateZip();
+                }
             };
         };
+
+        background.onerror = () => {
+            console.error('Background failed to load');
+            completedCanvases++;
+            if (completedCanvases === canvases.length) {
+                generateZip();
+            }
+        };
     });
+
+    function generateZip() {
+        zip.generateAsync({ type: 'blob' }).then(function(content) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = `images_${Date.now()}.zip`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    }
 }
 
-
-// // Export the function
 export { download_zip };
