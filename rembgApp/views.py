@@ -1660,3 +1660,29 @@ def get_available_logos(request):
     
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+
+
+@require_POST
+def delete_logo(request):
+    try:
+        data = json.loads(request.body)
+        logo_path = data.get('logo_path')
+        
+        if not logo_path:
+            return JsonResponse({'error': 'No logo path provided'}, status=400)
+        
+        # Security check - prevent directory traversal
+        if '../' in logo_path or not logo_path.startswith('logos/'):
+            return JsonResponse({'error': 'Invalid logo path'}, status=400)
+        
+        full_path = os.path.join(settings.MEDIA_ROOT, logo_path)
+        
+        if not os.path.exists(full_path):
+            return JsonResponse({'error': 'Logo not found'}, status=404)
+            
+        os.remove(full_path)
+        return JsonResponse({'message': 'Logo deleted successfully'})
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
