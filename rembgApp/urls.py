@@ -51,8 +51,10 @@ urlpatterns = [
     path('test_renewal/', views.test_renewal, name='test_renewal'),
     path('get_available_logos/', views.get_available_logos, name='get_available_logos'),
     path('delete_logo/', views.delete_logo, name='delete_logo'),
-
     path('update_background', views.update_background, name='update_background'), # update bg with template.js template select
+
+    path('recent-projects/', views.recent_projects, name='recent_projects'),
+    path('download-project/<int:project_id>/', views.download_project, name='download_project'),
 
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
