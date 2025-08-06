@@ -533,3 +533,188 @@ canvas {
     } */
 }
 /* End top nav recent projects and account */
+
+/* START template delete x*/
+/* Template delete button styles */
+.template-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.template-content {
+    flex-grow: 1;
+}
+
+.template-delete-btn {
+    color: #ff6b6b;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 0 5px;
+    cursor: pointer;
+}
+
+.template-delete-btn:hover {
+    color: #ff0000;
+}
+
+/* Delete confirmation modal styles */
+.delete-confirmation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.delete-confirmation-modal .modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.delete-confirmation-modal p {
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.delete-confirmation-modal .modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.delete-confirmation-modal button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.delete-confirmation-modal .confirm-delete {
+    background-color: #ff6b6b;
+    color: white;
+}
+
+.delete-confirmation-modal .confirm-delete:hover {
+    background-color: #ff0000;
+}
+
+.delete-confirmation-modal .cancel-delete {
+    background-color: #e0e0e0;
+}
+
+.delete-confirmation-modal .cancel-delete:hover {
+    background-color: #b0b0b0;
+}
+/* END template delete x*/
+
+/* START LOGO selection */
+
+.hidden {
+    display: none !important;
+}
+
+.logo-thumbnail {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.logo-thumbnail:hover {
+    transform: scale(1.05);
+    border-color: #1b5e95;
+}
+
+.selected-logo {
+    border: 2px solid #1b5e95;
+    box-shadow: 0 0 5px rgba(27, 94, 149, 0.5);
+}
+
+
+/* Add to your CSS file */
+.logo-img-container {
+    position: relative;
+    display: inline-block;
+}
+
+.delete-logo-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ff4444;
+    color: white;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.logo-item:hover .delete-logo-btn {
+    opacity: 1;
+}
+
+.delete-confirmation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.delete-confirmation-modal .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.delete-confirmation-modal .modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.delete-confirmation-modal button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.delete-confirmation-modal .confirm-delete {
+    background: #ff4444;
+    color: white;
+}
+
+.delete-confirmation-modal .cancel-delete {
+    background: #ddd;
+}
+
+/* END Logo Selection*/
