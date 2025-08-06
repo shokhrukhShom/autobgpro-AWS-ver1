@@ -48,6 +48,9 @@ urlpatterns = [
     path('webhooks/stripe/', webhooks.stripe_webhook, name='stripe_webhook'),
     path('api/usage/', views.api_usage, name='api_usage'),
     path('test_renewal/', views.test_renewal, name='test_renewal'),
+
+    path('update_background', views.update_background, name='update_background'), # update bg with template.js template select
+
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

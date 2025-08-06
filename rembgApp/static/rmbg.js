@@ -691,12 +691,13 @@ function setupTemplateCreation() {
     const createTemplateBtn = document.getElementById('create-template-btn');
     const templateModal = document.getElementById('template-creation-modal');
     const cancelTemplateBtn = document.getElementById('cancel-template-btn');
-    
+    const checkbox = document.getElementById('include-background');
+
     // Show modal when "Create a Template" is clicked
     createTemplateBtn.addEventListener('click', function() {
         // Reset form
         document.getElementById('template-title').value = '';
-        document.getElementById('include-background').checked = true;
+        //document.getElementById('include-background').checked;
         templateModal.style.display = 'flex';
     });
     
@@ -713,18 +714,19 @@ function setupTemplateCreation() {
             showError("Please enter a template title", "red");
             return;
         }
+        let background_path_update = false;
+        if (checkbox.checked){
+            background_path_update = true;
+            console.log("checkbox checked!!!! : ",background_path_update );
+        }
+
         
-        // Collect template data
-        const templateData = {
-            title: templateTitle,
-            background: document.getElementById('include-background').checked
-        };
         
         // Here you would typically send the templateData to your server
-        console.log("Template saved:", templateData);
+        //console.log("Template saved:", templateData);
         
         // Show success message and close modal
-        showError("Template \"" + templateData.title + "\" saved successefuly!", "green");
+        showError("Template \"" + templateTitle + "\" saved successefuly!", "green");
         
         
         
@@ -738,18 +740,28 @@ function setupTemplateCreation() {
         //     designMetadata: state
         // };
         // Prepare the data structure
-        const logo_path = state.logo.image.currentSrc;
-        const data = {
-            template_name: templateData.title,
-            project_id: project_id,
-            logo_path: logo_path,
-            designMetadata: {
-                header: state.header || {},
-                footer: state.footer || {},
-                logo: state.logo || {}
-            }
-        };
-        console.log("Logo path: ", state.logo.image.currentSrc);
+
+    
+      
+        const logo_path = state.logo.image?.currentSrc || "";
+
+    
+            const data = {
+                template_name: templateTitle,
+                project_id: window.project_id,
+                logo_path: logo_path,
+                designMetadata: {
+                    header: state.header || {},
+                    footer: state.footer || {},
+                    logo: state.logo || {},
+                    include_background: background_path_update // true or false flag
+                
+                }
+            };
+        
+        
+        console.log("Logo path: ", logo_path);
+
         
         // Fetch POST to save design template to sqlite database
 
@@ -815,10 +827,11 @@ function accountDropdown() {
 }
 
 
+
 // Now you can query your own DB instead of Stripe
 async function getUsage() {
     try {
-        console.log("getUsage started!!!")
+        console.log("getUsage started!")
         const response = await fetch('/api/usage/');
         
         if (!response.ok) {
@@ -833,6 +846,8 @@ async function getUsage() {
                 <strong>Plan:</strong> ${data.plan}<br>
                 <strong>Usage:</strong> ${data.used}/${data.limit} images<br>
                 <strong>Resets:</strong> ${data.reset_date}
+                <br>
+                ${data.message ? `<br><strong>${data.message}</strong>` : ''}
             `;
         }
     } catch (error) {

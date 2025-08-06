@@ -82,13 +82,15 @@ async function loadTemplateMetadata(templateId) {
         
         templateMetadata = {
             ...data,
-            id: templateId  // Include template ID in the metadata
+            id: templateId,  // Include template ID in the metadata
+            background_path: data.background_path || null  // Ensure background_path is included
         };
 
         templateMetadata = data;
         //console.log("template metadata: ", templateMetadata)
         const dropdown = document.getElementById('template-dropdown');
         if (dropdown) dropdown.style.display = 'none';
+
         // call the function to select pictures
         template_select();
         
@@ -182,11 +184,10 @@ function template_select(){
 };
 
 async function save_selected_pictures_with_new_template(selectedPicturesTemplate){
-
-
     console.log("(inside save func) Selected pictures:", selectedPicturesTemplate); // Log the array
     console.log("(inside save func) Template ID: ", templateMetadata.id);
     console.log("(inside save func) Template metadata: ", templateMetadata);
+    console.log("templateBG path: ", templateMetadata.background_path);
 
     selectedPicturesTemplate = selectedPicturesTemplate.map(url => 
         //url.replace('http://127.0.0.1:8000', '')
@@ -195,6 +196,29 @@ async function save_selected_pictures_with_new_template(selectedPicturesTemplate
     console.log("(inside save func) Selected pictures without http:", selectedPicturesTemplate);
 
     try {
+
+        // if Background exist, update Uploaded_Pictures modules bg path
+        if (templateMetadata.background_path) {
+            // First, update the background image in Uploaded_Pictures
+            const updateBgResponse = await fetch('update_background', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    project_id: window.project_id,
+                    background_path: templateMetadata.background_path
+                })
+            });
+
+            if (!updateBgResponse.ok) {
+                throw new Error(`Failed to update background image: ${updateBgResponse.status}`);
+            }
+        }
+
+
+        // save the template metadata
         const response = await fetch('save_metadata', {
             method: 'POST',
             headers: {
@@ -220,6 +244,7 @@ async function save_selected_pictures_with_new_template(selectedPicturesTemplate
                         logo_x: templateMetadata.logo_x,
                         logo_y: templateMetadata.logo_y,
                         logo_scale: templateMetadata.logo_scale,
+                        background_path: templateMetadata.background_path, // include background
                     }
                 })),
                 project_id: window.project_id 

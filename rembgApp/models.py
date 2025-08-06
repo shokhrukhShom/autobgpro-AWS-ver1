@@ -15,11 +15,17 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
     subscription_status = models.CharField(max_length=20, default='inactive')
-    plan_type = models.CharField(max_length=20, choices=[('starter', 'Starter'), ('pro', 'Pro')], null=True)
+    plan_type = models.CharField(max_length=20, choices=[('starter', 'Starter'), 
+                                                         ('pro', 'Pro'), 
+                                                         ('expert', 'Expert'), 
+                                                         ('starter-yearly', 'Starter-yearly'),
+                                                         ('pro-yearly', 'Pro-yearly'),
+                                                         ('expert-yearly', 'Expert-yearly')], null=True)
     images_used_this_month = models.IntegerField(default=0)
     monthly_image_limit = models.IntegerField(default=0)
     current_period_end = models.DateTimeField(null=True, blank=True)
     current_period_start = models.DateTimeField(null=True, blank=True)
+    last_monthly_reset_date = models.DateField(null=True, blank=True) # Tracks the last date the monthly usage was reset
 
     class Meta:
         verbose_name_plural = "User Profile"
