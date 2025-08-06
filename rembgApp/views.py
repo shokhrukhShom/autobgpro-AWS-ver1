@@ -1624,3 +1624,39 @@ def get_template_metadata(request, template_id):
         return JsonResponse({'error': 'Template not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+
+@csrf_exempt
+@login_required
+def delete_template(request, template_id):
+    if request.method == 'POST':
+        try:
+            template = get_object_or_404(Template, id=template_id, author=request.user)
+            template.delete()
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@login_required
+def get_available_logos(request):
+    try:
+        user_id = request.user.id
+        logos_dir = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', 'logos')
+        
+        logos = []
+        if os.path.exists(logos_dir):
+            for filename in os.listdir(logos_dir):
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    url = f"{settings.MEDIA_URL}images/user_id_{user_id}/logos/{filename}"
+                    path = f"images/user_id_{user_id}/logos/{filename}"
+                    logos.append({
+                        'url': url,
+                        'path': path,
+                        'filename': filename
+                    })
+        
+        return JsonResponse({'logos': logos})
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

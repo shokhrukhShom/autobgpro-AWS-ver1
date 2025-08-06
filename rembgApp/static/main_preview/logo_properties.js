@@ -9,7 +9,6 @@ let file = null; // Variable to store the uploaded file
 
 export function initializeLogo (canvas){
 
-    // new code-------------------
     // Check if metadata exists for this canvas and has logo info
     const meta = metadataMap.get(canvas);
     if (meta && meta.design_data && meta.design_data.logo_path) {
@@ -157,56 +156,6 @@ export function initializeLogo (canvas){
         logoUploadInitialized = true;
         
     }
-    
-
-    // resetting/removing logo from canvas
-    // document.getElementById('resetLogoInput').addEventListener('click', function() {
-    //     console.log("Reset clicked: logo_properties.js");
-
-    //     const oldInput = document.getElementById('logo-upload');
-    //     const newInput = oldInput.cloneNode(true);
-    //     newInput.id = 'logo-upload'; // Make sure the ID remains consistent
-
-    //     // Replace the old input with the new one
-    //     oldInput.parentNode.replaceChild(newInput, oldInput);
-
-    //     // Reattach the upload event listener to the new input
-    //     newInput.addEventListener('change', function(e) {
-    //         file = e.target.files[0];
-    //         if (file) {
-
-    //             const reader = new FileReader();
-    //             reader.onload = function(event) {
-    //                 const img = new Image();
-    //                 img.onload = () => {
-    //                     // Update the canvas state with the new logo image and its properties
-    //                     const state = getCanvasStateDesign();
-    //                     updateCanvasStateDesign({
-    //                         logo: {
-    //                             ...state.logo,
-    //                             image: img, // Update the logo image in the state
-    //                         }
-    //                     });
-    //                     canvasDrawLogo(); // Redraw the canvas with the logo
-    //                 };
-    //             };
-    //             reader.readAsDataURL(file);
-    //         }
-    //     });
-
-    //     // Optional reset logic:
-    //     const state = getCanvasStateDesign();
-    //     updateCanvasStateDesign({
-    //         logo: {
-    //             ...state.logo,
-    //             image: null,
-    //             x: 100,
-    //             y: 100,
-    //             scale: 0.1
-    //         }
-    //     });
-    //     canvasDrawLogo(); // Redraw canvas
-    // });
 
     // resetting/removing logo from canvas
     document.getElementById('resetLogoInput').addEventListener('click', function() {

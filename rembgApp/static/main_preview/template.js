@@ -53,6 +53,25 @@ async function loadTemplates() {
     }
 }
 
+// function renderTemplateList(templates) {
+//     const templateList = document.getElementById('template-list');
+//     if (!templateList) return;
+    
+//     templateList.innerHTML = '';
+    
+//     templates.forEach(template => {
+//         const templateItem = document.createElement('div');
+//         templateItem.className = 'template-item';
+//         templateItem.textContent = template.name;
+
+//         templateItem.addEventListener('click', (e) => {
+//             e.stopPropagation();
+//             loadTemplateMetadata(template.id);
+//         });
+//         templateList.appendChild(templateItem);
+//     });
+// }
+
 function renderTemplateList(templates) {
     const templateList = document.getElementById('template-list');
     if (!templateList) return;
@@ -62,14 +81,99 @@ function renderTemplateList(templates) {
     templates.forEach(template => {
         const templateItem = document.createElement('div');
         templateItem.className = 'template-item';
-        templateItem.textContent = template.name;
-        templateItem.addEventListener('click', (e) => {
+        
+        // Create container for template name and delete button
+        const templateContent = document.createElement('div');
+        templateContent.className = 'template-content';
+        templateContent.textContent = template.name;
+        
+        // Create delete button
+        const deleteBtn = document.createElement('span');
+        deleteBtn.className = 'template-delete-btn';
+        deleteBtn.innerHTML = '&times;';
+        deleteBtn.title = 'Delete template';
+        deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            loadTemplateMetadata(template.id);
+            showDeleteConfirmation(template.id, template.name);
         });
+        
+        templateItem.appendChild(templateContent);
+        templateItem.appendChild(deleteBtn);
+        templateItem.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('template-delete-btn')) {
+                e.stopPropagation();
+                loadTemplateMetadata(template.id);
+            }
+        });
+        
         templateList.appendChild(templateItem);
     });
 }
+
+function showDeleteConfirmation(templateId, templateName) {
+    const modal = document.createElement('div');
+    modal.className = 'delete-confirmation-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <p>Are you sure you want to delete template "${templateName}"?</p>
+            <div class="modal-buttons">
+                <button class="confirm-delete">Yes, Delete</button>
+                <button class="cancel-delete">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('.confirm-delete').addEventListener('click', () => {
+        deleteTemplate(templateId);
+        modal.remove();
+    });
+    
+    modal.querySelector('.cancel-delete').addEventListener('click', () => {
+        modal.remove();
+    });
+}
+
+async function deleteTemplate(templateId) {
+    try {
+        const response = await fetch(`/delete_template/${templateId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Reload the template list after deletion
+        loadTemplates();
+    } catch (error) {
+        console.error('Error deleting template:', error);
+        alert('Failed to delete template. Please check console for details.');
+    }
+}
+
+// Add this to your existing getCSRFToken function if not already present
+function getCSRFToken() {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
 let templateMetadata = {};
 
 async function loadTemplateMetadata(templateId) {
@@ -283,3 +387,5 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+
