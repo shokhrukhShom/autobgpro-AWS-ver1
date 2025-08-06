@@ -6,10 +6,15 @@ function getCSRFToken() {
     return cookieValue ? cookieValue[1] : null;
 }
 
+const buttons = document.getElementsByClassName("saveChanges");
+
+for (let btn of buttons) {
+    btn.addEventListener('click', saveChanges);
+}
 
 function saveChanges(){
-
-    //console.log("save btn pressed");
+    console.log("save btn pressed");
+    
     const finalMetadataArray = Array.from(metadataMap.values()); // metadataMap 
     console.log(finalMetadataArray);
     
