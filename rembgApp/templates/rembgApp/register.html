@@ -63,7 +63,7 @@
     <div class="register-container">
         <div class="banner-text">
             <h1>Join <a href="{% url 'landing_page' %}" class="logo">AutoBG Pro</a></h1>
-            <p>Create an account to remove car photo backgrounds instantly</p>
+            <p>Create an account </p>
             
         </div>
 
@@ -80,8 +80,15 @@
                 <div class="form-group">
                     <select name="plan" class="form-control" required>
                         <option value="" disabled selected>Select Your Subscrption</option>
-                        <option value="starter" {% if form_data.plan == "starter" %}selected{% endif %} > Starter - $12/mo</option>
-                        <option value="pro" {% if form_data.plan == "pro" %}selected{% endif %} > Pro - $18/mo</option>
+                        <option disabled>─────────── Monthly Plans ───────────</option>
+                        <option value="starter" {% if form_data.plan == "starter" %}selected{% endif %} > $12/month - Starter Plan- 500 photos/month</option>
+                        <option value="pro" {% if form_data.plan == "pro" %}selected{% endif %} >$18/month -  Pro Plan - 1000 photos/month</option>
+                        <option value="expert" {% if form_data.plan == "expert" %}selected{% endif %} >$24/month - Expert Plan - 2000 photos/month</option>
+
+                        <option disabled>─────────── Yearly Plans ───────────</option>
+                        <option value="starter-yearly" {% if form_data.plan == "starter-yearly" %}selected{% endif %} > $120/year - Starter Plan - 500 photos/month</option>
+                        <option value="pro-yearly" {% if form_data.plan == "pro-yearly" %}selected{% endif %} > $150/year - Pro Plan - 1000 photos/month</option>
+                        <option value="expert-yearly" {% if form_data.plan == "expert-yearly" %}selected{% endif %} >$200/year - Expert Plan- 2000 photos/month</option>
                     </select>
                 </div>
 
@@ -113,9 +120,25 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-
-            console.log("Rendered focusField:", "{{ form_data.focus|default_if_none:'(none)' }}" );
-
+            
+            // read the URL parameter and auto-select the plan
+            // Get the plan from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const planParam = urlParams.get('plan');
+            
+            // If a plan parameter exists, select it in the dropdown
+            if (planParam) {
+                const planSelect = document.querySelector('select[name="plan"]');
+                const optionToSelect = Array.from(planSelect.options).find(option => 
+                    option.value === planParam
+                );
+                
+                if (optionToSelect) {
+                    optionToSelect.selected = true;
+                }
+            }
+            
+            //existing focus code
             const focusField = "{{ form_data.focus|default:'' }}";
 
             if (focusField) {

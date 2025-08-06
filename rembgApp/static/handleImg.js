@@ -73,10 +73,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Server error response:', errorText);
-                
                 if (response.status === 413) {
-                    alert('File size too large. Please reduce image sizes or upload fewer images at once.');
-                } else {
+                    //alert('File size too large. Please reduce image sizes or upload fewer images at once.');
+                    showError("File size too large. Please reduce image sizes or upload fewer images at once.", "red");
+                } 
+                else if (response.status === 403) { 
+                    showError("Your Subscription is expired or You've reached your monthly limit", "red");
+                    }
+                else {
                     alert('An error occurred: ' + response.statusText);
                 }
                 return;

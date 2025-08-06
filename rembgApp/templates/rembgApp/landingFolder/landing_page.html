@@ -988,8 +988,8 @@
                             <i class="fas fa-user-circle" style="font-size: 3rem; color: var(--light-gray);"></i>
                         </div>
                         <div class="author-info">
-                            <div class="author-name">Mike Johnson</div>
-                            <div class="author-title">Sales Manager, Premium Auto</div>
+                            <div class="author-name">Roger Martin</div>
+                            <div class="author-title">Owner, Momentum Auto</div>
                         </div>
                     </div>
                 </div>
@@ -1031,7 +1031,7 @@
                         </div>
                         <div class="author-info">
                             <div class="author-name">David Rodriguez</div>
-                            <div class="author-title">Owner, Elite Automotive</div>
+                            <div class="author-title">Sales Manager, Elite Automotive</div>
                         </div>
                     </div>
                 </div>
@@ -1045,37 +1045,67 @@
             <h2>Simple, Transparent Pricing</h2>
             <p class="subtitle">Choose the plan that fits your dealership's needs. No hidden fees, cancel anytime.</p>
             
+            <h3 style="text-align: center;">Monthly Plans</h3>
             <div class="pricing-cards">
                 <div class="pricing-card">
                     <h3>Starter</h3>
                     <div class="price">$12 <span>/month</span></div>
                     <ul class="pricing-features">
                         <li>Up to 500 photos/month</li>
-                        
                     </ul>
-                    <a href="{% url 'register' %}"  class="btn btn-outline">Buy Now</a>
+                    <a href="{% url 'register' %}?plan=starter" class="btn btn-outline">Buy Now</a>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3>Professional</h3>
+                    <div class="price">$18 <span>/month</span></div>
+                    <ul class="pricing-features">
+                        <li>Up to 1000 photos/month</li>
+                    </ul>
+                    <a href="{% url 'register' %}?plan=pro" class="btn">Buy Now</a>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3>Expert</h3>
+                    <div class="price">$24 <span>/month</span></div>
+                    <ul class="pricing-features">
+                        <li>Up to 2000 photos/month</li>
+                    </ul>
+                    <a href="{% url 'register' %}?plan=expert" class="btn btn-outline">Buy Now</a>
+                </div>
+            </div>
+            
+            <h3 style="text-align: center; margin-top: 40px; margin-bottom: 40px;">Yearly Plans</h3>
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <h3>Starter</h3>
+                    <div class="price">$120 <span>/Year</span></div>
+                    <ul class="pricing-features">
+                        <li>Up to 500 photos/month</li>
+                        <li>Save $24 about 16%</li>
+                    </ul>
+                    <a href="{% url 'register' %}?plan=starter-yearly" class="btn btn-outline">Buy Now</a>
                 </div>
                 
                 <div class="pricing-card popular">
                     <div class="popular-badge">Most Popular</div>
                     <h3>Professional</h3>
-                    <div class="price">$18 <span>/month</span></div>
+                    <div class="price">$150 <span>/Year</span></div>
                     <ul class="pricing-features">
                         <li>Up to 1000 photos/month</li>
-                        
+                        <li>Saving $66 about 30%</li>
                     </ul>
-                    <a href="{% url 'register' %}"  class="btn">Buy Now</a>
+                    <a href="{% url 'register' %}?plan=pro-yearly" class="btn">Buy Now</a>
                 </div>
                 
                 <div class="pricing-card">
-                    <h3>Enterprise</h3>
-                    <div class="price">Custom</div>
+                    <h3>Expert</h3>
+                    <div class="price">$200 <span>/Year</span></div>
                     <ul class="pricing-features">
-                        <li>Over 1000 photos/month</li>
-                        <li>Custom backgrounds</li>
-                        <li>Dedicated support</li>
+                        <li>Up to 2000 photos/month</li>
+                        <li>Save $88 about 30%</li>
                     </ul>
-                    <a href="#contact" class="btn btn-outline">Contact Sales</a>
+                    <a href="{% url 'register' %}?plan=expert-yearly" class="btn btn-outline">Buy Now</a>
                 </div>
             </div>
         </div>
