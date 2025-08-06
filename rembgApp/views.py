@@ -27,7 +27,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 from django.utils.timezone import make_aware
-
+from django.contrib import messages
 
 def custom_404_view(request, exception):
     return redirect('login')  # Assuming 'login' is the name of your login URL pattern
@@ -146,6 +146,14 @@ def register(request):
                 price_id = settings.STRIPE_PRICE_ID_STARTER
             elif plan == "pro":
                 price_id = settings.STRIPE_PRICE_ID_PRO
+            elif plan == "expert":
+                price_id = settings.STRIPE_PRICE_ID_EXPERT
+            elif plan == "starter-yearly":
+                price_id = settings.STRIPE_PRICE_ID_STARTER_YEARLY
+            elif plan == "pro-yearly":
+                price_id = settings.STRIPE_PRICE_ID_PRO_YEARLY
+            elif plan == "expert-yearly":
+                price_id = settings.STRIPE_PRICE_ID_EXPERT_YEARLY
             else:
                 return render(request, "rembgApp/register.html", {
                     "message": "Invalid plan selected."
@@ -209,11 +217,38 @@ def register_success(request):
         )
         
         
-        
-        
+        # Create profile with actual plan details
+        if plan_type == "starter":
+            monthly_limit = 500
+        elif plan_type == "pro":
+            monthly_limit = 1000
+        elif plan_type == "expert":
+            monthly_limit = 2000
+        elif plan_type == "starter-yearly":
+            monthly_limit = 500
+        elif plan_type == "pro-yearly":
+            monthly_limit = 1000
+        elif plan_type == "expert-yearly":
+            monthly_limit = 2000
+        else:
+            monthly_limit = 500  # default fallback
+
         now_utc = timezone.now()  
         current_period_start = now_utc.date()
-        current_period_end = current_period_start + relativedelta(months=1)
+        # Set period end based on plan type
+        if plan_type in ["starter", "pro", "expert"]:
+            # Add 1 month to the start date
+            current_period_end = current_period_start + relativedelta(months=1)
+        elif plan_type in ["starter-yearly", "pro-yearly", "expert-yearly"]:
+            # Yearly plans - add 1 year
+            current_period_end = current_period_start + relativedelta(years=1)
+        else:
+            # Default fallback (1 month)
+            current_period_end = current_period_start + relativedelta(months=1)
+
+        # Make the dates timezone-aware
+        current_period_start = make_aware(datetime.combine(current_period_start, datetime.min.time()))
+        current_period_end = make_aware(datetime.combine(current_period_end, datetime.min.time()))
 
 
         # Create profile with actual plan details
@@ -221,7 +256,7 @@ def register_success(request):
             user=user,
             stripe_customer_id=session.customer,
             plan_type=plan_type,
-            monthly_image_limit=1000 if plan_type == 'pro' else 500,
+            monthly_image_limit=monthly_limit,
             subscription_status='active',
             current_period_start=current_period_start,
             current_period_end=current_period_end,
@@ -316,18 +351,51 @@ def api_usage(request):
     
     profile = request.user.userprofile
     
-    # Set default reset date to next month if not set
-    reset_date = profile.current_period_end
-    if not reset_date:
-        from datetime import datetime, timedelta
-        reset_date = datetime.now() + timedelta(days=30)
+    # --- NEW LOGIC FOR MONTHLY RESET ON YEARLY PLANS ---
+    current_date = timezone.now().date()
+    #current_date = datetime.strptime('10-5-2025', '%m-%d-%Y').date()  # Testing date
+
+    # Check if the plan is yearly and if a new month has started since the last reset
+    if profile.plan_type in ['starter-yearly', 'pro-yearly', 'expert-yearly']:
+        if profile.last_monthly_reset_date is None or \
+           profile.last_monthly_reset_date.month != current_date.month or \
+           profile.last_monthly_reset_date.year != current_date.year:
+            
+            print(f"Monthly reset triggered for yearly plan for user {profile.user.username}.")
+            profile.images_used_this_month = 0
+            profile.last_monthly_reset_date = current_date
+            profile.save()
+    # --- END NEW LOGIC ---
+
+    # Set default reset date to next month if not set or for monthly plans
+    reset_date_display = 'N/A' # Default for cancelled or if not easily calculable
+    if profile.subscription_status == 'active' and profile.current_period_end:
+        if profile.plan_type in ['starter-yearly', 'pro-yearly', 'expert-yearly']:
+            # For yearly plans, show the next monthly reset date
+            # This will be the 1st of the next month
+            next_month = current_date + relativedelta(months=1)
+            reset_date_display = next_month.strftime('%b %-d')
+        else:
+            # For monthly plans, show the actual subscription period end
+            reset_date_display = profile.current_period_end.strftime('%b %-d')
     
-    return JsonResponse({
-        'used': profile.images_used_this_month,
-        'limit': profile.monthly_image_limit,
-        'reset_date': reset_date.strftime('%b %-d'),
-        'plan': profile.plan_type or 'error, plan not found'  # Fallback to starter
-    })
+    
+    # Adjust response based on subscription status
+    if profile.subscription_status != 'active':
+        return JsonResponse({
+            'used': profile.images_used_this_month,
+            'limit': 0, # Show 0 limit if not active
+            'reset_date': 'N/A', # No reset date if cancelled
+            'plan': 'Expired',
+            'message': 'Subscription Expired. Please renew.'
+        })
+    else:
+        return JsonResponse({
+            'used': profile.images_used_this_month,
+            'limit': profile.monthly_image_limit,
+            'reset_date': reset_date_display, # Use the calculated display date
+            'plan': profile.plan_type or 'error, plan not found'  # Fallback to starter
+        })
     
     
     
@@ -417,66 +485,244 @@ def api_usage(request):
 
 # TEST -----------
 
+"""
+For Subscription Renewal:
+Access: http://127.0.0.1:8000/test_renewal/?type=renewal
+Expected: images_used_after_renewal should be 0, and new_period_end 
+should be a future date.
 
-# views.py
+For Subscription Cancellation/Expiration (new test):
+Access: http://127.0.0.1:8000/test_renewal/?type=cancellation
+Expected: images_used_after_cancellation should be 0, subscription_status 
+should be cancelled, and monthly_image_limit should be 0. The api_usage 
+endpoint (which rmbg.js calls) will then reflect this status.
+
+
+Subscription Upgrade (Starter to Pro):
+http://127.0.0.1:8000/test_renewal/?type=upgrade
+
+Expected Result: images_used_after_upgrade should not be reset (it should remain 150), 
+new_plan_type should be 'pro', and new_monthly_image_limit should be 1000. The period_end_after_upgrade 
+should remain the same as the initial current_period_end set for the test.
+
+Subscription Downgrade (Pro to Starter):
+http://127.0.0.1:8000/test_renewal/?type=downgrade
+
+Expected Result: images_used_after_downgrade should not be reset (it should remain 700), new_plan_type should
+ be 'starter', and new_monthly_image_limit should be 500. The period_end_after_downgrade should remain the same as the 
+ initial current_period_end set for the test.
+
+"""
+
+
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from rembgApp.models import UserProfile
+from dateutil.relativedelta import relativedelta # Import this for easier date calculations
 
 @csrf_exempt  # Temporarily disable CSRF for testing
 @login_required
 def test_renewal(request):
     try:
-        now = datetime.now()
-        test_data = {
-            "id": "sub_1RrQyzCaEGsYhfdv8itJ11nW",
-            "object": "subscription",
-            "customer": "cus_Sn109L11STRr3n",
-            "status": "active",
-            "current_period_start": int((now - timedelta(days=30)).timestamp()),
-            "current_period_end": int(now.timestamp()),
-            "items": {
-                "data": [{
-                    "id": "si_test123",
-                    "object": "subscription_item",
-                    "price": {
-                        "id": "price_1RqoTCCaEGsYhfdvPijlMlir",
-                        "object": "price"
-                    },
-                    "quantity": 1
-                }]
-            }
-        }
+        test_type = request.GET.get('type', 'renewal') # 'renewal', 'cancellation', 'upgrade', or 'downgrade'
+        customer_id = "cus_SnhRcWL7DZ5I5W" # Consistent test customer ID
 
-        # Get or create user profile
+        # Ensure a UserProfile exists for the test customer
         profile, created = UserProfile.objects.get_or_create(
-            stripe_customer_id="cus_Sn109L11STRr3n",
+            stripe_customer_id=customer_id,
             defaults={
                 "user": request.user,
                 "plan_type": "starter",
                 "monthly_image_limit": 500,
-                "images_used_this_month": 300,
-                "current_period_end": timezone.now() - timedelta(days=1)
+                "images_used_this_month": 0,
+                "subscription_status": "active",
+                "current_period_start": timezone.now(),
+                "current_period_end": timezone.now() + relativedelta(months=1)
             }
         )
 
-        from .webhooks import handle_subscription_update
-        handle_subscription_update(test_data)
-        
-        profile.refresh_from_db()
-        return JsonResponse({
-            "status": "success",
-            "images_used": profile.images_used_this_month,
-            "period_end": profile.current_period_end.strftime('%Y-%m-%d')
-        })
+        if test_type == 'renewal':
+            # Simulate an old subscription period that definitely ended in the past
+            simulated_old_period_end = timezone.now() - timedelta(days=35)
+            
+            # Simulate the new period starting today and ending one month from today
+            simulated_new_period_start = timezone.now()
+            simulated_new_period_end = timezone.now() + relativedelta(months=1)
+
+            test_data = {
+                "id": "sub_test_renewal_id_v3",
+                "object": "subscription",
+                "customer": customer_id,
+                "status": "active",
+                "current_period_start": int(simulated_new_period_start.timestamp()),
+                "current_period_end": int(simulated_new_period_end.timestamp()),
+                "items": {
+                    "data": [{
+                        "id": "si_test123",
+                        "object": "subscription_item",
+                        "price": {
+                            "id": settings.STRIPE_PRICE_ID_PRO, # Use PRO price for renewal test
+                            "object": "price"
+                        },
+                        "quantity": 1
+                    }]
+                }
+            }
+
+            # Set profile to a state where renewal should trigger reset
+            profile.images_used_this_month = 300
+            profile.current_period_end = simulated_old_period_end
+            profile.save()
+            print(f"Existing profile updated for renewal test: images_used_this_month={profile.images_used_this_month}, current_period_end={profile.current_period_end}")
+
+            from .webhooks import handle_subscription_update
+            handle_subscription_update(test_data)
+            
+            profile.refresh_from_db()
+            return JsonResponse({
+                "status": "success",
+                "test_scenario": "renewal",
+                "images_used_after_renewal": profile.images_used_this_month,
+                "new_period_end": profile.current_period_end.strftime('%Y-%m-%d %H:%M:%S %Z'),
+                "plan_type": profile.plan_type,
+                "monthly_image_limit": profile.monthly_image_limit
+            })
+
+        elif test_type == 'cancellation':
+            # Simulate a subscription deletion event
+            test_data = {
+                "id": "sub_test_cancellation_id",
+                "object": "subscription",
+                "customer": customer_id,
+                "status": "canceled", # Stripe sets status to 'canceled' on deletion
+                "current_period_end": int(timezone.now().timestamp()), # Subscription ends now for test
+                "items": { # Items might still be present, but not relevant for deletion logic
+                    "data": []
+                }
+            }
+            
+            # Set profile to an active state before cancellation
+            profile.plan_type = 'pro'
+            profile.monthly_image_limit = 1000
+            profile.images_used_this_month = 50
+            profile.subscription_status = 'active'
+            profile.current_period_end = timezone.now() + timedelta(days=10) # Still active for 10 more days
+            profile.save()
+            print(f"Existing profile updated for cancellation test: images_used_this_month={profile.images_used_this_month}, subscription_status={profile.subscription_status}")
+
+            from .webhooks import handle_subscription_deleted
+            handle_subscription_deleted(test_data)
+
+            profile.refresh_from_db()
+            return JsonResponse({
+                "status": "success",
+                "test_scenario": "cancellation",
+                "images_used_after_cancellation": profile.images_used_this_month,
+                "subscription_status": profile.subscription_status,
+                "monthly_image_limit": profile.monthly_image_limit,
+                "period_end_after_cancellation": profile.current_period_end.strftime('%Y-%m-%d %H:%M:%S %Z')
+            })
+
+        elif test_type == 'upgrade':
+            # Simulate an upgrade from Starter to Pro
+            # Set profile to starter plan initially
+            profile.plan_type = 'starter'
+            profile.monthly_image_limit = 500
+            profile.images_used_this_month = 150 # Some usage before upgrade
+            profile.subscription_status = 'active'
+            # Ensure current_period_end is in the future, so usage doesn't reset
+            profile.current_period_end = timezone.now() + timedelta(days=15) 
+            profile.save()
+            print(f"Existing profile updated for upgrade test (initial): images_used_this_month={profile.images_used_this_month}, plan_type={profile.plan_type}")
+
+            test_data = {
+                "id": "sub_test_upgrade_id",
+                "object": "subscription",
+                "customer": customer_id,
+                "status": "active",
+                "current_period_start": int(profile.current_period_start.timestamp()), # Should be same as current
+                "current_period_end": int(profile.current_period_end.timestamp()),   # Should be same as current
+                "items": {
+                    "data": [{
+                        "id": "si_test_upgrade_item",
+                        "object": "subscription_item",
+                        "price": {
+                            "id": settings.STRIPE_PRICE_ID_PRO, # New plan: PRO
+                            "object": "price"
+                        },
+                        "quantity": 1
+                    }]
+                }
+            }
+            from .webhooks import handle_subscription_update
+            handle_subscription_update(test_data)
+
+            profile.refresh_from_db()
+            return JsonResponse({
+                "status": "success",
+                "test_scenario": "upgrade",
+                "images_used_after_upgrade": profile.images_used_this_month, # Should NOT reset
+                "subscription_status": profile.subscription_status,
+                "new_plan_type": profile.plan_type,
+                "new_monthly_image_limit": profile.monthly_image_limit,
+                "period_end_after_upgrade": profile.current_period_end.strftime('%Y-%m-%d %H:%M:%S %Z') # Should be same
+            })
+
+        elif test_type == 'downgrade':
+            # Simulate a downgrade from Pro to Starter
+            # Set profile to pro plan initially
+            profile.plan_type = 'pro'
+            profile.monthly_image_limit = 1000
+            profile.images_used_this_month = 700 # Some usage before downgrade
+            profile.subscription_status = 'active'
+            # Ensure current_period_end is in the future, so usage doesn't reset
+            profile.current_period_end = timezone.now() + timedelta(days=15) 
+            profile.save()
+            print(f"Existing profile updated for downgrade test (initial): images_used_this_month={profile.images_used_this_month}, plan_type={profile.plan_type}")
+
+            test_data = {
+                "id": "sub_test_downgrade_id",
+                "object": "subscription",
+                "customer": customer_id,
+                "status": "active",
+                "current_period_start": int(profile.current_period_start.timestamp()), # Should be same as current
+                "current_period_end": int(profile.current_period_end.timestamp()),   # Should be same as current
+                "items": {
+                    "data": [{
+                        "id": "si_test_downgrade_item",
+                        "object": "subscription_item",
+                        "price": {
+                            "id": settings.STRIPE_PRICE_ID_STARTER, # New plan: STARTER
+                            "object": "price"
+                        },
+                        "quantity": 1
+                    }]
+                }
+            }
+            from .webhooks import handle_subscription_update
+            handle_subscription_update(test_data)
+
+            profile.refresh_from_db()
+            return JsonResponse({
+                "status": "success",
+                "test_scenario": "downgrade",
+                "images_used_after_downgrade": profile.images_used_this_month, # Should NOT reset
+                "subscription_status": profile.subscription_status,
+                "new_plan_type": profile.plan_type,
+                "new_monthly_image_limit": profile.monthly_image_limit,
+                "period_end_after_downgrade": profile.current_period_end.strftime('%Y-%m-%d %H:%M:%S %Z') # Should be same
+            })
+
+        else:
+            return JsonResponse({"error": "Invalid test type. Use 'renewal', 'cancellation', 'upgrade', or 'downgrade'."}, status=400)
 
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
-    
-    
+        return JsonResponse({"error": str(e)}, status=400)  
+  
+ 
     
 # END Test-----------------
 
@@ -551,15 +797,25 @@ def rmbg(request):
         current_bg = picture.background_image
         
         # PNG images ----------Start-----------
-        path_rembg = "media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(latest_upload_id) + "/cropped"
+        # this code doesn't work on mac
+        #path_rembg = "media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(latest_upload_id) + "/cropped" 
         
-        
+        #this code works on mac (fuck it!!!)
+        path_rembg = os.path.join(
+            settings.MEDIA_ROOT,
+            "images",
+            f"user_id_{user_id}",
+            f"post_id_{latest_upload_id}",
+            "cropped"
+        )
+  
         rembg_files_path = []
         
         # Loop through the images in the folder and save it to image_files_path list
         for filename in os.listdir(path_rembg):
             if filename.endswith(('.png')):
-                file_path = os.path.join(path_rembg, filename)
+                #file_path = os.path.join(path_rembg, filename)
+                file_path = f"media/images/user_id_{user_id}/post_id_{latest_upload_id}/cropped/{filename}"
                 rembg_files_path.append(file_path)
                 
         
@@ -642,7 +898,29 @@ def rmbg(request):
         
         return redirect("rmbg")
 
-
+# template.js updating bg with template select
+@csrf_exempt
+@login_required
+def update_background(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            project_id = data.get('project_id')
+            background_path = data.get('background_path')
+            
+            if not project_id or not background_path:
+                return JsonResponse({'error': 'Missing required fields'}, status=400)
+                
+            project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
+            project.background_image = background_path
+            project.save()
+            
+            return JsonResponse({'status': 'success'})
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 @csrf_exempt  # Optional if you handle CSRF token manually in JS
 @login_required
@@ -738,15 +1016,20 @@ def imageProcessing(request): #API Processing
         files_count = len(request.FILES.getlist('images'))
         
         if profile.images_used_this_month + files_count > profile.monthly_image_limit:
+            messages.error(request, f"You've reached your monthly limit.")
             return JsonResponse({
-                "error": f"You've reached your monthly limit of {profile.monthly_image_limit} images. Upgrade your plan or wait until next month."
+                #"error": f"You've reached your monthly limit of {profile.monthly_image_limit} images. Upgrade your plan or wait until next month."
             }, status=403)
         
         # End New code  
-            
-        user_id = str(request.user.id) # save user id in user_id variable
+        print("request.user:", request.user)
+        user_id = int(request.user.id) # save user id in user_id variable
         images = request.FILES.getlist('images')  # 'images' should match the key in FormData
         
+
+        print(f"ACTUAL USER ID: {user_id} (type: {type(user_id)})")  # Debug line
+        print(f"Session data: {dict(request.session)}")
+
         if not images:
             print("No files received.")  # This message should help diagnose the issue
             return JsonResponse({"Error": "No image in the list"}, status=200) # If no files received
@@ -993,7 +1276,6 @@ def save_image_edit(request):
         return JsonResponse({"status": "error", "message": "Invalid request method"})
 
 
-
 @csrf_exempt
 @login_required
 def save_metadata(request):
@@ -1073,7 +1355,10 @@ def handle_design_elements(request, data):
         
         design_data = element.get('design_data', {})
         print("image path: ",image_path)
-        
+
+        # Update background image if included in design_data True or Flase
+        if 'background_path' in design_data and design_data['background_path']:
+            project.background_image = design_data['background_path']
 
         # Use same pattern as handle_shadow_settings
         metadata, created = Metadata.objects.get_or_create(
@@ -1094,7 +1379,9 @@ def handle_design_elements(request, data):
                 'logo_path': design_data.get('logo_path', "Not Given"),
                 'logo_x': design_data.get('logo_x', 100),
                 'logo_y': design_data.get('logo_y', 100),
-                'logo_scale': design_data.get('logo_scale', 0.1) 
+                'logo_scale': design_data.get('logo_scale', 0.1), 
+
+                'background_path': design_data.get('background_path', None)  # Save background path to metadata
             }
         )
 
@@ -1122,6 +1409,10 @@ def handle_design_elements(request, data):
                 metadata.logo_y = design_data['logo_y']
             if 'logo_scale' in design_data:
                 metadata.logo_scale = design_data['logo_scale']
+
+            # Update background path if it exists in design_data
+            if 'background_path' in design_data:
+                metadata.background_path = design_data['background_path']
             
             metadata.save()
 
@@ -1251,6 +1542,9 @@ def design_template(request):
                 # Get the project (Uploaded_Pictures instance)
                 project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
                 
+                print("include_background: ",design_metadata.get("include_background"))
+                print("project id: ", project_id)
+
                 # Create a new Template instance
                 template = Template(
                     author=request.user,
@@ -1276,6 +1570,8 @@ def design_template(request):
                     # Texts
                     texts=design_metadata.get('footer', {}).get('texts', []),
                 )
+
+           
                 
                 # Save the template to database
                 template.save()
@@ -1321,7 +1617,8 @@ def get_template_metadata(request, template_id):
             'logo_path': template.logo_path or '',
             'logo_x': template.logo_x,
             'logo_y': template.logo_y,
-            'logo_scale': template.logo_scale
+            'logo_scale': template.logo_scale,
+            'background_path': template.background_path or ''  # Add this line
         }, status=200)
     except Template.DoesNotExist:
         return JsonResponse({'error': 'Template not found'}, status=404)

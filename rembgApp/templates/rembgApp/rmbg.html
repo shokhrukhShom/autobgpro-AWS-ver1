@@ -22,12 +22,6 @@
 
 </head>
 <body>
-    <!-- {% if user.is_authenticated %}
-        <span id="latest_upload_id" style="float: left; overflow: hidden; position: relative; font-size: 11px;">Project No.{{latest_upload_id}} </span>
-        <span style="float: right;"><a href="{% url 'logout' %}">Sign Out</a> | User: <strong>{{ user.username }}</strong> and ID <strong> {{user.id}} </strong>.</span> 
-        <a href="{% url 'billing_portal' %}" class="btn btn-primary"> Manage Subscription </a>
-    {% endif %}
-    -->
     {% if user.is_authenticated %}
         <div class="user-nav">
             <!-- Debug info (left side) -->
@@ -206,16 +200,16 @@
             <!-- Add this inside the static-content div, replacing the existing "Create a Template" text -->
             <div id="template-creation-modal" style="display: none;">
                 <div class="template-modal-content">
-                    <h2>Create New Template</h2>
+                    <h2 style="margin-bottom: 10px;">Create New Template</h2>
                     
                     <div class="template-form-group">
-                        <label for="template-title">Template Title:</label>
+                        
                         <input type="text" id="template-title" placeholder="Enter template name" autocomplete="off">
                     </div>
                     
                     <div class="template-form-group">
                         <label>
-                            <input type="checkbox" id="include-background" checked> Background
+                            <input type="checkbox" id="include-background"> Background
                         </label>
                     </div>
                     
@@ -233,7 +227,7 @@
              <!-- Upload Logo Start -->
             <div class="logo-upload-container" style="text-align: center; margin: 10px auto;">
                 <label for="logo-upload">Upload Logo</label>
-                <input type="file" class="logo-upload" id="logo-upload" accept="image/*">
+                <input type="file" class="logo-upload" id="logo-upload" accept=".png, .jpg, .jpeg">
                 <span id="resetLogoInput" style="cursor: pointer; color: #fff; font-weight: bold; font-size: 20px; padding: 4px;">✕</span>
 
             </div>

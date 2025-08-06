@@ -1,5 +1,3 @@
-
-
 function download_zip() {
     const canvases = document.querySelectorAll(".rembg-canvas");
     const images = document.querySelectorAll(".png-img");
@@ -183,5 +181,5 @@ function download_zip() {
 }
 
 
-// Export the function
+// // Export the function
 export { download_zip };

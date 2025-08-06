@@ -13,7 +13,8 @@ import { initializeFooter } from "./footer.js";
 import { initializeLogo } from "./logo_properties.js";
 import { canvasDrawLogo } from "./logo_properties.js";
 
-
+const DEFAULT_SHADOW_OFFSET_Y = 40;
+const DEFAULT_SHADOW_BLUR = 50;
 
 fetchMetadataAPI(project_id);
 
@@ -48,11 +49,17 @@ function drawCanvas(ctx, img, background, imageX, imageY,
     imageScale, shadowOffsetY, 
     shadowBlur, canvas, imagePath, currentBg, project_id, 
     metadataMap, canvasId = null) { // Make canvasId optional
+    
+    // and apply defaults if it's missing.
+    if (shadowOffsetY == null || shadowBlur == null) {
+        shadowOffsetY = 5; // Default shadow offset
+        shadowBlur = 10;   // Default shadow blur
+    }
 
     let state;
     // switching between getCanvasState and getCanvasStateDesign when in design mode
     // check if there is selected pictures, if yes then its design mode 
-    if(window.selectedCanvas == null){ // window.selectedPicture
+    if (window.selectedCanvas == null) { // window.selectedPicture
         // console.log("selectedPicture array is empty");
         // console.log("window.selectedPic: ", window.selectedCanvas); // window.selectedPicture
         state = getCanvasState(canvasId); // Get state for this specific canvas
@@ -81,7 +88,6 @@ function drawCanvas(ctx, img, background, imageX, imageY,
     }
     
     
-
     // Draw the background first
     ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
 
@@ -90,6 +96,8 @@ function drawCanvas(ctx, img, background, imageX, imageY,
     ctx.shadowOffsetY = shadowOffsetY; 
     ctx.shadowBlur = shadowBlur;
     ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    
+   
 
     // Draw the image with scale and position
     const imgWidth = img.naturalWidth * imageScale;
@@ -368,7 +376,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Center the image
                 imageX = canvas.width / 2;
                 imageY = canvas.height / 2;
-                
+                //new
+                shadowOffsetY = DEFAULT_SHADOW_OFFSET_Y;
+                shadowBlur = DEFAULT_SHADOW_BLUR;
                 
                 // Ensure we have corresponding metadata for this image
                 const metadata = metadataList ? metadataList[index] : null;
