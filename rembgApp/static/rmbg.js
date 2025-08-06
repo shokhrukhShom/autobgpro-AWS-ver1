@@ -19,8 +19,10 @@ document.addEventListener('DOMContentLoaded', function() {
     delete_bg_image();
     accountDropdown();
     getUsage();
+    //logoSelect();
 
 })
+
 
 
 // when individual image clicked
@@ -111,37 +113,6 @@ function backToMainBtn(){
 
 }
 
-// checkmarking selected picture in "background insert"
-// Old Code - going to rewrite for event delegation
-// function Checkmark_picture() {
-//     const pictures = document.querySelectorAll('.picture');
-//         selectedPicture = null;
-
-//         pictures.forEach(picture => {
-//             picture.addEventListener('click', () => {
-//                 if (selectedPicture) {
-//                     selectedPicture.classList.remove('selected');
-//                 }
-//                 selectedPicture = picture;
-//                 picture.classList.add('selected');
-//             });
-//         });
-
-//         document.getElementById('submitBtn').addEventListener('click', () => {
-//             if (selectedPicture) {
-
-//                 const srcText = selectedPicture.getElementsByTagName('img')[0];
-//                 const srcAlt = srcText.alt;
-//                 console.log("fetch post: ", srcAlt);
-                
-//                 Fetch_post_bg_path(srcAlt);
-
-//             } else {
-//                 showError("You have not selected picture. Please select a picture.", 'red');
-                
-//             }
-//         });
-// };
 
 // Event delegation version of checkmarking selected picture
 function Checkmark_picture() {
@@ -184,71 +155,6 @@ function Checkmark_picture() {
     }
 }
 
-
-// function delete_bg_image() {
-//     const bgContainer = document.getElementById('bg_images');
-
-//     if (!bgContainer) return;
-
-//     bgContainer.addEventListener('click', function(event) {
-//         // DELETE button clicked
-//         if (event.target.classList.contains('delete-btn')) {
-//             event.stopPropagation(); // Prevent event bubbling
-//             const pictureDiv = event.target.closest('.picture');
-//             if (!pictureDiv) return;
-
-//             const imageId = pictureDiv.dataset.imageId;
-//             const imagePath = pictureDiv.querySelector('img').src;
-
-//             if (confirm("Are you sure you want to delete this background image?")) {
-//                 showLoadingSpinner();
-                
-//                 fetch(`/delete-background/${imageId}/`, {
-//                     method: 'POST',
-//                     headers: {
-//                         'X-CSRFToken': getCookie('csrftoken'),
-//                         'Content-Type': 'application/json'
-//                     },
-//                     body: JSON.stringify({
-//                         image_path: imagePath
-//                     })
-//                 })
-//                 .then(response => {
-//                     hideLoadingSpinner();
-//                     if (response.ok) {
-//                         pictureDiv.remove(); // Remove from DOM
-//                         showError("Background image deleted successfully", "green");
-//                     } else {
-//                         return response.json().then(err => {
-//                             throw new Error(err.error || 'Failed to delete image');
-//                         });
-//                     }
-//                 })
-//                 .catch(err => {
-//                     hideLoadingSpinner();
-//                     console.error("Error deleting image:", err);
-//                     showError(err.message || "Error deleting image", "red");
-//                 });
-//             }
-//         }
-//     });
-
-//     // CSRF token helper function
-//     function getCookie(name) {
-//         let cookieValue = null;
-//         if (document.cookie && document.cookie !== '') {
-//             const cookies = document.cookie.split(';');
-//             for (let i = 0; i < cookies.length; i++) {
-//                 const cookie = cookies[i].trim();
-//                 if (cookie.startsWith(name + '=')) {
-//                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-//                     break;
-//                 }
-//             }
-//         }
-//         return cookieValue;
-//     }
-// }
 
 
 function delete_bg_image() {
@@ -640,11 +546,8 @@ function textBtn(){ // new async added
         
         // Add logic to proceed to text-editing functionality
         textEditing(selectedPicture);
-        
 
     });
-
-    
 };
 
 
@@ -684,7 +587,6 @@ function textEditing(selectedPicture){
     document.getElementById("static-content").style.display = "block";
 
 }
-
 
 // Create a Template START -------------------
 function setupTemplateCreation() {
@@ -788,6 +690,7 @@ function setupTemplateCreation() {
 
 
     });
+
 }
 
 // Function to get CSRF token from Django's cookies
@@ -858,3 +761,133 @@ async function getUsage() {
         }
     }
 }
+
+
+
+
+// // logo select 
+// function logoSelect() {
+//     const selectLogoBtn = document.getElementById('select-logo-btn');
+//     const logoModal = document.getElementById('logo-selector-modal');
+//     const logoGrid = document.getElementById('logo-grid');
+//     const cancelLogoSelect = document.getElementById('cancel-logo-select');
+
+//     // Show logo selector modal
+//     selectLogoBtn.addEventListener('click', function() {
+//         // Get all visible canvases (those not hidden by display:none)
+//         const visibleCanvases = Array.from(document.querySelectorAll('.rembg-canvas'))
+//             .filter(canvas => canvas.offsetParent !== null); // offsetParent is null for display:none elements
+        
+//         if (visibleCanvases.length === 0) {
+//             showError("No visible canvases found. Please select canvases first.", "red");
+//             return;
+//         }
+
+//         loadAvailableLogos();
+//         logoModal.classList.remove('hidden');
+//     });
+
+//     // Hide logo selector modal
+//     cancelLogoSelect.addEventListener('click', function() {
+//         logoModal.classList.add('hidden');
+//     });
+
+//     // Load available logos from server
+//     function loadAvailableLogos() {
+//         logoGrid.innerHTML = '<p>Loading logos...</p>';
+        
+//         fetch('/get_available_logos/')
+//             .then(response => response.json())
+//             .then(data => {
+//                 if (data.logos && data.logos.length > 0) {
+//                     renderLogoGrid(data.logos);
+//                 } else {
+//                     logoGrid.innerHTML = '<p>No logos found. Please upload one first.</p>';
+//                 }
+//             })
+//             .catch(error => {
+//                 console.error('Error loading logos:', error);
+//                 logoGrid.innerHTML = '<p>Error loading logos. Please try again.</p>';
+//             });
+//     }
+
+//     // Render logos in the grid
+//     function renderLogoGrid(logos) {
+//         logoGrid.innerHTML = '';
+        
+//         logos.forEach(logo => {
+//             const logoItem = document.createElement('div');
+//             logoItem.style.textAlign = 'center';
+            
+//             const img = document.createElement('img');
+//             img.src = logo.url;
+//             img.alt = 'Logo';
+//             img.className = 'logo-thumbnail';
+//             img.dataset.path = logo.path;
+            
+//             img.addEventListener('click', function() {
+//                 // Remove selection from all logos
+//                 document.querySelectorAll('.logo-thumbnail').forEach(thumb => {
+//                     thumb.classList.remove('selected-logo');
+//                 });
+                
+//                 // Select this logo
+//                 img.classList.add('selected-logo');
+                
+//                 handleLogoSelection({
+//                     name: logo.path.split('/').pop(),
+//                     path: logo.path,
+//                     url: logo.url
+//                 });
+                
+//                 setTimeout(() => {
+//                     logoModal.classList.add('hidden');
+//                 }, 300);
+//             });
+            
+//             logoItem.appendChild(img);
+//             logoGrid.appendChild(logoItem);
+//         });
+//     }
+
+//     function handleLogoSelection(file) {
+//         // Get all visible canvases
+//         const visibleCanvases = Array.from(document.querySelectorAll('.rembg-canvas'))
+//             .filter(canvas => canvas.offsetParent !== null);
+        
+//         if (visibleCanvases.length === 0) {
+//             showError("No visible canvases found", "red");
+//             return;
+//         }
+    
+//         const logoImg = new Image();
+//         logoImg.crossOrigin = "Anonymous";
+//         logoImg.src = file.url;
+    
+//         logoImg.onload = function() {
+//             // Update the global design state
+//             const state = getCanvasStateDesign();
+//             updateCanvasStateDesign({
+//                 logo: {
+//                     image: logoImg,
+//                     x: 100, // default x position
+//                     y: 100, // default y position
+//                     scale: 0.2 // default scale
+//                 }
+//             });
+    
+//             // Update the global state as well
+//             window.canvasStateDesignGlobal = getCanvasStateDesign();
+    
+//             // Dispatch the canvasDrawLogo event
+//             canvasDrawLogo();
+    
+//             showError("Logo added to visible canvases", "green");
+//         };
+    
+//         logoImg.onerror = function() {
+//             showError("Failed to load the selected logo", "red");
+//         };
+//     }
+// }
+// // end logo select
