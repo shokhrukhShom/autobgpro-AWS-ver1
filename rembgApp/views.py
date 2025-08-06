@@ -28,6 +28,7 @@ from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 from django.utils.timezone import make_aware
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 
 def custom_404_view(request, exception):
     return redirect('login')  # Assuming 'login' is the name of your login URL pattern
@@ -1663,26 +1664,59 @@ def get_available_logos(request):
     
 
 
+# @require_POST
+# def delete_logo(request):
+#     try:
+#         data = json.loads(request.body)
+#         logo_path = data.get('logo_path')
+        
+#         if not logo_path:
+#             return JsonResponse({'error': 'No logo path provided'}, status=400)
+        
+#         # Security check - prevent directory traversal
+#         if '../' in logo_path or not logo_path.startswith('logos/'):
+#             return JsonResponse({'error': 'Invalid logo path'}, status=400)
+        
+#         full_path = os.path.join(settings.MEDIA_ROOT, logo_path)
+        
+#         if not os.path.exists(full_path):
+#             return JsonResponse({'error': 'Logo not found'}, status=404)
+            
+#         os.remove(full_path)
+#         return JsonResponse({'message': 'Logo deleted successfully'})
+        
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+
+
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+@ensure_csrf_cookie
 @require_POST
+@login_required
 def delete_logo(request):
     try:
-        data = json.loads(request.body)
-        logo_path = data.get('logo_path')
+        # For FormData, use request.POST instead of request.body
+        logo_path = request.POST.get('logo_path')
         
         if not logo_path:
-            return JsonResponse({'error': 'No logo path provided'}, status=400)
+            return JsonResponse({'success': False, 'error': 'No logo path provided'}, status=400)
         
-        # Security check - prevent directory traversal
-        if '../' in logo_path or not logo_path.startswith('logos/'):
-            return JsonResponse({'error': 'Invalid logo path'}, status=400)
-        
+
+        # Construct secure path
+        user_dir = os.path.join(settings.MEDIA_ROOT, "images", f"user_id_{request.user.id}")        
         full_path = os.path.join(settings.MEDIA_ROOT, logo_path)
-        
+
+       
+        # Security check
+        if not full_path.startswith(user_dir):
+            return JsonResponse({'success': False, 'error': 'Invalid path'}, status=400)
+            
         if not os.path.exists(full_path):
-            return JsonResponse({'error': 'Logo not found'}, status=404)
+            return JsonResponse({'success': False, 'error': 'File not found'}, status=404)
             
         os.remove(full_path)
-        return JsonResponse({'message': 'Logo deleted successfully'})
+        return JsonResponse({'success': True, 'message': 'Logo deleted'})
         
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
