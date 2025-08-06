@@ -78,6 +78,75 @@ export function initializeLogoSelect() {
         });
     }
 
+    function showDeleteConfirmation(logoPath) {
+        const modal = document.createElement('div');
+        modal.className = 'delete-confirmation-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <p>Delete this logo permanently?</p>
+                <div class="modal-actions">
+                    <button class="confirm-delete">Delete</button>
+                    <button class="cancel-delete">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('.confirm-delete').addEventListener('click', () => {
+            deleteLogo(logoPath);
+            modal.remove();
+        });
+        
+        modal.querySelector('.cancel-delete').addEventListener('click', () => {
+            modal.remove();
+        });
+    }
+
+    async function deleteLogo(logoPath) {
+        try {
+            showLoadingSpinner('Deleting logo...');
+            
+            const response = await fetch('/delete_logo/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ logo_path: logoPath })
+            });
+            
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+            
+            const data = await response.json();
+            showError(data.message || 'Logo deleted successfully', 'green');
+            loadAvailableLogos(); // Refresh the list
+            
+            // If deleted logo was currently selected, clear it
+            const state = getCanvasStateDesign();
+            if (state.logo?.image?.src.includes(logoPath)) {
+                updateCanvasStateDesign({
+                    logo: {
+                        image: null,
+                        x: 100,
+                        y: 100,
+                        scale: 0.1
+                    }
+                });
+                canvasDrawLogo();
+            }
+            
+        } catch (error) {
+            console.error('Error deleting logo:', error);
+            showError(`Failed to delete logo: ${error.message}`, 'red');
+        } finally {
+            hideLoadingSpinner();
+        }
+    }
+    
+
     function handleLogoSelection(logo) {
         const logoImg = new Image();
         logoImg.crossOrigin = "Anonymous";

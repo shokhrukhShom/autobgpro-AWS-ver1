@@ -50,6 +50,7 @@ urlpatterns = [
     path('api/usage/', views.api_usage, name='api_usage'),
     path('test_renewal/', views.test_renewal, name='test_renewal'),
     path('get_available_logos/', views.get_available_logos, name='get_available_logos'),
+    path('delete_logo/', views.delete_logo, name='delete_logo'),
 
     path('update_background', views.update_background, name='update_background'), # update bg with template.js template select
 
