@@ -9,6 +9,9 @@ fi
 
 # List the specific files you want to add
 FILES=(
+
+    "settings.py"
+
     "git_files.sh"
     "requirements.txt"
     "documentation.txt"
@@ -95,7 +98,7 @@ echo "Selected files have been added to staging."
 # chmod +x git_files.sh
 
 # 2. then execute it with:
-# ./git_files.sh
+# ./git_files.sh "message"
 
 #. 3 Finally, commit the changes:
 # you change message as needed or commit as-is
