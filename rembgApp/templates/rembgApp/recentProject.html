@@ -32,9 +32,9 @@
         }
         
         .project-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #1b5e95;
+            font-size: 12px;
+            font-weight: thin;
+            color: #747474;
         }
         
         .project-date {
@@ -125,7 +125,7 @@
             {% for project in recent_projects %}
                 <div class="project-card" data-project-id="{{ project.id }}">
                     <div class="project-header">
-                        <div class="project-title">Project #{{ project.id }}</div>
+                        <div class="project-title"> created date: {{ project.createdDate }}</div>
                         <div class="project-date">{{ project.createdDate|date:"F j, Y" }}</div>
                     </div>
                     
@@ -160,101 +160,97 @@
         {% endif %}
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            let offset = {{ offset|default:0 }};
-            const limit = {{ limit|default:10 }};
-            
-            // Load more projects
-            document.getElementById('load-more')?.addEventListener('click', function() {
-                offset += limit;
-                fetch(`/recent-projects/?offset=${offset}&limit=${limit}`, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.projects.length > 0) {
-                        const projectsList = document.getElementById('projects-list');
-                        data.projects.forEach(project => {
-                            const projectCard = document.createElement('div');
-                            projectCard.className = 'project-card';
-                            projectCard.dataset.projectId = project.id;
-                            
-                            projectCard.innerHTML = `
-                                <div class="project-header">
-                                    <div class="project-title">Project #${project.id}</div>
-                                    <div class="project-date">${new Date(project.createdDate).toLocaleDateString()}</div>
-                                </div>
-                                
-                                <div class="project-images">
-                                    ${project.images.map(image => `
-                                        <img src="${image}" alt="Project image" class="project-thumbnail">
-                                    `).join('')}
-                                </div>
-                                
-                                <div class="project-actions">
-                                    <button class="btn btn-primary download-project" data-project-id="${project.id}">
-                                        <i class="fa fa-download"></i> Download Project
-                                    </button>
-                                </div>
-                            `;
-                            
-                            projectsList.appendChild(projectCard);
-                        });
+    <script type="module">
+        import { downloadRecentProject } from "{% static 'recentProjects.js' %}";
+
+        // Fixed version avoiding nested template literals
+    document.addEventListener('DOMContentLoaded', function() {
+        let offset = {{ offset|default:0 }};
+        const limit = {{ limit|default:10 }};
+        
+        // Load more projects
+        document.getElementById('load-more')?.addEventListener('click', function() {
+            offset += limit;
+            fetch(`/recent-projects/?offset=${offset}&limit=${limit}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.projects.length > 0) {
+                    const projectsList = document.getElementById('projects-list');
+                    data.projects.forEach(project => {
+                        const projectCard = document.createElement('div');
+                        projectCard.className = 'project-card';
+                        projectCard.dataset.projectId = project.id;
                         
-                        if (!data.has_more) {
-                            document.getElementById('load-more').style.display = 'none';
-                        }
-                    } else {
+                        // Build images HTML separately to avoid nested template literals
+                        const imagesHtml = project.images.map(image => 
+                            '<img src="' + image + '" alt="Project image" class="project-thumbnail">'
+                        ).join('');
+                        
+                        projectCard.innerHTML = 
+                            '<div class="project-header">' +
+                                '<div class="project-title">created date: ' + project.createdDate + '</div>' +
+                               
+                            '</div>' +
+                            '<div class="project-images">' + imagesHtml + '</div>' +
+                            '<div class="project-actions">' +
+                                '<button class="btn btn-primary download-project" data-project-id="' + project.id + '">' +
+                                    '<i class="fa fa-download"></i> Download Project' +
+                                '</button>' +
+                            '</div>';
+                        
+                        projectsList.appendChild(projectCard);
+                    });
+                    
+                    if (!data.has_more) {
                         document.getElementById('load-more').style.display = 'none';
                     }
-                });
-            });
-            
-            // Download project
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('download-project') || 
-                    e.target.closest('.download-project')) {
-                    const button = e.target.classList.contains('download-project') ? 
-                        e.target : e.target.closest('.download-project');
-                    const projectId = button.dataset.projectId;
-                    
-                    // Show loading state
-                    button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Preparing Download...';
-                    button.disabled = true;
-                    
-                    // Trigger download
-                    fetch(`/download-project/${projectId}/`, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(response => {
-                        if (response.ok) return response.blob();
-                        throw new Error('Failed to download project');
-                    })
-                    .then(blob => {
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `project_${projectId}_images.zip`;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        document.body.removeChild(a);
-                    })
-                    .catch(error => {
-                        alert(error.message);
-                    })
-                    .finally(() => {
-                        button.innerHTML = '<i class="fa fa-download"></i> Download Project';
-                        button.disabled = false;
-                    });
+                } else {
+                    document.getElementById('load-more').style.display = 'none';
                 }
             });
         });
+
+        // Download project
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('download-project') || 
+                e.target.closest('.download-project')) {
+                const button = e.target.classList.contains('download-project') ? 
+                    e.target : e.target.closest('.download-project');
+                const projectId = button.dataset.projectId;
+                
+                // Show loading state
+                const originalHtml = button.innerHTML;
+                button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Preparing Download...';
+                button.disabled = true;
+                
+                // Trigger download using JavaScript processing
+                downloadRecentProject(projectId)
+                    .then(() => {
+                        console.log('Download completed successfully');
+                    })
+                    .catch(error => {
+                        console.error('Download failed:', error);
+                        alert('Download failed: ' + error.message);
+                    })
+                    .finally(() => {
+                        button.innerHTML = originalHtml;
+                        button.disabled = false;
+                    });
+            }
+        });
+
+    });
     </script>
+    
+    <!-- Add this to your base template head -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<!--load rmbg_function.js file-->
+<script type="module" src="{% static 'recentProjects.js' %}" defer></script>
+
 </body>
 </html>

@@ -32,6 +32,7 @@ FILES=(
     "rembgApp/static/main_preview/download_zip.js"
     "rembgApp/static/main_preview/template.js"
     "rembgApp/static/handleImg.js"
+    "rembgApp/static/recentProjects.js"
 
     "rembgApp/static/css/rmbg.css"
     "rembgApp/static/css/text_edit.css"
@@ -61,6 +62,7 @@ FILES=(
     "rembgApp/templates/rembgApp/uploadImg.html"
     "rembgApp/templates/rembgApp/canvasPage.html"
     "rembgApp/templates/rembgApp/recentProject.html"
+
     
 
 
@@ -83,10 +85,10 @@ echo "Selected files have been added to staging."
 
 
 # 1.To make this script executable, run:
-# chmod +x git_save_files.sh
+# chmod +x git_files.sh
 
 # 2. then execute it with:
-# ./git_save_files.sh
+# ./git_files.sh
 
 #. 3 Finally, commit the changes:
 # you change message as needed or commit as-is

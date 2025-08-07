@@ -5,13 +5,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Upload and Preview</title>
+    <link rel="stylesheet" href="{% static 'css/rmbg.css' %}">
     <link rel="stylesheet" href="{% static 'css/uploadImg.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body>
     {% if user.is_authenticated %}
-            Signed in as <strong>{{ user.username }}</strong> and ID <strong> {{user.id}} </strong>.
+        <div class="user-nav">
+            <div class="debug-info">
+                <span>User: <strong>{{ user.username }}</strong></span>
+            </div>
+            
+            <div class="nav-actions">
+                <a href="{% url 'rmbg' %}" class="nav-btn nav-btn-secondary">
+                    <i class="fa fa-arrow-left"></i> Back to Editor
+                </a>
+            </div>
+        </div>
     {% endif %}
-    <hr>
+ 
     <h1>Image Upload and Preview</h1>
         
         {% if message %}
@@ -21,7 +33,7 @@
         <form id="imageForm" >
             {% csrf_token %}
             <label for="fileInput" class="uploadBtn">Add Images</label>
-            <button type="button" id="SaveButton" class="uploadBtn">Upload and Remove Background </button>
+            <button type="button" id="SaveButton" class="uploadBtn">Next </button>
             <input type="file" id="fileInput" name="image" accept=".jpeg, .png, .jpg " multiple  style="display:none;">
             <input type="hidden" name="csrfmiddlewaretoken" value="your-csrf-token-here">
             

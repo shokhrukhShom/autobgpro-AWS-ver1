@@ -29,6 +29,8 @@ from django.utils import timezone
 from django.utils.timezone import make_aware
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
+
 
 def custom_404_view(request, exception):
     return redirect('login')  # Assuming 'login' is the name of your login URL pattern
@@ -886,7 +888,7 @@ def rmbg(request):
     # inserting background picture
     if request.method == "POST":
         
-        print("_____Post request processing_______")
+        print("_____Post request processing: save new background path_______")
         data = json.loads(request.body)
         background_path = data.get('text')
         print("Data recieved: " + background_path + "_________")
@@ -896,6 +898,26 @@ def rmbg(request):
         uploaded_picture = get_object_or_404(Uploaded_Pictures, id=latest_upload_id)
         uploaded_picture.background_image = background_path
         uploaded_picture.save()
+
+         # Also save to Metadata model
+        # Alternative approach - if you need to trigger save() on each record
+        metadata_records = Metadata.objects.filter(project=uploaded_picture)
+
+        if metadata_records.exists():
+            # Update each record individually (triggers save() method)
+            updated_count = 0
+            for metadata in metadata_records:
+                metadata.background_path = background_path
+                metadata.save()
+                updated_count += 1
+            print(f"Updated {updated_count} metadata records individually")
+        else:
+            # Create a new metadata record if none exist
+            metadata = Metadata.objects.create(
+                project=uploaded_picture,
+                background_path=background_path
+            )
+            print("Created new metadata record with background path")
         
         return redirect("rmbg")
 
@@ -1724,15 +1746,8 @@ def delete_logo(request):
 
 
 
-# Recent Projects
 
-from django.core.paginator import Paginator
-from django.http import JsonResponse
-import os
-from django.conf import settings
-from django.http import HttpResponse
-import zipfile
-import io
+
 
 @login_required
 def recent_projects(request):
@@ -1780,42 +1795,36 @@ def recent_projects(request):
         'has_more': page_projects.has_next()
     })
 
+
+# In views.py
 @login_required
-def download_project(request, project_id):
-    try:
-        # Verify the project belongs to the user
-        project = Uploaded_Pictures.objects.get(id=project_id, author=request.user)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # Add cropped images
-            user_id = request.user.id
-            cropped_path = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', f'post_id_{project_id}', 'cropped')
-            
-            if os.path.exists(cropped_path):
-                for filename in os.listdir(cropped_path):
-                    if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        file_path = os.path.join(cropped_path, filename)
-                        zip_file.write(file_path, f'images/{filename}')
-            
-            # Add metadata if exists
-            metadata = Metadata.objects.filter(project=project).first()
-            if metadata:
-                metadata_content = f"""Project ID: {project_id}
-Created: {project.createdDate}
-Background: {metadata.background_path or 'None'}
-Header: Height={metadata.header_height}, Color={metadata.header_color}
-Footer: Height={metadata.footer_height}, Color={metadata.footer_color}
-"""
-                zip_file.writestr('metadata.txt', metadata_content)
-        
-        # Prepare response
-        response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
-        response['Content-Disposition'] = f'attachment; filename="project_{project_id}_images.zip"'
-        return response
-        
-    except Uploaded_Pictures.DoesNotExist:
-        return HttpResponse('Project not found', status=404)
-    except Exception as e:
-        return HttpResponse(f'Error creating zip file: {str(e)}', status=500)
+def get_project_images(request, project_id):
+    project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
+    user_id = request.user.id
+    cropped_path = os.path.join(
+        settings.MEDIA_ROOT,
+        'images',
+        f'user_id_{user_id}',
+        f'post_id_{project_id}',
+        'cropped'
+    )
+    
+    images = []
+    if os.path.exists(cropped_path):
+        for filename in sorted(os.listdir(cropped_path)):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                file_path = os.path.join(
+                    settings.MEDIA_URL,
+                    'images',
+                    f'user_id_{user_id}',
+                    f'post_id_{project_id}',
+                    'cropped',
+                    filename
+                )
+                images.append(file_path)
+    
+    # Ensure we return a consistent format
+    return JsonResponse({
+        'success': True,
+        'images': images
+    })
