@@ -54,7 +54,7 @@ urlpatterns = [
     path('update_background', views.update_background, name='update_background'), # update bg with template.js template select
 
     path('recent-projects/', views.recent_projects, name='recent_projects'),
-    path('download-project/<int:project_id>/', views.download_project, name='download_project'),
+    path('get_project_images/<int:project_id>/', views.get_project_images, name='get_project_images'),
 
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

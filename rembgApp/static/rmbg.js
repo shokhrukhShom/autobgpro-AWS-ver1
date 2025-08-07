@@ -250,32 +250,85 @@ function delete_bg_image() {
 
 
 
+// function Fetch_post_bg_path(textData) {
+
+//     showLoadingSpinner();
+//     //const formData = img_path; // Collect form data
+
+
+//     fetch('/rmbg', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',  // Specify JSON content
+//           'X-CSRFToken': '{{ csrf_token }}'    // CSRF token for Django
+//         },
+//         body: JSON.stringify({ text: textData })  // Send text as JSON
+//       })
+//       .then(response => {
+//         if (response.redirected) {
+//           window.location.href = response.url;  // Handle redirection if needed
+//         } else {
+//           return response.json();  // Handle the response as JSON
+//         }
+//       })
+//       .then(data => console.log(data))
+//       .catch(error => console.error('Error:', error));
+  
+    
+// };
+
 function Fetch_post_bg_path(textData) {
-
     showLoadingSpinner();
-    //const formData = img_path; // Collect form data
-
-
+    
     fetch('/rmbg', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',  // Specify JSON content
-          'X-CSRFToken': '{{ csrf_token }}'    // CSRF token for Django
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
         },
-        body: JSON.stringify({ text: textData })  // Send text as JSON
-      })
-      .then(response => {
-        if (response.redirected) {
-          window.location.href = response.url;  // Handle redirection if needed
-        } else {
-          return response.json();  // Handle the response as JSON
+        body: JSON.stringify({ text: textData })
+    })
+    .then(response => {
+        // Check if it's a redirect
+        if (response.redirected || response.status === 302) {
+            window.location.href = response.url || '/rmbg';
+            return null; // Don't try to parse as JSON
         }
-      })
-      .then(data => console.log(data))
-      .catch(error => console.error('Error:', error));
-  
-    
-};
+        
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            // If it's HTML (like an error page), handle it
+            return response.text().then(text => {
+                console.error('Received HTML instead of JSON:', text);
+                throw new Error('Server returned HTML instead of JSON');
+            });
+        }
+    })
+    .then(data => {
+        if (data) {
+            console.log('Success:', data);
+            // Handle successful JSON response here
+            if (data.status === 'success') {
+                console.log('Background path saved successfully');
+                // You can update UI here or redirect manually
+                // window.location.href = '/rmbg';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        hideLoadingSpinner(); // Make sure to hide spinner on error
+    });
+}
+
 
 function showError(message, color) {
     const errorMessage = document.getElementById('error-message');
