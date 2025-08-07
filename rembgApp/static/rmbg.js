@@ -29,31 +29,34 @@ document.addEventListener('DOMContentLoaded', function() {
 //Edit_Image_Btn Button proccessed here too
 function img_clicked() {
 
-    const clickableImages = document.querySelectorAll(".clickable-image");
+    const clickableImages = document.querySelectorAll(".clickable-image"); //.clickable-image,
     const enlargedImageContainer = document.getElementById("enlarged-image-container");
     const enlargedImage = document.getElementById("enlarged-image");
     const closeButton = document.getElementById("close-button");
-    const imageEditPage = document.getElementById("image-edit-page");
-    const cancelBtn = document.getElementById("cancel");
-    const Edit_Image_Btn = document.getElementById("Edit_Image_Btn");
+    //const imageEditPage = document.getElementById("image-edit-page");
+    //const cancelBtn = document.getElementById("cancel");
+    //const Edit_Image_Btn = document.getElementById("Edit_Image_Btn");
     
 
     clickableImages.forEach((image) => {
-        image.addEventListener("click", function() {
+        image.addEventListener("dblclick", function() {
             // Set the source of the enlarged image to the clicked image's source
             enlargedImage.src = this.src;
             // Show the enlarged image container
             enlargedImageContainer.style.display = "flex"; // Use flex to center the content
             // Show the image edit toolbar
-            imageEditPage.style.display = "block"; // Ensure the toolbar is visible
+            //imageEditPage.style.display = "block"; // Ensure the toolbar is visible
             
             // when Edit_Image_Btn clicked pass on the source of the image
             let imgSrc = enlargedImage.src;
-            Edit_Image_Btn.addEventListener('click', function(){
-                Edit_Image(imgSrc);
-                //console.log(imgSrc);
+
+            console.log("imgSrc", imgSrc);
+
+            // Edit_Image_Btn.addEventListener('click', function(){
+            //     Edit_Image(imgSrc);
+            //     console.log("Edit_Image_Btn", imgSrc);
                 
-            })
+            // })
         });
     });
 
@@ -62,16 +65,16 @@ function img_clicked() {
         // Hide the enlarged image container
         enlargedImageContainer.style.display = "none";
         // Hide the image edit toolbar
-        imageEditPage.style.display = "none"; // Hide the toolbar when closing the enlarged image
+        //imageEditPage.style.display = "none"; // Hide the toolbar when closing the enlarged image
     });
 
     // cancelBtn button functionality
-    cancelBtn.addEventListener("click", ()=> {
-        // Hide the enlarged image container
-        enlargedImageContainer.style.display = "none";
-        // Hide the image edit toolbar
-        imageEditPage.style.display = "none"; // Hide the toolbar when closing the enlarged image
-    })
+    // cancelBtn.addEventListener("click", ()=> {
+    //     // Hide the enlarged image container
+    //     enlargedImageContainer.style.display = "none";
+    //     // Hide the image edit toolbar
+    //     //imageEditPage.style.display = "none"; // Hide the toolbar when closing the enlarged image
+    // })
 
 };
 
