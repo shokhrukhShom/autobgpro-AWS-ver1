@@ -133,7 +133,7 @@ function download_zip() {
                 // Finalize the canvas and add to zip
                 const finalizeCanvas = (idx) => {
                     const imageData = tempCanvas.toDataURL('image/png', 1.0);
-                    const imageName = `canvas-image-${idx + 1}.png`;
+                    const imageName = `image-${idx + 1}.png`;
                     zip.file(imageName, imageData.split('base64,')[1], { base64: true });
                     
                     completedCanvases++;

@@ -63,6 +63,9 @@
 // }
 
 function downloadRecentProject(projectId) {
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[:.]/g, '-'); // Replaces colons and dots to make it filename-safe
+
     return new Promise((resolve, reject) => {
         // Get the current project's metadata from the server
         fetch(`/get_metadata/${projectId}/`)
@@ -106,7 +109,7 @@ function downloadRecentProject(projectId) {
                                     
                                     processedImages++;
                                     if (processedImages === totalImages) {
-                                        generateZipFile(zip, "recent-project-images.zip");
+                                        generateZipFile(zip, `recent-project-images ${timestamp}.zip`);
                                         resolve();
                                     }
                                 }, 'image/png', 1.0);
@@ -176,7 +179,7 @@ function processImageForDownload(imagePath, metadata, callback) {
         // Load background image
         const bg = new Image();
         bg.crossOrigin = 'Anonymous';
-        bg.src = metadata.background_path || metadata.project?.background_image || '/media/bg-templates/patform.jpg';
+        bg.src =  metadata.project?.background_image || metadata.background_path || '/media/bg-templates/patform.jpg';
 
         bg.onload = function() {
             // Draw background

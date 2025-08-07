@@ -899,26 +899,6 @@ def rmbg(request):
         uploaded_picture.background_image = background_path
         uploaded_picture.save()
 
-         # Also save to Metadata model
-        # Alternative approach - if you need to trigger save() on each record
-        metadata_records = Metadata.objects.filter(project=uploaded_picture)
-
-        if metadata_records.exists():
-            # Update each record individually (triggers save() method)
-            updated_count = 0
-            for metadata in metadata_records:
-                metadata.background_path = background_path
-                metadata.save()
-                updated_count += 1
-            print(f"Updated {updated_count} metadata records individually")
-        else:
-            # Create a new metadata record if none exist
-            metadata = Metadata.objects.create(
-                project=uploaded_picture,
-                background_path=background_path
-            )
-            print("Created new metadata record with background path")
-        
         return redirect("rmbg")
 
 # template.js updating bg with template select
