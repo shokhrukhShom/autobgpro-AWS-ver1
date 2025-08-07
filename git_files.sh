@@ -10,7 +10,7 @@ fi
 # List the specific files you want to add
 FILES=(
 
-    "settings.py"
+    "rembg_w_python/settings.py"
 
     "git_files.sh"
     "requirements.txt"
