@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Check if a commit message was provided
+if [ -z "$1" ]; then
+    echo "❌ Error: No commit message provided."
+    echo "Usage: ./git_files.sh \"your commit message here\""
+    exit 1
+fi
+
 # List the specific files you want to add
 FILES=(
     "git_files.sh"
@@ -92,4 +99,4 @@ echo "Selected files have been added to staging."
 
 #. 3 Finally, commit the changes:
 # you change message as needed or commit as-is
-git commit -m "git_save_files.sh: changed the path to make production ready"
+git commit -m "$1"
