@@ -26,10 +26,11 @@ from django.core.mail import send_mail
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, now
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
+from django.views.decorators.cache import never_cache
 
 
 def custom_404_view(request, exception):
@@ -737,7 +738,8 @@ def uploadImg(request):
     if request.method == "GET":
         return render(request, "rembgApp/uploadImg.html")
     
-
+import time
+import random
             
 # Get and Post rmbg.html page   
 @csrf_exempt
@@ -781,7 +783,8 @@ def rmbg(request):
                 # file_path = os.path.join(bg_img_templates_path, filename)
                 # bg_img_paths.append(file_path)
                 file_path = f"{settings.MEDIA_URL}bg-templates/road/{filename}"
-                bg_img_paths_road.append(file_path)        
+                bg_img_paths_road.append(file_path)   
+            
         
         context = {
             
@@ -820,6 +823,12 @@ def rmbg(request):
                 #file_path = os.path.join(path_rembg, filename)
                 file_path = f"media/images/user_id_{user_id}/post_id_{latest_upload_id}/cropped/{filename}"
                 rembg_files_path.append(file_path)
+                
+                # cache-busting parameter : Current timestamp (milliseconds)
+                cache_buster = int(time.time() * 1000)
+                file_path = f"{file_path}?v={cache_buster}"
+        
+            
                 
         
         # Sort by the numeric part of the filenames (code from chatgpt)
@@ -872,6 +881,7 @@ def rmbg(request):
                 bg_img_paths_user.append(file_path)                
         
         context = {
+            'now': now(), 
             "latest_upload_id" : latest_upload_id,
             'current_bg' : current_bg,
             'sorted_rembg_files_path': sorted_rembg_files_path,
@@ -1138,7 +1148,9 @@ def imageProcessing(request): #API Processing
             print(" file path: " + img_path)
             input_image = Image.open(img_path) # open img PIL
             output_image = remove(input_image) #removing bg with rembg library
-            output_image.save(path_save_processed_rembg + "/" + str(counter_rembg) + ".png") # Path to save the img inside rembg folder
+            #output_image.save(path_save_processed_rembg + "/" + str(counter_rembg) + ".png") # Path to save the img inside rembg folder
+            output_path = os.path.join(path_save_processed_rembg, f"{counter_rembg}.png")
+            output_image.save(output_path, "PNG", optimize=False, compress_level=0)
             counter_rembg = int(counter_rembg) + 1 # updating image name by adding one
         
         # Cropping png section ---------
@@ -1204,79 +1216,132 @@ def imageProcessing(request): #API Processing
 
 @csrf_exempt
 @login_required
-# save_image_edit from canvas image edit "save" button clicked
 def save_image_edit(request):
     if request.method == "POST":
         try:
             # Parse the JSON data from the request body
             data = json.loads(request.body)
-            image_data = data.get("image")
-            image_path = data.get("image_path", "")
-
-            # Strip out the 'data:image/png;base64,' part from the image data
-            format, imgstr = image_data.split(';base64,')  
-            #ext = format.split('/')[-1]  # Get the image extension (e.g., png, jpeg)
-
-            # Convert the base64 string to binary data
-            img_data = base64.b64decode(imgstr)
-
-            with open (image_path, 'wb') as f:
-                f.write(img_data)
+            image_data = data.get("image")  # Base64 encoded image data
+            image_path = data.get("image_path", "")  # Relative path to the image
             
-            # The regular expression r'post_id_(\d+)' looks for 
-            # the pattern post_id_ followed by one or more digits
-            #use Python's re module 
-            match = re.search(r'post_id_(\d+)', image_path)
-            if match:
-                post_id = int(match.group(1))
-                print(":) matched - post_id: ", post_id)
-            else:
-                print(post_id + " post_id not found :( ")
+            if not image_data or not image_path:
+                return JsonResponse({"status": "error", "message": "Missing image data or path"}, status=400)
             
-            # Finding Background image with post_id
-            post = get_object_or_404(Uploaded_Pictures, author=request.user, id=post_id)
-            # Access the background_image field
-            background_image = post.background_image
-            #print("--->This is background img path:" + background_image)
-
-
-
-            # Creating new picture ------------->
-
-            # getting the name of image, for example: 3.png
-            file_name = os.path.basename(image_path)
-            user_id = str(request.user.id) # Get the current user
-    
-            # Create output path
-            output_path = "media/images/user_id_"+ user_id +"/post_id_"+ str(post_id) +"/output/"+file_name
+            # Extract the filename from the path
+            filename = os.path.basename(image_path)
             
-            # Deleting old picture
-            # Check if the file exists before attempting to delete it
-            if os.path.exists(output_path):
-                os.remove(output_path)
-                print(f"{output_path} has been deleted.")
-            else:
-                print(f"{output_path} does not exist.")
-
-            # Open the original PNG image
-            original_img = Image.open(image_path).convert("RGBA")
-            # Open the background image and resize it to match the size of the original image
-            background_image = Image.open(background_image).convert("RGBA")
-            background_image = background_image.resize(original_img.size)
-            # Composite the original PNG onto the background image
-            combined = Image.alpha_composite(background_image, original_img)
-
-            # Save the result
-            combined.convert("RGB").save(output_path)
-            print(f"Saved with background at {output_path}")
-
-
-            return JsonResponse({"status": "success", "file_path": "file_path"})
+            # Get user ID and project ID from the path
+            path_parts = image_path.split('/')
+            user_id = None
+            project_id = None
+            
+            # Parse the path to get user_id and project_id
+            for i, part in enumerate(path_parts):
+                if part.startswith('user_id_'):
+                    user_id = part.replace('user_id_', '')
+                elif part.startswith('post_id_'):
+                    project_id = part.replace('post_id_', '')
+            
+            if not user_id or not project_id:
+                return JsonResponse({"status": "error", "message": "Invalid image path format"}, status=400)
+            
+            # Create the destination directory paths
+            rembg_dir = os.path.join(
+                settings.MEDIA_ROOT,
+                'images',
+                f'user_id_{user_id}',
+                f'post_id_{project_id}',
+                'rembg'
+            )
+            
+            cropped_dir = os.path.join(
+                settings.MEDIA_ROOT,
+                'images',
+                f'user_id_{user_id}',
+                f'post_id_{project_id}',
+                'cropped'
+            )
+            
+            # Ensure directories exist
+            os.makedirs(rembg_dir, exist_ok=True)
+            os.makedirs(cropped_dir, exist_ok=True)
+            
+            # Full paths to the image files
+            rembg_path = os.path.join(rembg_dir, filename)
+            cropped_path = os.path.join(cropped_dir, filename)
+            
+            # Remove existing files if they exist
+            for path in [rembg_path, cropped_path]:
+                if os.path.exists(path):
+                    os.remove(path)
+            
+            # Save the new image to rembg folder
+            # The image data comes as "data:image/png;base64,..." so we need to split it
+            format, imgstr = image_data.split(';base64,') 
+            ext = format.split('/')[-1]  # Get the file extension
+            
+            # Decode the base64 data
+            data = ContentFile(base64.b64decode(imgstr), name=filename)
+            
+            # Save to rembg file
+            with open(rembg_path, 'wb+') as destination:
+                for chunk in data.chunks():
+                    destination.write(chunk)
+            
+            # Now process the cropped version
+            try:
+                # Open the saved image
+                img = Image.open(rembg_path)
+                
+                # Get the bounding box of the non-transparent areas
+                bbox = img.getbbox()
+                
+                if bbox:  # Only crop if we found a bounding box
+                    # Crop the image to the bounding box
+                    cropped_img = img.crop(bbox)
+                    
+                    # Save the cropped image
+                    cropped_img.save(cropped_path)
+                else:
+                    # If no bounding box found (shouldn't happen with transparent PNGs), just copy the original
+                    img.save(cropped_path)
+            
+            except Exception as e:
+                print(f"Error cropping image: {str(e)}")
+                # If cropping fails, just copy the original to cropped folder
+                with open(rembg_path, 'rb') as src, open(cropped_path, 'wb') as dst:
+                    dst.write(src.read())
+            
+            # Return the new paths (relative to MEDIA_URL)
+            rembg_relative_path = os.path.join(
+                'images',
+                f'user_id_{user_id}',
+                f'post_id_{project_id}',
+                'rembg',
+                filename
+            )
+            
+            cropped_relative_path = os.path.join(
+                'images',
+                f'user_id_{user_id}',
+                f'post_id_{project_id}',
+                'cropped',
+                filename
+            )
+            
+            return JsonResponse({
+                "status": "success", 
+                "rembg_path": rembg_relative_path,
+                "cropped_path": cropped_relative_path,
+                "rembg_absolute_url": request.build_absolute_uri(settings.MEDIA_URL + rembg_relative_path),
+                "cropped_absolute_url": request.build_absolute_uri(settings.MEDIA_URL + cropped_relative_path)
+            })
 
         except Exception as e:
-            return JsonResponse({"status": "error", "message": str(e)})
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
     else:
-        return JsonResponse({"status": "error", "message": "Invalid request method"})
+        return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)    
+
 
 
 @csrf_exempt

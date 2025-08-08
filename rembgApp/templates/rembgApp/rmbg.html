@@ -1,5 +1,6 @@
 
 {% load static %}
+{% load tz %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -123,24 +124,15 @@
         <button id="saveChanges" class="saveChanges"> Save Changes</button>
         <h1>Preview</h1>
     </div>
-
-    <div  style="display:none ;"> <!-- Preview for Edit TODO -->
+    
+    <!-- Preview for Edit TODO -->
+    <!-- Without this div, canvas edit not working -->
+    <!-- todo: WTF why why why cry -->
+    <div  style="display: none;"> 
         <div id="enlarged-image-container" class="enlarged-container" style="display: none;">
-            <button id="close-button" class="close-button">✖</button> <!-- Close button -->
+            <button id="close-button" class="close-button">✖</button> 
             <img id="enlarged-image" src="" alt="Enlarged Image" />
         </div>
-
-        <!--When individual image clicked
-        <div id="image-edit-page" style="display: none;"> 
-            <div id="img_tool_bar">
-                <ul>
-                    <li id="Edit_Image_Btn">Edit Image</li>
-                    <li>Transform</li>
-                    <li id="cancel">Cancel</li>
-                </ul>
-            </div>
-        </div>  -->
-
     </div>
 
     <!--Start implementing canvas shadow -->
@@ -159,12 +151,24 @@
         {%if sorted_rembg_files_path%}
             <div id="rmbg_images" class="canvas-container" style="display: block;"> 
                 {% for rembg_path in sorted_rembg_files_path %}
-                            <span class="clickable-image canvas-item canvas-wrapper" data-path="{{ rembg_path }}">
+                    
+                            <span class="clickable-image canvas-item canvas-wrapper" data-path="{{ rembg_path }}?v={% now 'U' %}">
+                                <p id="canvasEditBtn" 
+                                class="canvasEditBtn"
+                                style="
+                                margin: 0px;
+                                padding: 0;
+                                font-size: 11px;
+                                text-align: right; 
+                                line-height: 0;
+                                " >Edit</p>
+
                                 <canvas class="rembg-canvas"  style=" border: 1px solid #ccc; box-shadow: none;"></canvas>
-                                <img src="{{ rembg_path}}" alt="image"  class="png-img" data-path="{{ rembg_path }}"
+                                <img src="{{ rembg_path}}?v={% now 'U' %}" alt="image"  class="png-img" data-path="{{ rembg_path }}?v={% now 'U' %}"
                                 style="display:none; width: 500px;" /><!-- getting image src with data-path on Canvases-->  
                                 <div class="checkmark" style="display: none;">✔</div> <!-- Checkmark -->
                             </span>
+
                 {% endfor %} 
             </div>
         {% else %}
@@ -463,17 +467,15 @@
 
     <!--Edit Image Start -->
     <div id="canvasPage" style="display:none;">
-        <h1> Edit Image</h1>
-      
-
         <div id="field">
+            <h1 style="color: #333;"> Edit Image</h1>
             <div class="top-controls-container"
                 style="
                     display: flex; /* Flex container */
                     justify-content: space-between; /* Align left and right */
                     align-items: center; /* Vertically center items */
                     padding: 10px; /* Add padding */
-                    width: 100%; /* Full width of the field */
+                    width: 60%; /* Full width of the field */
                     box-sizing: border-box; /* Ensure padding doesn't break the width */
                 ">
 
