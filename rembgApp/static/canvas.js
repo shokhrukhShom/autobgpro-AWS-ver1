@@ -28,7 +28,7 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
     // Once the image is loaded, adjust canvas size and draw it on the canvas
     img.onload = function() {
         // Set the canvas width to 80% of the browser window's width
-        canvas.width = window.innerWidth * 0.8;
+        canvas.width = 800;
         
         // Maintain the aspect ratio and adjust canvas height based on image's natural dimensions
         const aspectRatio = img.height / img.width;
@@ -401,14 +401,23 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
 
 
     // when saveImage button clicked, call 
-    document.getElementById('saveImage').addEventListener('click', function(){
+    // document.getElementById('saveImage').addEventListener('click', function(){
 
-        let modifiedGivenImageSrc = givenImageSrc.replace("http://127.0.0.1:8000/", "").replace(/\?t=.*$/, "");
+    //     let modifiedGivenImageSrc = givenImageSrc.replace("http://127.0.0.1:8000/", "").replace(/\?t=.*$/, "");
         
-        //call a save image function
+    //     //call a save image function
+    //     saveImage(modifiedGivenImageSrc);
+        
+
+    // });
+    const BASE_URL = window.location.origin + "/";
+
+    document.getElementById('saveImage').addEventListener('click', function () {
+        let modifiedGivenImageSrc = givenImageSrc
+            .replace(BASE_URL, "")
+            .replace(/\?t=.*$/, "");
+
         saveImage(modifiedGivenImageSrc);
-        
-
     });
 
 

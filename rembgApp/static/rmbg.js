@@ -19,11 +19,22 @@ document.addEventListener('DOMContentLoaded', function() {
     delete_bg_image();
     accountDropdown();
     getUsage();
-    //logoSelect();
+    canvasEditBtn();
 
 })
 
-
+function canvasEditBtn() {
+    const canvasEditBtns = document.querySelectorAll('#canvasEditBtn');
+    canvasEditBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const container = this.closest('.clickable-image');
+            const img = container.querySelector('img');
+            const imgSrc = img?.getAttribute('src');
+            console.log("Edit clicked! Image src:", imgSrc);
+            Edit_Image(imgSrc);
+        });
+    });
+}
 
 // when individual image clicked
 //Edit_Image_Btn Button proccessed here too
@@ -32,51 +43,88 @@ function img_clicked() {
     const clickableImages = document.querySelectorAll(".clickable-image"); //.clickable-image,
     const enlargedImageContainer = document.getElementById("enlarged-image-container");
     const enlargedImage = document.getElementById("enlarged-image");
-    const closeButton = document.getElementById("close-button");
-    //const imageEditPage = document.getElementById("image-edit-page");
-    //const cancelBtn = document.getElementById("cancel");
-    //const Edit_Image_Btn = document.getElementById("Edit_Image_Btn");
+    //const closeButton = document.getElementById("close-button");
     
 
     clickableImages.forEach((image) => {
         image.addEventListener("dblclick", function() {
+
             // Set the source of the enlarged image to the clicked image's source
             enlargedImage.src = this.src;
             // Show the enlarged image container
             enlargedImageContainer.style.display = "flex"; // Use flex to center the content
             // Show the image edit toolbar
-            //imageEditPage.style.display = "block"; // Ensure the toolbar is visible
             
             // when Edit_Image_Btn clicked pass on the source of the image
             let imgSrc = enlargedImage.src;
 
             console.log("imgSrc", imgSrc);
 
-            // Edit_Image_Btn.addEventListener('click', function(){
-            //     Edit_Image(imgSrc);
-            //     console.log("Edit_Image_Btn", imgSrc);
-                
-            // })
+            Edit_Image(imgSrc);
+
+            
         });
     });
 
     // Close button functionality
-    closeButton.addEventListener("click", function() {
-        // Hide the enlarged image container
-        enlargedImageContainer.style.display = "none";
-        // Hide the image edit toolbar
-        //imageEditPage.style.display = "none"; // Hide the toolbar when closing the enlarged image
-    });
-
-    // cancelBtn button functionality
-    // cancelBtn.addEventListener("click", ()=> {
+    // closeButton.addEventListener("click", function() {
     //     // Hide the enlarged image container
     //     enlargedImageContainer.style.display = "none";
-    //     // Hide the image edit toolbar
-    //     //imageEditPage.style.display = "none"; // Hide the toolbar when closing the enlarged image
-    // })
+        
+
+    // });
 
 };
+
+
+// when Edit_Image_Btn clicked Edit_Image(x) called and canvasEdit(x,y)
+function Edit_Image(imageSrc) {
+    // Getting Elements and assigning it to variable
+    const rmbg_images = document.getElementById("rmbg_images");
+    const tool_bar = document.getElementById("tool_bar");
+    const canvasPage = document.getElementById("canvasPage");
+    const main_preview = document.getElementById("main_preview")
+
+    // Hiding div_rmbg_images when bg_intsert button clicked
+
+    rmbg_images.style.display = "none"; // hide
+    tool_bar.style.display = "none";  // hide
+    canvasPage.style.display = "block"; //show
+    main_preview.style.display = "none";
+
+    // removing data-path
+    //imageSrc = imageSrc.split('?')[0]; 
+    // Normalize the image source
+    imageSrc = new URL(imageSrc.split('?')[0], window.location.origin).href;
+    
+
+    // replacing given path ".../output/..." with ".../rembg/..."
+    //let givenImageSrc = imageSrc.replace("output", "rembg");
+    // Get the path relative to media root
+    let givenImageSrc = new URL(imageSrc);
+    // Replace hardcoded path manipulations with more robust handling:
+    givenImageSrc = givenImageSrc.pathname.replace("cropped", "rembg");
+
+    // replacing given path ".../output/..." with ".../initialUpload/..." and also updating format to ".jpg"
+    //let originalImageSrc = imageSrc.replace("output", "initialUpload").replace(".png", ".jpg").replace("rembg", "initialUpload");
+    let originalImageSrc = new URL(imageSrc);
+    originalImageSrc = originalImageSrc.pathname
+        .replace("cropped", "initialUpload")
+        .replace(".png", ".jpg")
+        .replace("rembg", "initialUpload");
+
+
+    // Pass on the image source to canvasEdit
+    // it take two variables canvasEdit (givenImageSrc, originalImageSrc)
+    //debugging
+    console.log("imageSrc: ", imageSrc);
+    console.log("givenImageSrc: ", givenImageSrc);
+    console.log("originalImageSrc: ", originalImageSrc);
+
+    canvasEdit(givenImageSrc, originalImageSrc);
+
+} 
+
 
 // background insert page
 window.Background_Insert = function(){
@@ -376,53 +424,6 @@ function updateImages() {
     });
 }
 
-
-// when Edit_Image_Btn clicked Edit_Image(x) called and canvasEdit(x,y)
-function Edit_Image(imageSrc) {
-    // Getting Elements and assigning it to variable
-    const rmbg_images = document.getElementById("rmbg_images");
-    const tool_bar = document.getElementById("tool_bar");
-    const canvasPage = document.getElementById("canvasPage");
-
-    // Hiding div_rmbg_images when bg_intsert button clicked
-
-    rmbg_images.style.display = "none"; // hide
-    tool_bar.style.display = "none";  // hide
-    canvasPage.style.display = "block"; //show
-
-    // removing data-path
-    //imageSrc = imageSrc.split('?')[0]; 
-    // Normalize the image source
-    imageSrc = new URL(imageSrc.split('?')[0], window.location.origin).href;
-    
-
-    // replacing given path ".../output/..." with ".../rembg/..."
-    //let givenImageSrc = imageSrc.replace("output", "rembg");
-    // Get the path relative to media root
-    let givenImageSrc = new URL(imageSrc);
-    // Replace hardcoded path manipulations with more robust handling:
-    givenImageSrc = givenImageSrc.pathname.replace("/media/", "").replace("output", "rembg");
-
-    // replacing given path ".../output/..." with ".../initialUpload/..." and also updating format to ".jpg"
-    //let originalImageSrc = imageSrc.replace("output", "initialUpload").replace(".png", ".jpg").replace("rembg", "initialUpload");
-    let originalImageSrc = new URL(imageSrc);
-    originalImageSrc = originalImageSrc.pathname.replace("/media/", "")
-        .replace("output", "initialUpload")
-        .replace(".png", ".jpg")
-        .replace("rembg", "initialUpload");
-
-
-    // Pass on the image source to canvasEdit
-    // it take two variables canvasEdit (givenImageSrc, originalImageSrc)
-
-    //debugging
-    // console.log("imageSrc: ", imageSrc);
-    // console.log("givenImageSrc: ", givenImageSrc);
-    // console.log("originalImageSrc: ", originalImageSrc);
-
-    canvasEdit(givenImageSrc, originalImageSrc);
-
-} 
 
 
 // Start - Toggles shadow dropdown 

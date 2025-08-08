@@ -21,8 +21,11 @@ function saveImage(imagePath) {
   
     showLoadingSpinner();
     
+    console.log("save_image_edit initiated");
+
     // Send AJAX request
     fetch("save_image_edit", {
+        
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -36,9 +39,15 @@ function saveImage(imagePath) {
     .then(response => response.json())
     .then(data => {
         console.log("Image saved successfully:", data);
-        backToMainBtn();
+        //backToMainBtn();
         // Reload the page after successful response
-        window.location.reload();
+        showError("Image saved successfully","green")
+
+        //window.location.reload();
+        setTimeout(() => {
+            window.location.href = window.location.pathname + "?nocache=" + Date.now();
+        }, 500);    
+        
     })
     .catch(error => {
         console.error("Error saving image:", error);
