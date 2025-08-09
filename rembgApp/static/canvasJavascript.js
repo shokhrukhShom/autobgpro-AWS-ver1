@@ -43,6 +43,20 @@ function saveImage(imagePath) {
         // Reload the page after successful response
         showError("Image saved successfully","green")
 
+        // Clear the canvas after successful save
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Reset drawing state
+        if (window.disableDrawing) {
+            window.disableDrawing();
+        }
+
+        // Reset brush size to default after saving
+        if (window.updateCursorWidth) {
+            window.updateCursorWidth(50); // Reset to default size
+        }
+
         //window.location.reload();
         setTimeout(() => {
             window.location.href = window.location.pathname + "?nocache=" + Date.now();
