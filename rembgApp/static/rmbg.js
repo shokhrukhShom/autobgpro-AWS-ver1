@@ -77,8 +77,9 @@ function img_clicked() {
 };
 
 
-// when Edit_Image_Btn clicked Edit_Image(x) called and canvasEdit(x,y)
+
 function Edit_Image(imageSrc) {
+    
     // Getting Elements and assigning it to variable
     const rmbg_images = document.getElementById("rmbg_images");
     const tool_bar = document.getElementById("tool_bar");
@@ -94,16 +95,18 @@ function Edit_Image(imageSrc) {
 
     // removing data-path
     //imageSrc = imageSrc.split('?')[0]; 
-    // Normalize the image source
-    imageSrc = new URL(imageSrc.split('?')[0], window.location.origin).href;
+
+    // Normalize the image source and add cache-busting parameter
+    imageSrc = new URL(imageSrc.split('?')[0], window.location.origin).href + '?t=' + Date.now();
     
 
     // replacing given path ".../output/..." with ".../rembg/..."
     //let givenImageSrc = imageSrc.replace("output", "rembg");
     // Get the path relative to media root
     let givenImageSrc = new URL(imageSrc);
+
     // Replace hardcoded path manipulations with more robust handling:
-    givenImageSrc = givenImageSrc.pathname.replace("cropped", "rembg");
+    givenImageSrc = givenImageSrc.pathname.replace("cropped", "rembg") + '?t=' + Date.now(); // added Date.now for cache busting
 
     // replacing given path ".../output/..." with ".../initialUpload/..." and also updating format to ".jpg"
     //let originalImageSrc = imageSrc.replace("output", "initialUpload").replace(".png", ".jpg").replace("rembg", "initialUpload");
@@ -111,7 +114,7 @@ function Edit_Image(imageSrc) {
     originalImageSrc = originalImageSrc.pathname
         .replace("cropped", "initialUpload")
         .replace(".png", ".jpg")
-        .replace("rembg", "initialUpload");
+        .replace("rembg", "initialUpload") + '?t=' + Date.now(); // added Date.now for cache busting
 
 
     // Pass on the image source to canvasEdit
@@ -120,10 +123,20 @@ function Edit_Image(imageSrc) {
     console.log("imageSrc: ", imageSrc);
     console.log("givenImageSrc: ", givenImageSrc);
     console.log("originalImageSrc: ", originalImageSrc);
+    imageSrc = null; // reseting imageSrc to null
 
+    // call canvasEdit function and pass on values
     canvasEdit(givenImageSrc, originalImageSrc);
 
+    // reset image sources
+    imageSrc = null;
+    givenImageSrc = null;
+    originalImageSrc= null;
+
 } 
+
+
+
 
 
 // background insert page
