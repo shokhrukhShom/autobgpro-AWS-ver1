@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     //Background_Insert;
     document.getElementById("Background_Insert").addEventListener("click", Background_Insert);
     Checkmark_picture();
-    img_clicked();
+  
     document.getElementById("backToMainBtn").addEventListener("click", backToMainBtn);
     updateImages(); // update image whenever page loads, can be bad practice but meh...
     toggleDropdown;
@@ -35,47 +35,6 @@ function canvasEditBtn() {
         });
     });
 }
-
-// when individual image clicked
-//Edit_Image_Btn Button proccessed here too
-function img_clicked() {
-
-    const clickableImages = document.querySelectorAll(".clickable-image"); //.clickable-image,
-    const enlargedImageContainer = document.getElementById("enlarged-image-container");
-    const enlargedImage = document.getElementById("enlarged-image");
-    //const closeButton = document.getElementById("close-button");
-    
-
-    clickableImages.forEach((image) => {
-        image.addEventListener("dblclick", function() {
-
-            // Set the source of the enlarged image to the clicked image's source
-            enlargedImage.src = this.src;
-            // Show the enlarged image container
-            enlargedImageContainer.style.display = "flex"; // Use flex to center the content
-            // Show the image edit toolbar
-            
-            // when Edit_Image_Btn clicked pass on the source of the image
-            let imgSrc = enlargedImage.src;
-
-            console.log("imgSrc", imgSrc);
-
-            Edit_Image(imgSrc);
-
-            
-        });
-    });
-
-    // Close button functionality
-    // closeButton.addEventListener("click", function() {
-    //     // Hide the enlarged image container
-    //     enlargedImageContainer.style.display = "none";
-        
-
-    // });
-
-};
-
 
 
 function Edit_Image(imageSrc) {
@@ -427,6 +386,12 @@ function showError(message, color) {
     errorMessage.classList.add('hidden');
 };
 
+
+
+
+
+
+
 // Call updateImages whenever the user changes the background or edits an image
 // Example usage: updateImages();
 function updateImages() {
@@ -529,8 +494,15 @@ function hideLoadingSpinner() {
 
 
 function textBtn(){ // new async added
+
     window.selectedPicture = []; // Reset to empty array when entering design mode
     //window.selectedCanvas = []; // Reset selected canvases // new
+
+    // hide canvas edit button
+    const canvasEditBtns = document.querySelectorAll('#canvasEditBtn');
+    canvasEditBtns.forEach(btn => {
+        btn.style.display = "none";
+    });
 
 
     console.log("text btn working");

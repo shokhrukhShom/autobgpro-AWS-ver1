@@ -163,9 +163,6 @@ hr {
 
 
 /* Error msg Start */
-
-/* Error message styling */
-/* Error message styling */
 #error-message {
     position: fixed;
     top: 20px;
@@ -206,6 +203,8 @@ hr {
   }
 
   /* Error msg END */
+
+ 
 
 
   /* Shadow  Start */

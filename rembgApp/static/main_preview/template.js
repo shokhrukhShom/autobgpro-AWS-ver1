@@ -209,6 +209,13 @@ async function loadTemplateMetadata(templateId) {
 function template_select(){
     
     console.log("template_select clicked");
+    // hide canvas edit button
+    const canvasEditBtns = document.querySelectorAll('#canvasEditBtn');
+    canvasEditBtns.forEach(btn => {
+        btn.style.display = "none";
+    });
+    
+    // Hide those elements
     document.getElementById("tool_bar").style.display = "none";
     document.getElementById("main_preview").style.display = "none";
     document.getElementById("select-canvas").style.display = "block";

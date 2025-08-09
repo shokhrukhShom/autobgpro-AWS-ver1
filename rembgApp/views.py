@@ -936,30 +936,79 @@ def update_background(request):
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-@csrf_exempt  # Optional if you handle CSRF token manually in JS
+# @csrf_exempt  # Optional if you handle CSRF token manually in JS
+# @login_required
+# def upload_background(request):
+#     if request.method == 'POST' and request.FILES.get('image'):
+        
+#         user_id = str(request.user.id)
+#         uploaded_file = request.FILES['image']
+        
+#         # Create a unique filename using uuid to avoid overwriting
+#         file_ext = os.path.splitext(uploaded_file.name)[1]
+#         file_name = f"{uuid.uuid4().hex}{file_ext}"
+        
+#         # Define upload path: media/images/user_id_X/user_backgrounds/
+#         upload_path = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}','user_backgrounds')
+#         os.makedirs(upload_path, exist_ok=True)
+
+#         file_path = os.path.join(upload_path, file_name)
+        
+#         # Save uploaded image to disk
+#         with open(file_path, 'wb+') as f:
+#             for chunk in uploaded_file.chunks():
+#                 f.write(chunk)
+                
+#         # Return image URL so frontend can display it
+#         file_url = f"{settings.MEDIA_URL}images/user_id_{user_id}/user_backgrounds/{file_name}"
+#         return JsonResponse({'url': file_url})
+
+#     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@csrf_exempt
 @login_required
 def upload_background(request):
     if request.method == 'POST' and request.FILES.get('image'):
-        
         user_id = str(request.user.id)
         uploaded_file = request.FILES['image']
+        
+        # Check current number of backgrounds
+        user_bg_dir = os.path.join(
+            settings.MEDIA_ROOT,
+            'images',
+            f'user_id_{user_id}',
+            'user_backgrounds'
+        )
+        
+        # Count existing background images
+        current_count = 0
+        if os.path.exists(user_bg_dir):
+            current_count = len([
+                f for f in os.listdir(user_bg_dir) 
+                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif'))
+            ])
+        
+        # Enforce 5-image limit
+        if current_count >= 20:
+            return JsonResponse({
+                'error': 'You can only have up to 20 background uploads. Delete old pictures to upload more.',
+                'limit_reached': True
+            }, status=400)
         
         # Create a unique filename using uuid to avoid overwriting
         file_ext = os.path.splitext(uploaded_file.name)[1]
         file_name = f"{uuid.uuid4().hex}{file_ext}"
         
-        # Define upload path: media/images/user_id_X/user_backgrounds/
-        upload_path = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}','user_backgrounds')
-        os.makedirs(upload_path, exist_ok=True)
+        # Define upload path
+        upload_path = os.path.join(user_bg_dir, file_name)
+        os.makedirs(user_bg_dir, exist_ok=True)
 
-        file_path = os.path.join(upload_path, file_name)
-        
         # Save uploaded image to disk
-        with open(file_path, 'wb+') as f:
+        with open(upload_path, 'wb+') as f:
             for chunk in uploaded_file.chunks():
                 f.write(chunk)
                 
-        # Return image URL so frontend can display it
+        # Return image URL
         file_url = f"{settings.MEDIA_URL}images/user_id_{user_id}/user_backgrounds/{file_name}"
         return JsonResponse({'url': file_url})
 
@@ -1477,8 +1526,8 @@ def save_image_edit(request):
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
-    
-      
+
+
 
 
 @csrf_exempt
@@ -1657,6 +1706,23 @@ def upload_logo(request):
             # Create logos directory if it doesn't exist
             logo_dir = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', 'logos')
             os.makedirs(logo_dir, exist_ok=True)
+
+            # Count existing logo images
+            current_count = 0
+            if os.path.exists(logo_dir):
+                current_count = len([
+                    f for f in os.listdir(logo_dir) 
+                    if f.lower().endswith(('.png', '.jpg', '.jpeg'))
+                ])
+            
+            # Enforce 20-logo limit
+            if current_count >= 20:
+                return JsonResponse({
+                    'error': 'You have 20 logo images saved. Please delete old logos to upload more.',
+                    'limit_reached': True
+                }, status=400)
+
+
             
             # Generate a unique filename (you can customize this)
             timestamp = int(time.time())

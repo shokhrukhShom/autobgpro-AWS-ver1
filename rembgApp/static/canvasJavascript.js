@@ -44,8 +44,7 @@ function saveImage(imagePath) {
         showError("Image saved successfully","green")
 
         // Clear the canvas after successful save
-        const context = canvas.getContext('2d');
-        context.clearRect(0, 0, canvas.width, canvas.height);
+        
         
         // Reset drawing state
         if (window.disableDrawing) {
