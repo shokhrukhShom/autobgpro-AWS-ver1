@@ -180,7 +180,7 @@ async function fetchMetadataAPI(project_id) { // export new added
                         document.dispatchEvent(event);
                     };
                     logoImg.onerror = () => {
-                        console.log('Failed to load logo (logo not set):', metadata.logo_path);
+                        //console.log('Failed to load logo (logo not set):', metadata.logo_path);
                         updateCanvasState(canvasId, newState);
                     };
                 } else {

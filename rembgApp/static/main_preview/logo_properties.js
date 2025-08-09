@@ -82,6 +82,11 @@ export function initializeLogo (canvas){
                     if (data.status === 'success') {
                         console.log('Logo cleared successfully');
                     }
+                    if (data.error) {
+                        
+                        console.log(data.error);
+                        return;
+                    }
                 })
                 .catch(error => {
                     console.error('Error clearing logo:', error);
@@ -129,10 +134,15 @@ export function initializeLogo (canvas){
                             canvasDrawLogo(); // Redraw the canvas with the new logo
                         }
                     } else {
-                        console.error('Logo upload failed:', data.error);
+                        showError(data.error, "red");
+                        alert("You have 20 logo images saved. Please delete old logos to upload more.");
+                        console.error('Logo upload failed:', data.error);  
                     }
                 })
                 .catch(error => {
+                    //showError(data.error, "red");
+                    showErrorLogo("You have 20 logo images saved. Please delete old logos to upload more.", "red")
+                    alert("You have 20 logo images saved. Please delete old logos to upload more.");
                     console.error('Error uploading logo:', error);
                 });
             }
@@ -289,6 +299,7 @@ export function initializeLogo (canvas){
             e.preventDefault(); // Prevent default scrolling behavior
         }
     }, { passive: false });
+
 }
 
 
@@ -307,3 +318,7 @@ export function canvasDrawLogo() { //export
     document.dispatchEvent(event);
 
 }
+
+
+
+

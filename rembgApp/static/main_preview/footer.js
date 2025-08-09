@@ -142,6 +142,22 @@ export function initializeFooter(canvas, ctx) {
                 <option value="Courier New" style="font-family: 'Courier New';">Courier New</option>
                 <option value="Verdana" style="font-family: Verdana;">Verdana</option>
                 <option value="Georgia" style="font-family: Georgia;">Georgia</option>
+                <option value="Palatino" style="font-family: Palatino;">Palatino</option>
+                <option value="Garamond" style="font-family: Garamond;">Garamond</option>
+                <option value="Bookman" style="font-family: Bookman;">Bookman</option>
+                <option value="Comic Sans MS" style="font-family: 'Comic Sans MS';">Comic Sans MS</option>
+                <option value="Impact" style="font-family: Impact;">Impact</option>
+                <option value="Lucida Console" style="font-family: 'Lucida Console';">Lucida Console</option>
+                <option value="Tahoma" style="font-family: Tahoma;">Tahoma</option>
+                <option value="Trebuchet MS" style="font-family: 'Trebuchet MS';">Trebuchet MS</option>
+                <option value="Arial Black" style="font-family: 'Arial Black';">Arial Black</option>
+                <option value="Lucida Sans Unicode" style="font-family: 'Lucida Sans Unicode';">Lucida Sans Unicode</option>
+                <option value="MS Sans Serif" style="font-family: 'MS Sans Serif';">MS Sans Serif</option>
+                <option value="MS Serif" style="font-family: 'MS Serif';">MS Serif</option>
+                <option value="Symbol" style="font-family: Symbol;">Symbol</option>
+                <option value="Webdings" style="font-family: Webdings;">Webdings</option>
+                <option value="Wingdings" style="font-family: Wingdings;">Wingdings</option>
+                <option value="system-ui" style="font-family: system-ui;">System UI</option>
             </select>
 
             <button id="remove-footer-text-${textObj.id}" style="margin-right: 5px;">Remove</button>

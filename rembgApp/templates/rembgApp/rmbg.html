@@ -78,7 +78,7 @@
    
         
     {% if message %}
-    <div style="color: red;">{{ message }}</div>
+    
     {% endif %}
 
     <!--Tool Bar-->
@@ -158,7 +158,7 @@
                                 style="
                                 margin: 0px;
                                 padding: 0;
-                                font-size: 11px;
+                                font-size: 14px;
                                 text-align: right; 
                                 line-height: 0;
                                 " >Edit</p>
@@ -264,7 +264,24 @@
             <!-- Logo Select END-->
 
 
-            <div class="grid-container" >
+            <!-- Add Text -->
+            <!-- text START -->
+            <div style="width: 100%;" >
+                <div id="footer-text-controls" style="text-align: center; margin: 10px auto;">
+                    
+                    <button id="add-text-btn-footer" style="padding: 5px; margin: 5px;"><span id="plus-sign">+</span> Add Text</button>
+                </div>
+
+                <div id="footer-text-list" style="margin: 10px auto; text-align: center;">
+                    <!-- Dynamic text input sections will be added here -->
+                </div>
+            </div>
+            <!-- Add Text End -->
+
+
+
+
+            <div class="grid-container" style="margin-top: 20px; " >
             <!-- Header Bar Start -->
             <div class="grid-item" style="text-align:left; margin: 10px;">
                 <h3>Header</h3>
@@ -299,17 +316,7 @@
             </div>
             <!--Footer Settings END-->
             </div>
-            <!-- text START -->
-            <div style="width: 100%;" >
-                <div id="footer-text-controls" style="text-align: center; margin: 10px auto;">
-                    
-                    <button id="add-text-btn-footer" style="padding: 5px; margin: 5px;"><span id="plus-sign">+</span> Add Text</button>
-                </div>
-
-                <div id="footer-text-list" style="margin: 10px auto; text-align: center;">
-                    <!-- Dynamic text input sections will be added here -->
-                </div>
-            </div>
+            
 
         </div>
     </div>
@@ -358,66 +365,6 @@
                 </div>
             </div>
             </div>
-            <!-- END Handling deletion of user BG image-->
-
-            <script>
-            document.getElementById('bgUpload').addEventListener('change', function () {
-                const files = this.files;
-                const container = document.querySelector('.image-grid');
-
-               // Loop over each selected file
-                Array.from(files).forEach(file => {
-                    const formData = new FormData();
-                    formData.append('image', file);
-
-                    fetch('/upload-background/', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRFToken': getCSRFToken(), // protect against CSRF
-                        },
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.url) {
-                            // Create <div class="picture"> element
-                            const div = document.createElement('div');
-                            div.className = 'picture';
-                           
-
-                            const img = document.createElement('img');
-                            img.src = data.url;
-                            img.alt = data.url;
-
-                            const checkmark = document.createElement('div');
-                            checkmark.className = 'checkmark';
-                            checkmark.textContent = '✔';
-
-                            const delete_btn = document.createElement('button')
-                            delete_btn.className = 'delete-btn';
-                            delete_btn.textContent  = 'X';
-                            delete_btn.style.color = 'rgb(212, 143, 143)';
-                            delete_btn.style.background = 'white';
-                            delete_btn.style.border = 'aquamarine';
-                            delete_btn.style.cursor = 'pointer';
-
-                            div.appendChild(img);
-                            div.appendChild(checkmark);
-                            div.appendChild(delete_btn);
-                            container.appendChild(div); // ✅ Add new image to the container
-                            
-                        }
-                    });
-                });
-
-                function getCSRFToken() {
-                    const cookieValue = document.cookie
-                        .split('; ')
-                        .find(row => row.startsWith('csrftoken='));
-                    return cookieValue ? cookieValue.split('=')[1] : '';
-                }
-            });
-            </script>
         </div>    
         <!-- END templates/upload_background.html -->
         <hr>
@@ -579,245 +526,172 @@
 
 
     <!-- Code for canvas --> 
-    <script>
-        // Update your JavaScript to send the JSON to the server using fetch
+<script>
         
-        // function saveChanges(){
-
-        //     //console.log("save btn pressed");
-        //     const finalMetadataArray = Array.from(metadataMap.values()); // metadataMap 
-        //     console.log(finalMetadataArray);
-            
-        //     // Fetch POST to save sqlite database
-
-        //     fetch('save_metadata', {  // Adjust URL based on your Django URL structure
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //             'X-CSRFToken': getCSRFToken() // Include CSRF token
-        //         },
-        //         body: JSON.stringify({ metadata:finalMetadataArray }) 
-        //     })
-        //     .then(response => response.json())
-        //     .then(data => {
-        //         console.log("Response from server:", data);
-        //         showError("Saved", "green")
-             
-        //     })
-        //     .catch(error => {
-        //         console.error("Error saving metadata:", error);
-        //         showError("Error saving metadata: " + error, "red");
-        //     });
-        // }
-
-        // // Function to get CSRF token from Django's cookies
-        // function getCSRFToken() {
-        //     const cookieValue = document.cookie.match(/csrftoken=([^ ;]+)/);
-        //     return cookieValue ? cookieValue[1] : '';
-        // }
-                
-            
-        // // Setting up objs array to store canvas properties
-        // window.metadataMap = new Map();
         
+window.project_id = "{{ latest_upload_id|escapejs }}";
+// Setting up objs array to store canvas properties
+window.metadataMap = new Map();
+       
+document.addEventListener("DOMContentLoaded", () => {
+// Experimental
+window.currentBg = "{{ current_bg|escapejs }}";
 
-        // // assigning the background to variable
-        // window.project_id = "{{ latest_upload_id|escapejs }}";
+document.getElementById('bgUpload').addEventListener('change', function () {
+    const files = this.files;
+    const container = document.querySelector('.image-grid');
 
-        // document.addEventListener("DOMContentLoaded", () => {
+    // Loop over each selected file
+    Array.from(files).forEach(file => {
+        const formData = new FormData();
+        formData.append('image', file);
 
-        //     //experimental
-        //     window.currentBg = "{{ current_bg|escapejs }}";
+        fetch('/upload-background/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                showError(data.error, "red");
+                return;
+            }
+            if (data.url) {
+                // Create <div class="picture"> element
+                const div = document.createElement('div');
+                div.className = 'picture';
 
-        // });
+                const img = document.createElement('img');
+                img.src = data.url;
+                img.alt = data.url;
 
+                const checkmark = document.createElement('div');
+                checkmark.className = 'checkmark';
+                checkmark.textContent = '✔';
 
-        // // Call this when saving saveTextComponents
-        // document.getElementById('saveTextBtn').addEventListener('click', saveTextComponents);
+                const delete_btn = document.createElement('button');
+                delete_btn.className = 'delete-btn';
+                delete_btn.textContent = 'X';
+                delete_btn.style.color = 'rgb(212, 143, 143)';
+                delete_btn.style.background = 'white';
+                delete_btn.style.border = 'aquamarine';
+                delete_btn.style.cursor = 'pointer';
 
-        // // function saveTextComponents() {
-        // //     const canvasWrappers = document.querySelectorAll('.canvas-wrapper');
-        // //     const visibleCanvases = [];
-        // //     const project_id = "{{ latest_upload_id|escapejs }}";
-            
-        // //     // Filter only visible canvases
-        // //     canvasWrappers.forEach(wrapper => {
-        // //         if (window.getComputedStyle(wrapper).display !== 'none') {
-        // //             const canvas = wrapper.querySelector('.rembg-canvas');
-        // //             if (canvas) visibleCanvases.push(canvas);
-        // //         }
-        // //     });
-            
-        // //     // Prepare data with proper formatting
-        // //     const elements = visibleCanvases.map(canvas => {
-        // //         const meta = metadataMap.get(canvas);
-                
-        // //         // Get relative image path (remove domain and query params)
-        // //         let imagePath = meta.imagePath;
-        // //         if (imagePath.includes(window.location.origin)) {
-        // //             imagePath = imagePath.replace(window.location.origin, '');
-        // //         }
-        // //         if (imagePath.includes('?')) {
-        // //             imagePath = imagePath.split('?')[0];
-        // //         }
-                
-        // //         return {
-        // //             image_path: imagePath,
-        // //             design_data: {
-        // //                 header: {
-        // //                     height: parseInt(meta.design_data.header.height) || 0,
-        // //                     color: meta.design_data.header.color,
-        // //                     opacity: parseFloat(meta.design_data.header.opacity) || 1.0
-        // //                 },
-        // //                 footer: {
-        // //                     height: parseInt(meta.design_data.footer.height) || 0,
-        // //                     color: meta.design_data.footer.color,
-        // //                     opacity: parseFloat(meta.design_data.footer.opacity) || 1.0
-        // //                 },
-        // //                 //texts: meta.design_data.texts || [],
-                        
-        // //                 // new code for texts
-        // //                 texts: (meta.design_data.texts || []).map(text => ({
-        // //                     ...text,
-        // //                     fontFamily: text.fontFamily || 'Arial' // Ensure fontFamily is included
-        // //                 })),
-        // //                 // end new code texts
-                        
-        // //                 // New Code
-        // //                 logo_x: meta.design_data.logo_x,
-        // //                 logo_y: meta.design_data.logo_y,
-        // //                 logo_scale: meta.design_data.logo_scale,
-        // //                 //logo_path: meta.design_data.logo_path,
-        // //                 logo_opacity: meta.design_data.logo_opacity,
-                        
-        // //             }
-        // //         };
-        // //     });
-            
-        // //     const data = { 
-        // //         project_id: project_id,
-        // //         elements: elements 
-        // //     };
-            
-        // //     console.log("Saving design data:", JSON.stringify(data, null, 2));
+                // Add click event for delete button
+                delete_btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    deleteBackground(this.parentElement, data.url);
+                });
 
-        // //     fetch('save_metadata', {
-        // //         method: 'POST',
-        // //         headers: {
-        // //             'Content-Type': 'application/json',
-        // //             'X-CSRFToken': getCSRFToken()
-        // //         },
-        // //         body: JSON.stringify(data)
-        // //     })
-        // //     .then(response => {
-        // //         if (!response.ok) {
-        // //             return response.json().then(err => { throw new Error(err.error || 'Failed to save design'); });
-        // //         }
-        // //         return response.json();
-        // //     })
-        // //     .then(data => {
-        // //         console.log("Design saved:", data);
-        // //         showError("Design saved successfully!", "green");
-        // //     })
-        // //     .catch(error => {
-        // //         console.error("Error saving design:", error);
-        // //         showError("Error saving design: " + error.message, "red");s
-        // //     });
-        // // }
-
-        // // Add this function to rmbg.js
-        // function saveTextComponents() {
-        //     const visibleCanvases = Array.from(document.querySelectorAll('.rembg-canvas'))
-        //         .filter(canvas => canvas.offsetParent !== null); // Get only visible canvases
-
-        //     if (visibleCanvases.length === 0) {
-        //         showError("No visible canvases found", "red");
-        //         return;
-        //     }
-
-        //     const project_id = "{{ latest_upload_id|escapejs }}";
-        //     const state = getCanvasStateDesign(); // Get current design state
-
-        //     // Prepare the data to save
-        //     const elements = visibleCanvases.map(canvas => {
-        //         const meta = metadataMap.get(canvas);
-                
-        //         // Get relative image path
-        //         let imagePath = meta.imagePath;
-        //         if (imagePath.includes(window.location.origin)) {
-        //             imagePath = imagePath.replace(window.location.origin, '');
-        //         }
-        //         imagePath = imagePath.split('?')[0];
-
-        //         // Get logo path if exists
-        //         let logoPath = '';
-        //         if (state.logo && state.logo.image && state.logo.image.src) {
-        //             logoPath = state.logo.image.src
-        //                 .replace(window.location.origin, '')
-        //                 .split('?')[0];
-        //         }
-
-        //         return {
-        //             image_path: imagePath,
-        //             design_data: {
-        //                 header: state.header || {},
-        //                 footer: state.footer || {},
-        //                 texts: state.footer.texts || [],
-        //                 logo_path: logoPath,
-        //                 logo_x: state.logo.x || 100,
-        //                 logo_y: state.logo.y || 100,
-        //                 logo_scale: state.logo.scale || 0.1
-        //             }
-        //         };
-        //     });
-
-        //     const data = {
-        //         project_id: project_id,
-        //         elements: elements
-        //     };
-
-        //     console.log("Saving design data:", JSON.stringify(data, null, 2));
-
-        //     fetch('save_metadata', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //             'X-CSRFToken': getCSRFToken()
-        //         },
-        //         body: JSON.stringify(data)
-        //     })
-        //     .then(response => {
-        //         if (!response.ok) {
-        //             throw new Error('Failed to save design');
-        //         }
-        //         return response.json();
-        //     })
-        //     .then(data => {
-        //         console.log("Design saved:", data);
-        //         showError("Design saved successfully!", "green");
-        //     })
-        //     .catch(error => {
-        //         console.error("Error saving design:", error);
-        //         showError("Error saving design: " + error.message, "red");
-        //     });
-        // }
-        // // Add this if not already present
-        // function getCSRFToken() {
-        //     const cookieValue = document.cookie.match(/csrftoken=([^ ;]+)/);
-        //     return cookieValue ? cookieValue[1] : '';
-        // }
-        
-        window.project_id = "{{ latest_upload_id|escapejs }}";
-        // Setting up objs array to store canvas properties
-        window.metadataMap = new Map();
-        document.addEventListener("DOMContentLoaded", () => {
-
-        //experimental
-        window.currentBg = "{{ current_bg|escapejs }}";
-
+                div.appendChild(img);
+                div.appendChild(checkmark);
+                div.appendChild(delete_btn);
+                container.appendChild(div);
+            }
+        })
+        .catch(error => {
+            console.error("Upload error:", error);
+            showError(error.error || "Error uploading background", "red");
         });
+    });
+});
 
-    </script>
+function getCSRFToken() {
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='));
+    return cookieValue ? cookieValue.split('=')[1] : '';
+}
+
+function showError(message, color) {
+    const errorMessage = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
+    const dismissBtn = document.getElementById('dismiss-btn');
+
+    // Set the custom error message
+    errorText.textContent = message;
+
+    // Setting background color
+    errorMessage.style.backgroundColor = color;
+
+    // Show the error message
+    errorMessage.classList.remove('hidden');
+    errorMessage.classList.add('visible');
+
+    // Automatically hide the error message after 5 seconds
+    const timeoutId = setTimeout(() => {
+        hideError();
+    }, 5000);
+
+    // Allow the user to dismiss the message manually
+    dismissBtn.onclick = () => {
+        clearTimeout(timeoutId); // Cancel the automatic hide
+        hideError();
+    };
+}
+
+function hideError() {
+    const errorMessage = document.getElementById('error-message');
+    errorMessage.classList.remove('visible');
+    errorMessage.classList.add('hidden');
+}
+
+function deleteBackground(element, imageUrl) {
+    // Show confirmation modal
+    const modal = document.getElementById('confirmationModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const confirmDelete = document.getElementById('confirmDelete');
+    const cancelDelete = document.getElementById('cancelDelete');
+    
+    modalMessage.textContent = "Are you sure you want to delete this background image?";
+    modal.classList.remove('hidden');
+    
+    // Handle delete confirmation
+    confirmDelete.onclick = function() {
+        fetch('/delete-background/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                image_path: imageUrl.replace(window.location.origin, '')
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                element.remove();
+                showError("Background deleted successfully", "green");
+            } else {
+                showError(data.error || "Error deleting background", "red");
+            }
+        })
+        .catch(error => {
+            showError("Error deleting background", "red");
+            console.error("Delete error:", error);
+        })
+        .finally(() => {
+            modal.classList.add('hidden');
+        });
+    };
+    
+    // Handle cancel
+    cancelDelete.onclick = function() {
+        modal.classList.add('hidden');
+    };
+}
+});
+
+</script>
 
 
 <!--Load main preview js file-->
