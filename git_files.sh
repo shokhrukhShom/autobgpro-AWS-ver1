@@ -85,7 +85,8 @@ FILES=(
     # new py files
     "rembgApp/tasks.py"
     rembgApp/signals.py
-    
+    "rembg_w_python/celery.py"
+
     # app.py
     "rembgApp/apps.py"
     
