@@ -53,6 +53,25 @@ async function loadTemplates() {
     }
 }
 
+// function renderTemplateList(templates) {
+//     const templateList = document.getElementById('template-list');
+//     if (!templateList) return;
+    
+//     templateList.innerHTML = '';
+    
+//     templates.forEach(template => {
+//         const templateItem = document.createElement('div');
+//         templateItem.className = 'template-item';
+//         templateItem.textContent = template.name;
+
+//         templateItem.addEventListener('click', (e) => {
+//             e.stopPropagation();
+//             loadTemplateMetadata(template.id);
+//         });
+//         templateList.appendChild(templateItem);
+//     });
+// }
+
 function renderTemplateList(templates) {
     const templateList = document.getElementById('template-list');
     if (!templateList) return;
@@ -62,14 +81,99 @@ function renderTemplateList(templates) {
     templates.forEach(template => {
         const templateItem = document.createElement('div');
         templateItem.className = 'template-item';
-        templateItem.textContent = template.name;
-        templateItem.addEventListener('click', (e) => {
+        
+        // Create container for template name and delete button
+        const templateContent = document.createElement('div');
+        templateContent.className = 'template-content';
+        templateContent.textContent = template.name;
+        
+        // Create delete button
+        const deleteBtn = document.createElement('span');
+        deleteBtn.className = 'template-delete-btn';
+        deleteBtn.innerHTML = '&times;';
+        deleteBtn.title = 'Delete template';
+        deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            loadTemplateMetadata(template.id);
+            showDeleteConfirmation(template.id, template.name);
         });
+        
+        templateItem.appendChild(templateContent);
+        templateItem.appendChild(deleteBtn);
+        templateItem.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('template-delete-btn')) {
+                e.stopPropagation();
+                loadTemplateMetadata(template.id);
+            }
+        });
+        
         templateList.appendChild(templateItem);
     });
 }
+
+function showDeleteConfirmation(templateId, templateName) {
+    const modal = document.createElement('div');
+    modal.className = 'delete-confirmation-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <p>Are you sure you want to delete template "${templateName}"?</p>
+            <div class="modal-buttons">
+                <button class="confirm-delete">Yes, Delete</button>
+                <button class="cancel-delete">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('.confirm-delete').addEventListener('click', () => {
+        deleteTemplate(templateId);
+        modal.remove();
+    });
+    
+    modal.querySelector('.cancel-delete').addEventListener('click', () => {
+        modal.remove();
+    });
+}
+
+async function deleteTemplate(templateId) {
+    try {
+        const response = await fetch(`/delete_template/${templateId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Reload the template list after deletion
+        loadTemplates();
+    } catch (error) {
+        console.error('Error deleting template:', error);
+        alert('Failed to delete template. Please check console for details.');
+    }
+}
+
+// Add this to your existing getCSRFToken function if not already present
+function getCSRFToken() {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
 let templateMetadata = {};
 
 async function loadTemplateMetadata(templateId) {
@@ -82,13 +186,15 @@ async function loadTemplateMetadata(templateId) {
         
         templateMetadata = {
             ...data,
-            id: templateId  // Include template ID in the metadata
+            id: templateId,  // Include template ID in the metadata
+            background_path: data.background_path || null  // Ensure background_path is included
         };
 
         templateMetadata = data;
         //console.log("template metadata: ", templateMetadata)
         const dropdown = document.getElementById('template-dropdown');
         if (dropdown) dropdown.style.display = 'none';
+
         // call the function to select pictures
         template_select();
         
@@ -103,6 +209,13 @@ async function loadTemplateMetadata(templateId) {
 function template_select(){
     
     console.log("template_select clicked");
+    // hide canvas edit button
+    const canvasEditBtns = document.querySelectorAll('#canvasEditBtn');
+    canvasEditBtns.forEach(btn => {
+        btn.style.display = "none";
+    });
+    
+    // Hide those elements
     document.getElementById("tool_bar").style.display = "none";
     document.getElementById("main_preview").style.display = "none";
     document.getElementById("select-canvas").style.display = "block";
@@ -182,11 +295,10 @@ function template_select(){
 };
 
 async function save_selected_pictures_with_new_template(selectedPicturesTemplate){
-
-
     console.log("(inside save func) Selected pictures:", selectedPicturesTemplate); // Log the array
     console.log("(inside save func) Template ID: ", templateMetadata.id);
     console.log("(inside save func) Template metadata: ", templateMetadata);
+    console.log("templateBG path: ", templateMetadata.background_path);
 
     selectedPicturesTemplate = selectedPicturesTemplate.map(url => 
         //url.replace('http://127.0.0.1:8000', '')
@@ -195,6 +307,29 @@ async function save_selected_pictures_with_new_template(selectedPicturesTemplate
     console.log("(inside save func) Selected pictures without http:", selectedPicturesTemplate);
 
     try {
+
+        // if Background exist, update Uploaded_Pictures modules bg path
+        if (templateMetadata.background_path) {
+            // First, update the background image in Uploaded_Pictures
+            const updateBgResponse = await fetch('update_background', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    project_id: window.project_id,
+                    background_path: templateMetadata.background_path
+                })
+            });
+
+            if (!updateBgResponse.ok) {
+                throw new Error(`Failed to update background image: ${updateBgResponse.status}`);
+            }
+        }
+
+
+        // save the template metadata
         const response = await fetch('save_metadata', {
             method: 'POST',
             headers: {
@@ -220,6 +355,7 @@ async function save_selected_pictures_with_new_template(selectedPicturesTemplate
                         logo_x: templateMetadata.logo_x,
                         logo_y: templateMetadata.logo_y,
                         logo_scale: templateMetadata.logo_scale,
+                        background_path: templateMetadata.background_path, // include background
                     }
                 })),
                 project_id: window.project_id 
@@ -258,3 +394,5 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+

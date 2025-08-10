@@ -59,8 +59,16 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('images', file);
         });
 
+        showLoadingSpinner("   Processing... Please do not reload the page. It may take few minutes");
+
         try {
-            showLoadingSpinner();
+            //showLoadingSpinner();
+
+            // new
+            let formData = new FormData();
+            fileArray.forEach(file => {
+                formData.append('images', file);
+            });
             
             const response = await fetch('/imageProcessing', {
                 method: 'POST',
@@ -73,10 +81,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Server error response:', errorText);
-                
                 if (response.status === 413) {
-                    alert('File size too large. Please reduce image sizes or upload fewer images at once.');
-                } else {
+                    //alert('File size too large. Please reduce image sizes or upload fewer images at once.');
+                    showError("File size too large. Please reduce image sizes or upload fewer images at once.", "red");
+                } 
+                else if (response.status === 403) { 
+                    showError("Your Subscription is expired or You've reached your monthly limit", "red");
+                    }
+                else {
                     alert('An error occurred: ' + response.statusText);
                 }
                 return;
@@ -85,8 +97,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
             console.log(result["Backend message"]);
             
-            if (result.redirect_url) {
-                window.location.href = result.redirect_url;
+            // if (result.redirect_url) {
+            //     window.location.href = result.redirect_url;
+            // }
+
+            // Start polling for task completion
+            if (result.post_id) {
+                pollForTaskCompletion(result.post_id);
+            } else {
+                window.location.href = result.redirect_url || '/rmbg';
             }
 
         } catch (error) {
@@ -102,6 +121,56 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Add this new function to poll for task completion
+async function pollForTaskCompletion(postId) {
+    const maxAttempts = 60; // 60 attempts (30 seconds with 0.5s interval)
+    let attempts = 0;
+    
+    const checkStatus = async () => {
+        attempts++;
+        try {
+            const response = await fetch(`/check-processing-status/${postId}/`);
+            const data = await response.json();
+            
+            if (data.status === 'complete') {
+                // Processing complete - reload the page
+                console.log('completed!!!');
+                showLoadingSpinner('Completed...');
+                setTimeout(() => window.location.href = '/rmbg', 1000); // 1 second delay so then redirect to /rmbg
+                //window.location.href = '/rmbg';
+            } else if (data.status === 'processing') {
+                // Still processing - check again after delay
+                if (attempts < maxAttempts) {
+                    setTimeout(checkStatus, 1000); // Check every 1 seconds
+                    console.log('processing...');
+                    showLoadingSpinner('Processing... It may take a minute.');
+                } else {
+                    // Timeout reached
+                    showError("Processing is taking longer than expected. The page will reload shortly.", "orange");
+                    setTimeout(() => window.location.href = '/rmbg', 3000);
+                }
+            } else if (data.status === 'error') {
+                // Error occurred
+                showError("Error processing images: " + (data.message || 'Unknown error'), "red");
+            }
+        } catch (error) {
+            console.error('Error checking status:', error);
+            if (attempts < maxAttempts) {
+                setTimeout(checkStatus, 500);
+            } else {
+                showError("Unable to check processing status. The page will reload shortly.", "orange");
+                setTimeout(() => window.location.href = '/rmbg', 3000);
+            }
+        }
+    };
+    
+    // Start polling
+    checkStatus();
+}
+
+
+
+
 // Single CSRF token function
 function getCSRFToken() {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
@@ -112,7 +181,7 @@ function getCSRFToken() {
     return '';
 }
 
-function showLoadingSpinner() {
+function showLoadingSpinner(textMessage) {
     // Remove existing spinner if present
     const existingSpinner = document.getElementById('spinner-container');
     if (existingSpinner) {
@@ -146,7 +215,7 @@ function showLoadingSpinner() {
 
     // Create message
     const message = document.createElement("p");
-    message.textContent = "   Processing... Please do not reload the page. It may take few minutes";
+    message.textContent = textMessage;
     message.style.color = "white";
     message.style.marginTop = "20px";
     message.style.fontSize = "16px";

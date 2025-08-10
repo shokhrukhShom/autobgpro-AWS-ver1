@@ -1,6 +1,48 @@
 
 function canvasEdit (givenImageSrc, originalImageSrc) {
+
+    let draw_color = ''; // set drawing color fully transparent
+    let cursor_color = 'white';
+    let draw_width = 50;   // Default width
+
+    let is_drawing = false;
+    let is_erasing = false; // New variable to track eraser mode by Chatgpt
+    let is_enabled = false; // New flag to control drawing
+    let is_restoring = false;
+
+
+    //empty array to save all the path/dawring
+    let restore_array = [];
+    let index = -1;
+
+    // emty array to save all path/drawing for redo
+    let restore_array_redo = [];
+    let index_redo = -1;
+
+    // if (window.updateCursorWidth) {
+    //     window.updateCursorWidth(draw_width);
+    // }
+
+    // // Reset the pen-range slider to default (50) on initialization
+    // const penRangeSlider = document.querySelector('.pen-range');
+    // if (penRangeSlider) {
+    //     penRangeSlider.value = 50; // Set slider value
+    // }
     
+    // document.getElementById('exitWithoutSaving').addEventListener('click', function(){
+    //     // Clear the canvas context
+    //     const canvas = document.getElementById('canvas');
+    //     const context = canvas.getContext('2d');
+    //     context.clearRect(0, 0, canvas.width, canvas.height);
+        
+    //     // Reset the image source variables
+    //     givenImageSrc = null;
+    //     originalImageSrc = null;
+        
+    //     // Go back to main view
+    //     backToMainBtn();
+    // });
+
     //console.log("Canvas Edit function called");
     //console.log(givenImageSrc, originalImageSrc);
 
@@ -8,7 +50,7 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
     //canvas.width = window.innerWidth - 60;
     //canvas.height = window.innerWidth - 80;
 
-    let context = canvas.getContext("2d");
+    const context = canvas.getContext("2d");
     //let start_background_color = 'rgba(255, 255, 255, 0)'; // set the background fully transparent
 
     // Load the background image
@@ -25,10 +67,13 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
     // Set the image source  ---------> this is img source <---------
     img.src = givenImageSrc; // Replace with the path to your PNG
 
+    // debugging
+    console.log("img src: ", img.src);
+
     // Once the image is loaded, adjust canvas size and draw it on the canvas
     img.onload = function() {
         // Set the canvas width to 80% of the browser window's width
-        canvas.width = window.innerWidth * 0.8;
+        canvas.width = 800;
         
         // Maintain the aspect ratio and adjust canvas height based on image's natural dimensions
         const aspectRatio = img.height / img.width;
@@ -58,25 +103,6 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
     //ChatGPT code restore ENDS  <------------
 
 
-
-
-    let draw_color = ''; // set drawing color fully transparent
-    let cursor_color = 'white';
-    let draw_width = 50;   // Default width
-
-    let is_drawing = false;
-    let is_erasing = false; // New variable to track eraser mode by Chatgpt
-    let is_enabled = false; // New flag to control drawing
-    let is_restoring = false;
-
-
-    //empty array to save all the path/dawring
-    let restore_array = [];
-    let index = -1;
-
-    // emty array to save all path/drawing for redo
-    let restore_array_redo = [];
-    let index_redo = -1;
 
 
 
@@ -237,12 +263,12 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
 
 
      window.useEraser = function(){
-        updateCursorWidth(draw_width);
         enableDrawing(); // Enable drawing for erase mode NEW
         is_erasing = true; // Set erasing mode
         is_restoring = false; //turn off restore mode
         context.globalCompositeOperation = 'destination-out'; // Set to erase
         //draw_color = 'rgba(255, 255, 255, 1)'; // Set the color to fully transparent
+        updateCursorWidth(draw_width);
         
     }
 
@@ -401,17 +427,33 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
 
 
     // when saveImage button clicked, call 
-    document.getElementById('saveImage').addEventListener('click', function(){
+    // document.getElementById('saveImage').addEventListener('click', function(){
 
-        let modifiedGivenImageSrc = givenImageSrc.replace("http://127.0.0.1:8000/", "").replace(/\?t=.*$/, "");
+    //     let modifiedGivenImageSrc = givenImageSrc.replace("http://127.0.0.1:8000/", "").replace(/\?t=.*$/, "");
         
-        //call a save image function
+    //     //call a save image function
+    //     saveImage(modifiedGivenImageSrc);
+        
+
+    // });
+    const BASE_URL = window.location.origin + "/";
+
+    document.getElementById('saveImage').addEventListener('click', function () {
+        let modifiedGivenImageSrc = givenImageSrc
+            .replace(BASE_URL, "")
+            .replace(/\?t=.*$/, "");
+
+        
         saveImage(modifiedGivenImageSrc);
-        
 
+        // reset image sources 
+        givenImageSrc = null
+        originalImageSrc = null
+        
     });
 
 
 };
+
 
 

@@ -1,6 +1,6 @@
 body {
     font-family: Arial, sans-serif;
-    margin: 20px;
+    margin: 0;
     text-align: center;
 }
 
@@ -10,12 +10,30 @@ body {
     margin: 10px;  
 }
 
-.image-wrapper img {
+/* .image-wrapper img {
     width: 150px;
     height: 150px;
     object-fit: cover;
     border: 1px dotted #2175c9;
     border-radius: 8px;
+} */
+
+
+_::-webkit-full-page-media, _:future, :root .image-wrapper img {
+    width: 150px;
+    height: 150px;
+    
+}
+
+#imageForm #imageContainer .image-wrapper img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border: 1px dotted #2175c9;
+    border-radius: 8px;
+    border: 1px dotted #2175c9;
+    border-radius: 8px;
+    
 }
 
 .image-wrapper img:hover {
@@ -109,3 +127,297 @@ body {
   }
 
   /* Error msg END */
+
+
+
+
+/* Drop zone styling */
+.drop-zone {
+    max-width: 800px;
+    height: 250px;
+    margin: 30px auto;
+    padding: 20px;
+    border: 3px dashed #3498db;
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    background-color: #f0f8ff;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.drop-zone:hover {
+    border-color: #2980b9;
+    background-color: #e6f2ff;
+}
+
+.drop-zone.active {
+    border-color: #27ae60;
+    background-color: #e8f5e9;
+}
+
+.drop-zone i {
+    font-size: 48px;
+    color: #3498db;
+    margin-bottom: 15px;
+}
+
+.drop-zone h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 22px;
+    font-weight: 500;
+}
+
+.drop-zone p {
+    margin: 5px 0 15px;
+    color: #7f8c8d;
+    font-size: 16px;
+}
+
+.browse-text {
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.drop-zone:hover .browse-text {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+/* Image grid styling */
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+.image-wrapper {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.image-wrapper:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.image-wrapper img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+}
+
+.remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    border: none;
+    color: #e74c3c;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+    background: #e74c3c;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Action buttons */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.action-btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.next-btn {
+    background: linear-gradient(135deg, #3498db, #1b5e95);
+    color: white;
+    
+}
+
+.next-btn:hover {
+    transform: translateY(-3px);
+    animation: shake 0.5s ease infinite;
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateY(-3px) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-3px) rotate(2deg);
+    }
+    50% {
+        transform: translateY(-3px) rotate(-2deg);
+    }
+    75% {
+        transform: translateY(-3px) rotate(1deg);
+    }
+}
+
+
+
+.next-btn:active {
+    transform: translateY(1px);
+}
+
+.btn-icon {
+    transition: transform 0.3s ease;
+}
+
+.next-btn:hover .btn-icon {
+    transform: translateX(5px);
+}
+
+/* Dragging styles */
+.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.over {
+    border: 2px dashed #27ae60 !important;
+    background-color: rgba(46, 204, 113, 0.1) !important;
+}
+
+/* Error message styling */
+#error-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #e74c3c;
+    color: white;
+    padding: 15px 40px 15px 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    transform: translateX(100%);
+    max-width: 350px;
+    z-index: 1000;
+}
+
+#error-message.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.dismiss-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.dismiss-btn:hover {
+    color: #f8d7da;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .drop-zone {
+        height: 200px;
+        padding: 15px;
+    }
+    
+    .drop-zone i {
+        font-size: 36px;
+    }
+    
+    .drop-zone h3 {
+        font-size: 18px;
+    }
+    
+    .drop-zone p {
+        font-size: 14px;
+    }
+}
+
+
+/* Add these styles to your existing CSS */
+.highlight {
+    border-color: #27ae60 !important;
+    background-color: rgba(46, 204, 113, 0.1) !important;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(46, 204, 113, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+    }
+}
+
+/* Ensure the drop zone is properly sized */
+#dropZone {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    cursor: pointer;
+}
+
+/* Image container styles */
+#imageContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 20px;
+    min-height: 100px;
+}
+

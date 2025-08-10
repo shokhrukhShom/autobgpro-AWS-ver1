@@ -1,5 +1,6 @@
 
 {% load static %}
+{% load tz %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +9,7 @@
 
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
+    <meta name="csrf-token" content="{{ csrf_token }}">
 
     <title>Image Upload and Preview</title>
 
@@ -17,29 +19,76 @@
     <link rel="stylesheet" href="{% static 'css/canvasStyle.css' %}">
     <link rel="stylesheet" href="{% static 'css/canvas-selection.css' %}">
     <link rel="stylesheet" href="{% static 'css/text_edit.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    
     
 
 </head>
 <body>
+    {% csrf_token %}
+
     {% if user.is_authenticated %}
-        <span id="latest_upload_id" style="float: left; overflow: hidden; position: relative; font-size: 11px;">Project No.{{latest_upload_id}} </span>
-        <span style="float: right;"><a href="{% url 'logout' %}">Sign Out</a> | User: <strong>{{ user.username }}</strong> and ID <strong> {{user.id}} </strong>.</span> 
+        <div class="user-nav">
+            <!-- Debug info (left side) -->
+            <div class="debug-info">
+                <span id="latest_upload_id" style="display: none;">Project No.{{latest_upload_id}} •</span>
+                <span>  User: <strong>{{ user.username }}</strong> (ID: <strong>{{user.id}}</strong>)</span>
+            </div>
+            
+            <!-- Navigation buttons (right side) -->
+            <div class="nav-actions">
+                <!-- Recent Projects button -->
+                <a href="{% url 'recent_projects' %}" class="nav-btn nav-btn-secondary">
+                    <i class="fa fa-history"></i>Recent Projects
+                </a>
+                
+                <!-- Account dropdown -->
+                <div class="account-dropdown">
+                    <button class="nav-btn nav-btn-primary">
+                        <i class="fa fa-user-circle"></i>{{ user.username }}
+                    </button>
+                    <div class="account-dropdown-content">
+                        <div class="dropdown-header">
+                            <div id="usage-display">
+                                sample - This Month: 3/500 images
+                            </div>
+                        </div>
+                        <div class="dropdown-items-container">
+                            <a href="{% url 'billing_portal' %}" class="dropdown-item">
+                                <i class="fa fa-credit-card"></i>Manage Subscription
+                            </a>
+                            <a href="{% url 'logout' %}" class="dropdown-item">
+                                <i class="fa fa-sign-out"></i>Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     {% endif %}
-    <br>
-    <hr style="margin-top: 30px; margin-bottom: 2px;">
+    
+    {% if messages %}
+    <div class="alert alert-danger">
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+   
         
     {% if message %}
-    <div style="color: red;">{{ message }}</div>
+    
     {% endif %}
 
     <!--Tool Bar-->
     <div class="tool-bar" id="tool_bar">
         <ul>
             <!-- <li onclick="Background_Insert()">BG Insert</li> -->
-            <li id="Background_Insert">BG Insert</li> 
-            <li onclick="textBtn()">Design</li>
+            <li id="Background_Insert" class="fa fa-picture-o" aria-hidden="true"> BG Insert</li> 
+            <li onclick="textBtn()" class="fa fa-pencil-square-o" aria-hidden="true"> Design</li>
             <li class="dropdown" onclick="toggleDropdown(event)">
-                <span id="shadowBtn">Shadow</span>
+                <span id="shadowBtn" class="fa fa-adjust" aria-hidden="true" > Shadow</span>
                 <div class="dropdown-content">
 
                     <label for="shadow-offset-y">Shadow Offset:</label> 
@@ -52,47 +101,38 @@
                     <br>
                     <button id="cancelShadow"> reset </button>
                     <br><br>
-                    <button onclick="saveChanges()"> Save Changes</button>
+                    <button class="saveChanges"> Save Changes</button>
                     <br>
             
 
                 </div>
             </li>
             
-            <li id="template">
+            <li id="template" class="fa fa-file-text-o" aria-hidden="true" >
                 Template
                 <div id="template-dropdown" class="dropdown-content" style="display: none;">
                     <div id="template-list"></div>
                 </div>
             </li>
 
-            <li onclick="location.href='{% url  'uploadImg' %}'">New Project</li>
-            <li id="exportImages">Export</li>
+            <li onclick="location.href='{% url  'uploadImg' %}'" class="fa fa-plus-circle" aria-hidden="true"> New Project</li>
+            <li id="exportImages" class="fa fa-download" aria-hidden="true"> Download</li>
         </ul>
     </div>
 
     <div id="main_preview" style="display: block;">
-        <h1>Main Preview</h1>
-        <button id="saveChanges" onclick="saveChanges()"> Save Changes</button>
+        <button id="saveChanges" class="saveChanges"> <span class="fa fa-floppy-o"></span> Save Changes</button>
+        <h1>Preview</h1>
     </div>
-
-    <div  style="display:none ;"> <!-- Preview for Edit TODO -->
+    
+    <!-- Preview for Edit TODO -->
+    <!-- Without this div, canvas edit not working -->
+    <!-- todo: WTF why why why cry -->
+    <div  style="display: none;"> 
         <div id="enlarged-image-container" class="enlarged-container" style="display: none;">
-            <button id="close-button" class="close-button">✖</button> <!-- Close button -->
+            <button id="close-button" class="close-button">✖</button> 
             <img id="enlarged-image" src="" alt="Enlarged Image" />
         </div>
-
-        <!--When individual image clicked-->
-        <div id="image-edit-page" style="display: none;"> 
-            <div id="img_tool_bar">
-                <ul>
-                    <li id="Edit_Image_Btn">Edit Image</li>
-                    <li>Transform</li>
-                    <li id="cancel">Cancel</li>
-                </ul>
-            </div>
-        </div>  
-
     </div>
 
     <!--Start implementing canvas shadow -->
@@ -108,16 +148,49 @@
 
     <div id="no_container" >
         <!-- Main Preview of Canvases -->
-        <div id="rmbg_images" class="canvas-container" style="display: block;"> 
-            {% for rembg_path in sorted_rembg_files_path %}
-                        <span class="clickable-image canvas-item canvas-wrapper" data-path="{{ rembg_path }}">
-                            <canvas class="rembg-canvas"  style=" border: 1px solid #ccc; box-shadow: none;"></canvas>
-                            <img src="{{ rembg_path}}" alt="image"  class="png-img" data-path="{{ rembg_path }}"
-                            style="display:none; width: 500px;" /><!-- getting image src with data-path on Canvases-->  
-                            <div class="checkmark" style="display: none;">✔</div> <!-- Checkmark -->
-                        </span> 
-            {% endfor %} 
-        </div>
+        {%if sorted_rembg_files_path%}
+            <div id="rmbg_images" class="canvas-container" style="display: block;"> 
+                {% for rembg_path in sorted_rembg_files_path %}
+                    
+                            <span class="clickable-image canvas-item canvas-wrapper" data-path="{{ rembg_path }}?v={% now 'U' %}">
+                                <p id="canvasEditBtn" 
+                                class="canvasEditBtn"
+                                style="
+                                margin: 0px;
+                                padding: 0;
+                                font-size: 14px;
+                                text-align: right; 
+                                line-height: 0;
+                                " >Edit</p>
+
+                                <canvas class="rembg-canvas"  style=" border: 1px solid #ccc; box-shadow: none;"></canvas>
+                                <img src="{{ rembg_path}}?v={% now 'U' %}" alt="image"  class="png-img" data-path="{{ rembg_path }}?v={% now 'U' %}"
+                                style="display:none; width: 500px;" /><!-- getting image src with data-path on Canvases-->  
+                                <div class="checkmark" style="display: none;">✔</div> <!-- Checkmark -->
+                            </span>
+
+                {% endfor %} 
+            </div>
+        {% else %}
+             <div style="margin: 100px auto; text-align: center;">
+                    <p style="font-size: 1.4rem; color: #333; margin-bottom: 30px;">
+                       Please upload an image to begin.
+                    </p>
+                    <a href="{% url 'uploadImg' %}" 
+                    style="background-color: #1b5e95;
+                            color: white;
+                            padding: 14px 28px;
+                            font-size: 1.2rem;
+                            font-weight: 600;
+                            text-decoration: none;
+                            border-radius: 8px;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                            transition: background-color 0.3s ease;">
+                        🚀 CLICK HERE TO GET STARTED
+                    </a>
+                </div>
+
+        {% endif %}
 
         <!-- Text Edit Right Side: Static Content -->
         <div id="static-content" style="display: none;">
@@ -135,16 +208,16 @@
             <!-- Add this inside the static-content div, replacing the existing "Create a Template" text -->
             <div id="template-creation-modal" style="display: none;">
                 <div class="template-modal-content">
-                    <h2>Create New Template</h2>
+                    <h2 style="margin-bottom: 10px;">Create New Template</h2>
                     
                     <div class="template-form-group">
-                        <label for="template-title">Template Title:</label>
+                        
                         <input type="text" id="template-title" placeholder="Enter template name" autocomplete="off">
                     </div>
                     
                     <div class="template-form-group">
                         <label>
-                            <input type="checkbox" id="include-background" checked> Background
+                            <input type="checkbox" id="include-background"> Background
                         </label>
                     </div>
                     
@@ -160,14 +233,55 @@
             <!-- End create a template -->
 
              <!-- Upload Logo Start -->
-            <div class="logo-upload-container" style="text-align: center; margin: 10px auto;">
+             <div class="logo-upload-container" style="text-align: center; margin: 10px auto;">
                 <label for="logo-upload">Upload Logo</label>
-                <input type="file" class="logo-upload" id="logo-upload" accept="image/*">
+                <input type="file" class="logo-upload" id="logo-upload" accept=".png, .jpg, .jpeg">
+                <button id="select-logo-btn"  class="fa fa-caret-down" 
+                style="
+                margin-left: 10px;
+                padding: 5px 10px;
+                background: #f8f9fa;
+                border: 1px solid #007bff;
+                cursor: pointer;
+                border-radius: 10px;
+                color: #1b5e95;
+                "></button>
                 <span id="resetLogoInput" style="cursor: pointer; color: #fff; font-weight: bold; font-size: 20px; padding: 4px;">✕</span>
-
             </div>
             <!-- Upload Logo END -->
-            <div class="grid-container" >
+            
+            <!-- Logo Select Start-->
+            <!-- Inside the static-content div in rmbg.html -->
+            <div id="logo-selector-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+                <div style="background: white; padding: 20px; border-radius: 8px; max-width: 80%; max-height: 80%; overflow-y: auto;">
+                    <h3>Select a Logo</h3>
+                    <div id="logo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 15px;">
+                        <!-- Logos will be loaded here -->
+                    </div>
+                    <button id="cancel-logo-select" style="margin-top: 15px; padding: 5px 15px;">Cancel</button>
+                </div>
+            </div>
+            <!-- Logo Select END-->
+
+
+            <!-- Add Text -->
+            <!-- text START -->
+            <div style="width: 100%;" >
+                <div id="footer-text-controls" style="text-align: center; margin: 10px auto;">
+                    
+                    <button id="add-text-btn-footer" style="padding: 5px; margin: 5px;"><span id="plus-sign">+</span> Add Text</button>
+                </div>
+
+                <div id="footer-text-list" style="margin: 10px auto; text-align: center;">
+                    <!-- Dynamic text input sections will be added here -->
+                </div>
+            </div>
+            <!-- Add Text End -->
+
+
+
+
+            <div class="grid-container" style="margin-top: 20px; " >
             <!-- Header Bar Start -->
             <div class="grid-item" style="text-align:left; margin: 10px;">
                 <h3>Header</h3>
@@ -202,17 +316,7 @@
             </div>
             <!--Footer Settings END-->
             </div>
-            <!-- text START -->
-            <div style="width: 100%;" >
-                <div id="footer-text-controls" style="text-align: center; margin: 10px auto;">
-                    
-                    <button id="add-text-btn-footer" style="padding: 5px; margin: 5px;"><span id="plus-sign">+</span> Add Text</button>
-                </div>
-
-                <div id="footer-text-list" style="margin: 10px auto; text-align: center;">
-                    <!-- Dynamic text input sections will be added here -->
-                </div>
-            </div>
+            
 
         </div>
     </div>
@@ -229,6 +333,42 @@
         
        <!--"Background insert" pictures -->
         <h1>Choose your backgrond</h1>
+
+        <hr>
+        <!-- templates/upload_background.html -->
+        <div id="upload_your_bg" style="cursor:pointer;">
+            <label for="bgUpload" class="custom-upload" style="color:#7794aa; cursor:pointer;"> <i class="fa fa-upload"></i><u>Upload your background </u> </label>
+            <input type="file" id="bgUpload" accept="image/*" multiple style="display: none;"/>
+            <br>
+            <br>
+            <!-- Preview for uploaded bg image-->
+        
+            <div class="container">
+                <div class="image-grid">
+                    {% for bg_path in user_backgrounds %}
+                    <div class="picture">
+                        <img src="{{ bg_path }}" alt="{{ bg_path }}">
+                        <div class="checkmark">✔</div>
+                        <button class="delete-btn" style="color: rgb(212, 143, 143); background:white; border:aquamarine; cursor:pointer;">X</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Handling deletion of user BG image-->
+            <!-- Confirmation Modal -->
+            <div id="confirmationModal" class="modal hidden">
+            <div class="modal-content">
+                <p id="modalMessage">Are you sure you want to delete this background image?</p>
+                <div class="modal-buttons">
+                <button id="confirmDelete" class="btn btn-danger">Delete</button>
+                <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+            </div>
+        </div>    
+        <!-- END templates/upload_background.html -->
+        <hr>
+        
         <div class="container">
             <div class="image-grid">
                 {% for bg_path in bg_img_paths %}
@@ -237,11 +377,35 @@
                         </div> 
                 {% endfor %}
             </div>
-        </div>  
+        </div>
+        <hr>
+        <h1>Garage</h1>
+        <div class="container">
+            <div class="image-grid">
+                {% for bg_path in bg_img_paths_garage %}
+                        <div class="picture"><img src={{bg_path}} alt={{bg_path}} /> 
+                            <div class="checkmark">✔</div>
+                        </div> 
+                {% endfor %}
+            </div>
+        </div>
+
+        <hr>
+        <h1>Road</h1>
+        <div class="container">
+            <div class="image-grid">
+                {% for bg_path in bg_img_paths_road %}
+                        <div class="picture"><img src={{bg_path}} alt={{bg_path}} /> 
+                            <div class="checkmark">✔</div>
+                        </div> 
+                {% endfor %}
+            </div>
+        </div>
+        <hr>
     </div>  
 
     <!--Error message Start-->
-    <div id="error-message" class="hidden">
+    <div id="error-message" class="hidden" style="margin-top: 50px;">
         <span id="error-text"></span>
         <button id="dismiss-btn" class="dismiss-btn">&times;</button>
     </div>
@@ -250,17 +414,15 @@
 
     <!--Edit Image Start -->
     <div id="canvasPage" style="display:none;">
-        <h1> Edit Image</h1>
-      
-
         <div id="field">
+            <h1 style="color: #333;"> Edit Image</h1>
             <div class="top-controls-container"
                 style="
                     display: flex; /* Flex container */
                     justify-content: space-between; /* Align left and right */
                     align-items: center; /* Vertically center items */
                     padding: 10px; /* Add padding */
-                    width: 100%; /* Full width of the field */
+                    width: 60%; /* Full width of the field */
                     box-sizing: border-box; /* Ensure padding doesn't break the width */
                 ">
 
@@ -301,9 +463,7 @@
                     <button id="saveImage" type="button" class="buttonSave" name="saveBTN">
                         Save
                     </button>
-                    <button type="button" onclick="backToMainBtn()" class="buttonSave dontsave">
-                        Exit without saving
-                    </button>
+                    <a href="{% url 'rmbg' %}"><button type="button" class="buttonSave dontsave"> Exit without saving </button></a>
                 
             </div>
 
@@ -366,154 +526,172 @@
 
 
     <!-- Code for canvas --> 
-    <script>
-        // Update your JavaScript to send the JSON to the server using fetch
-        function saveChanges(){
-
-            //console.log("save btn pressed");
-            const finalMetadataArray = Array.from(metadataMap.values()); // metadataMap 
-            console.log(finalMetadataArray);
-            
-            // Fetch POST to save sqlite database
-
-            fetch('save_metadata', {  // Adjust URL based on your Django URL structure
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken() // Include CSRF token
-                },
-                body: JSON.stringify({ metadata:finalMetadataArray }) 
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Response from server:", data);
-                showError("Shadow Setting are saved", "green")
-             
-            })
-            .catch(error => {
-                console.error("Error saving metadata:", error);
-                showError("Error saving metadata: " + error, "red");
-            });
-        }
-
-        // Function to get CSRF token from Django's cookies
-        function getCSRFToken() {
-            const cookieValue = document.cookie.match(/csrftoken=([^ ;]+)/);
-            return cookieValue ? cookieValue[1] : '';
-        }
-                
-            
-        // Setting up objs array to store canvas properties
-        window.metadataMap = new Map();
+<script>
         
+        
+window.project_id = "{{ latest_upload_id|escapejs }}";
+// Setting up objs array to store canvas properties
+window.metadataMap = new Map();
+       
+document.addEventListener("DOMContentLoaded", () => {
+// Experimental
+window.currentBg = "{{ current_bg|escapejs }}";
 
-        // assigning the background to variable
-        window.project_id = "{{ latest_upload_id|escapejs }}";
+document.getElementById('bgUpload').addEventListener('change', function () {
+    const files = this.files;
+    const container = document.querySelector('.image-grid');
 
-        document.addEventListener("DOMContentLoaded", () => {
+    // Loop over each selected file
+    Array.from(files).forEach(file => {
+        const formData = new FormData();
+        formData.append('image', file);
 
-            //experimental
-            window.currentBg = "{{ current_bg|escapejs }}";
+        fetch('/upload-background/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                showError(data.error, "red");
+                return;
+            }
+            if (data.url) {
+                // Create <div class="picture"> element
+                const div = document.createElement('div');
+                div.className = 'picture';
 
+                const img = document.createElement('img');
+                img.src = data.url;
+                img.alt = data.url;
+
+                const checkmark = document.createElement('div');
+                checkmark.className = 'checkmark';
+                checkmark.textContent = '✔';
+
+                const delete_btn = document.createElement('button');
+                delete_btn.className = 'delete-btn';
+                delete_btn.textContent = 'X';
+                delete_btn.style.color = 'rgb(212, 143, 143)';
+                delete_btn.style.background = 'white';
+                delete_btn.style.border = 'aquamarine';
+                delete_btn.style.cursor = 'pointer';
+
+                // Add click event for delete button
+                delete_btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    deleteBackground(this.parentElement, data.url);
+                });
+
+                div.appendChild(img);
+                div.appendChild(checkmark);
+                div.appendChild(delete_btn);
+                container.appendChild(div);
+            }
+        })
+        .catch(error => {
+            console.error("Upload error:", error);
+            showError(error.error || "Error uploading background", "red");
         });
+    });
+});
 
+function getCSRFToken() {
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='));
+    return cookieValue ? cookieValue.split('=')[1] : '';
+}
 
-        // Call this when saving saveTextComponents
-        document.getElementById('saveTextBtn').addEventListener('click', saveTextComponents);
+function showError(message, color) {
+    const errorMessage = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
+    const dismissBtn = document.getElementById('dismiss-btn');
 
-        function saveTextComponents() {
-            const canvasWrappers = document.querySelectorAll('.canvas-wrapper');
-            const visibleCanvases = [];
-            const project_id = "{{ latest_upload_id|escapejs }}";
-            
-            // Filter only visible canvases
-            canvasWrappers.forEach(wrapper => {
-                if (window.getComputedStyle(wrapper).display !== 'none') {
-                    const canvas = wrapper.querySelector('.rembg-canvas');
-                    if (canvas) visibleCanvases.push(canvas);
-                }
-            });
-            
-            // Prepare data with proper formatting
-            const elements = visibleCanvases.map(canvas => {
-                const meta = metadataMap.get(canvas);
-                
-                // Get relative image path (remove domain and query params)
-                let imagePath = meta.imagePath;
-                if (imagePath.includes(window.location.origin)) {
-                    imagePath = imagePath.replace(window.location.origin, '');
-                }
-                if (imagePath.includes('?')) {
-                    imagePath = imagePath.split('?')[0];
-                }
-                
-                return {
-                    image_path: imagePath,
-                    design_data: {
-                        header: {
-                            height: parseInt(meta.design_data.header.height) || 0,
-                            color: meta.design_data.header.color,
-                            opacity: parseFloat(meta.design_data.header.opacity) || 1.0
-                        },
-                        footer: {
-                            height: parseInt(meta.design_data.footer.height) || 0,
-                            color: meta.design_data.footer.color,
-                            opacity: parseFloat(meta.design_data.footer.opacity) || 1.0
-                        },
-                        //texts: meta.design_data.texts || [],
-                        
-                        // new code for texts
-                        texts: (meta.design_data.texts || []).map(text => ({
-                            ...text,
-                            fontFamily: text.fontFamily || 'Arial' // Ensure fontFamily is included
-                        })),
-                        // end new code texts
-                        
-                        // New Code
-                        logo_x: meta.design_data.logo_x,
-                        logo_y: meta.design_data.logo_y,
-                        logo_scale: meta.design_data.logo_scale,
-                        //logo_path: meta.design_data.logo_path,
-                        logo_opacity: meta.design_data.logo_opacity,
-                        
-                    }
-                };
-            });
-            
-            const data = { 
-                project_id: project_id,
-                elements: elements 
-            };
-            
-            console.log("Saving design data:", JSON.stringify(data, null, 2));
+    // Set the custom error message
+    errorText.textContent = message;
 
-            fetch('save_metadata', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: JSON.stringify(data)
+    // Setting background color
+    errorMessage.style.backgroundColor = color;
+
+    // Show the error message
+    errorMessage.classList.remove('hidden');
+    errorMessage.classList.add('visible');
+
+    // Automatically hide the error message after 5 seconds
+    const timeoutId = setTimeout(() => {
+        hideError();
+    }, 5000);
+
+    // Allow the user to dismiss the message manually
+    dismissBtn.onclick = () => {
+        clearTimeout(timeoutId); // Cancel the automatic hide
+        hideError();
+    };
+}
+
+function hideError() {
+    const errorMessage = document.getElementById('error-message');
+    errorMessage.classList.remove('visible');
+    errorMessage.classList.add('hidden');
+}
+
+function deleteBackground(element, imageUrl) {
+    // Show confirmation modal
+    const modal = document.getElementById('confirmationModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const confirmDelete = document.getElementById('confirmDelete');
+    const cancelDelete = document.getElementById('cancelDelete');
+    
+    modalMessage.textContent = "Are you sure you want to delete this background image?";
+    modal.classList.remove('hidden');
+    
+    // Handle delete confirmation
+    confirmDelete.onclick = function() {
+        fetch('/delete-background/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                image_path: imageUrl.replace(window.location.origin, '')
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.error || 'Failed to save design'); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Design saved:", data);
-                showError("Design saved successfully!", "green");
-            })
-            .catch(error => {
-                console.error("Error saving design:", error);
-                showError("Error saving design: " + error.message, "red");s
-            });
-        }
-        
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                element.remove();
+                showError("Background deleted successfully", "green");
+            } else {
+                showError(data.error || "Error deleting background", "red");
+            }
+        })
+        .catch(error => {
+            showError("Error deleting background", "red");
+            console.error("Delete error:", error);
+        })
+        .finally(() => {
+            modal.classList.add('hidden');
+        });
+    };
+    
+    // Handle cancel
+    cancelDelete.onclick = function() {
+        modal.classList.add('hidden');
+    };
+}
+});
 
-
-    </script>
+</script>
 
 
 <!--Load main preview js file-->
@@ -533,6 +711,13 @@
 
 <!--load download zip js file-->
 <script type="module" src="{% static 'main_preview/template.js' %}" defer></script>
+
+<!--load logo_select.js file-->
+<script type="module" src="{% static 'main_preview/logo_select.js' %}" defer></script>
+
+<!--load rmbg_function.js file-->
+<script type="module" src="{% static 'rmbg_function.js' %}" defer></script>
+
 
 </body>
 </html>

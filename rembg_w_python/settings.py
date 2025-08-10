@@ -68,6 +68,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request', # cashe buster
             ],
         },
     },
@@ -131,7 +132,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Media file settings
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'rembg_w_python','media')
 
 CACHE_MIDDLEWARE_SECONDS = 0
 
@@ -154,3 +155,30 @@ STATICFILES_DIRS = [
 # Custom file paths settings
 IMAGE_UPLOAD_ROOT = os.path.join(MEDIA_ROOT, 'images')
 BG_TEMPLATES_ROOT = os.path.join(MEDIA_ROOT, 'bg-templates')
+
+STRIPE_SECRET_KEY = "sk_test_51RqkbeCaEGsYhfdvmNOLR87975Xd4i2tQXnIV2KiVyOou2P2KGg9lr2yCohopdeAHwNGQR7PJJjg4tlgL4JIJUZ200k3lRyEIg"
+
+STRIPE_PRICE_ID_STARTER = "price_1RqoRGCaEGsYhfdvl2BZqPWj"
+STRIPE_PRICE_ID_PRO = "price_1RqoTCCaEGsYhfdvPijlMlir"
+STRIPE_PRICE_ID_EXPERT = "price_1RsWbiCaEGsYhfdv4FlvqP69"
+
+STRIPE_PRICE_ID_STARTER_YEARLY = "price_1RsWdPCaEGsYhfdvPny2VRwx"
+STRIPE_PRICE_ID_PRO_YEARLY = "price_1RsWeTCaEGsYhfdv8HQXJFAe"
+STRIPE_PRICE_ID_EXPERT_YEARLY = "price_1RsWfICaEGsYhfdv0nc56SQ4"
+
+
+# Run this command to get STRIPE_WEBHOOK_SECRET
+# stripe listen --forward-to 127.0.0.1:8000/webhooks/stripe/ 
+
+STRIPE_WEBHOOK_SECRET = "whsec_41e9e9a887d089c9a67de75a49fb366623d8ad14dc0d11aebd392bdd1bc4d50c"
+
+
+# Celery settings (local Redis)
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+# Optional: Task serializer and time limits
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_TIME_LIMIT = 300  # 5 min max per task

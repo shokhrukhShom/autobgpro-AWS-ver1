@@ -8,6 +8,22 @@ body {
     padding: 0px;
     margin: 0px;
 }
+
+h1 {
+    margin: 30px auto;
+    color: #7794aa;
+}
+
+hr {
+    margin-top: 120px;
+    margin-bottom: 20px;
+    height: 4px; /* controls thickness */
+    background-color: #abc7df; /* visible line color */
+    border: none; /* remove default border */
+    border-radius: 2px; /* optional: rounded edges */
+}
+
+
 /* Container */
 .container {
     max-width: 1200px;
@@ -147,9 +163,6 @@ body {
 
 
 /* Error msg Start */
-
-/* Error message styling */
-/* Error message styling */
 #error-message {
     position: fixed;
     top: 20px;
@@ -190,6 +203,8 @@ body {
   }
 
   /* Error msg END */
+
+ 
 
 
   /* Shadow  Start */
@@ -302,3 +317,427 @@ canvas {
 }
 
 /* template btn style END*/
+
+
+/* user bg deletion prompt*/
+/* Confirmation Modal Styles */
+.modal {
+  position: fixed;
+  top: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  width: 80%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content #modalMessage{
+  margin-bottom: 60px;
+  margin: 10px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+/* END of user bg deletion prompt*/
+
+/* Start top nav recent projects and account */
+/* Modern Top Navigation */
+.user-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    position: relative;
+    z-index: 100;
+}
+
+.debug-info {
+    font-size: 9px;
+    color: #64748b;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.debug-info strong {
+    color: #334155;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.nav-btn-primary {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border-color: #bae6fd;
+}
+
+.nav-btn-primary:hover {
+    background-color: #bae6fd;
+    color: #075985;
+}
+
+.nav-btn-secondary {
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+.nav-btn-secondary:hover {
+    background-color: #e2e8f0;
+    color: #334155;
+}
+
+.nav-btn i {
+    margin-right: 6px;
+    font-size: 14px;
+}
+
+/* Account Dropdown - Click to Toggle */
+.account-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.account-dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+    min-width: 220px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    z-index: 110;
+    border: 1px solid #e2e8f0;
+}
+
+.account-dropdown.active .account-dropdown-content {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+
+.dropdown-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 12px;
+    color: #64748b;
+    background-color: #f8fafc;
+}
+
+.dropdown-items-container {
+    padding: 5px 0;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    color: #334155;
+    text-decoration: none;
+    transition: background-color 0.2s;
+    font-size: 13px;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f5f9;
+}
+
+.dropdown-item i {
+    margin-right: 10px;
+    color: #64748b;
+    width: 18px;
+    text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .user-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+    }
+    
+    .nav-actions {
+        margin-top: 10px;
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .debug-info {
+        margin-bottom: 8px;
+    }
+    
+    /* .account-dropdown-content {
+        right: auto;
+        left: 0;
+        min-width: 100%;
+    } */
+}
+/* End top nav recent projects and account */
+
+/* START template delete x*/
+/* Template delete button styles */
+.template-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.template-content {
+    flex-grow: 1;
+}
+
+.template-delete-btn {
+    color: #ff6b6b;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 0 5px;
+    cursor: pointer;
+}
+
+.template-delete-btn:hover {
+    color: #ff0000;
+}
+
+/* Delete confirmation modal styles */
+.delete-confirmation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.delete-confirmation-modal .modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.delete-confirmation-modal p {
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.delete-confirmation-modal .modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.delete-confirmation-modal button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.delete-confirmation-modal .confirm-delete {
+    background-color: #ff6b6b;
+    color: white;
+}
+
+.delete-confirmation-modal .confirm-delete:hover {
+    background-color: #ff0000;
+}
+
+.delete-confirmation-modal .cancel-delete {
+    background-color: #e0e0e0;
+}
+
+.delete-confirmation-modal .cancel-delete:hover {
+    background-color: #b0b0b0;
+}
+/* END template delete x*/
+
+/* START LOGO selection */
+
+.hidden {
+    display: none !important;
+}
+
+.logo-thumbnail {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.logo-thumbnail:hover {
+    transform: scale(1.05);
+    border-color: #1b5e95;
+}
+
+.selected-logo {
+    border: 2px solid #1b5e95;
+    box-shadow: 0 0 5px rgba(27, 94, 149, 0.5);
+}
+
+
+/* Add to your CSS file */
+.logo-img-container {
+    position: relative;
+    display: inline-block;
+}
+
+.delete-logo-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ff4444;
+    color: white;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.logo-item:hover .delete-logo-btn {
+    opacity: 1;
+}
+
+.delete-confirmation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.delete-confirmation-modal .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.delete-confirmation-modal .modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.delete-confirmation-modal button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.delete-confirmation-modal .confirm-delete {
+    background: #ff4444;
+    color: white;
+}
+
+.delete-confirmation-modal .cancel-delete {
+    background: #ddd;
+}
+
+/* END Logo Selection*/
+.canvasEditBtn {
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    cursor: pointer;
+    margin: 0px;
+    padding: 0;
+    font-size: 14px;
+    text-align: right; 
+    line-height: 0;
+    color: rgb(158, 158, 158);
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background-color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    transition: opacity 220ms ease, transform 220ms ease; 
+}
+
+.clickable-image:hover .canvasEditBtn {
+    opacity: 1;
+    transition: opacity 300ms ease, transform 220ms ease; 
+}
+

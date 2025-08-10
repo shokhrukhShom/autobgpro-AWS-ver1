@@ -1,0 +1,306 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recent Projects</title>
+    <link rel="stylesheet" href="{% static 'css/rmbg.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        .projects-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .project-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .project-title {
+            font-size: 12px;
+            font-weight: thin;
+            color: #747474;
+        }
+        
+        .project-date {
+            color: #64748b;
+            font-size: 14px;
+        }
+        
+        .project-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .project-thumbnail {
+            width: 100%;
+            height: 120px;
+            object-fit: contain;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            background-color: #f8fafc;
+        }
+        
+        .project-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #1b5e95;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #042e5b;
+        }
+        
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #334155;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
+        
+        .load-more-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .no-projects {
+            text-align: center;
+            padding: 50px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        <div class="user-nav">
+            <div class="debug-info">
+                <span>User: <strong>{{ user.username }}</strong></span>
+            </div>
+            
+            <div class="nav-actions">
+                <a href="{% url 'rmbg' %}" class="nav-btn nav-btn-secondary">
+                    <i class="fa fa-arrow-left"></i> Back to Editor
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+     <!--Error message Start-->
+     <div id="error-message" class="hidden" style="margin-top: 50px;">
+        <span id="error-text"></span>
+        <button id="dismiss-btn" class="dismiss-btn">&times;</button>
+    </div>
+    <!--Error message  END-->
+
+    <div class="projects-container">
+        <h1>Your Recent Projects</h1>
+        
+        <div id="projects-list">
+            {% for project in recent_projects %}
+                <div class="project-card" data-project-id="{{ project.id }}">
+                    <div class="project-header">
+                        <div class="project-title"> created date: {{ project.createdDate }}</div>
+                        <div class="project-date">{{ project.createdDate|date:"F j, Y" }}</div>
+                    </div>
+                    
+                    <div class="project-images">
+                        {% for image in project.images %}
+                            <img src="{{ image }}" alt="Project image" class="project-thumbnail">
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="project-actions">
+                        <button class="btn btn-primary download-project" data-project-id="{{ project.id }}">
+                            <i class="fa fa-download"></i> Download Project
+                        </button>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="no-projects">
+                    <p>You don't have any projects yet.</p>
+                    <br>
+                    <a href="{% url 'uploadImg' %}" class="btn btn-primary">
+                        Create Your First Project
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if has_more %}
+        <div class="load-more-container">
+            <button id="load-more" class="btn btn-secondary">
+                Load More Projects
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <script type="module">
+        import { downloadRecentProject } from "{% static 'recentProjects.js' %}";
+
+        // Fixed version avoiding nested template literals
+    document.addEventListener('DOMContentLoaded', function() {
+        let offset = {{ offset|default:0 }};
+        const limit = {{ limit|default:10 }};
+        
+        // Load more projects
+        document.getElementById('load-more')?.addEventListener('click', function() {
+            offset += limit;
+            fetch(`/recent-projects/?offset=${offset}&limit=${limit}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.projects.length > 0) {
+                    const projectsList = document.getElementById('projects-list');
+                    data.projects.forEach(project => {
+                        const projectCard = document.createElement('div');
+                        projectCard.className = 'project-card';
+                        projectCard.dataset.projectId = project.id;
+                        
+                        // Build images HTML separately to avoid nested template literals
+                        const imagesHtml = project.images.map(image => 
+                            '<img src="' + image + '" alt="Project image" class="project-thumbnail">'
+                        ).join('');
+                        
+                        projectCard.innerHTML = 
+                            '<div class="project-header">' +
+                                '<div class="project-title">created date: ' + project.createdDate + '</div>' +
+                               
+                            '</div>' +
+                            '<div class="project-images">' + imagesHtml + '</div>' +
+                            '<div class="project-actions">' +
+                                '<button class="btn btn-primary download-project" data-project-id="' + project.id + '">' +
+                                    '<i class="fa fa-download"></i> Download Project' +
+                                '</button>' +
+                            '</div>';
+                        
+                        projectsList.appendChild(projectCard);
+                    });
+                    
+                    if (!data.has_more) {
+                        document.getElementById('load-more').style.display = 'none';
+                    }
+                } else {
+                    document.getElementById('load-more').style.display = 'none';
+                }
+            });
+        });
+
+        // Download project
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('download-project') || 
+                e.target.closest('.download-project')) {
+                const button = e.target.classList.contains('download-project') ? 
+                    e.target : e.target.closest('.download-project');
+                const projectId = button.dataset.projectId;
+
+                // Show loading state
+                showError('Preparing your download...', '#1b5e95'); 
+                
+                // Show loading state
+                const originalHtml = button.innerHTML;
+                button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Preparing Download...';
+                button.disabled = true;
+                
+                // Trigger download using JavaScript processing
+                downloadRecentProject(projectId)
+                    .then(() => {
+
+                        showError('Download completed successfully', 'green');
+                        console.log('Download completed successfully');
+                    })
+                    .catch(error => {
+                        console.error('Download failed:', error);
+
+                        showError('Download failed:'+ error, 'red');
+
+                        //alert('Download failed: ' + error.message);
+                    })
+                    .finally(() => {
+                        button.innerHTML = originalHtml;
+                        button.disabled = false;
+                    });
+            }
+        });
+
+    });
+
+    function showError(message, color) {
+            const errorMessage = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            const dismissBtn = document.getElementById('dismiss-btn');
+        
+            // Set the custom error message
+            errorText.textContent = message;
+        
+            // Setting background color
+            errorMessage.style.backgroundColor = color;
+
+            // Show the error message
+            errorMessage.classList.remove('hidden');
+            errorMessage.classList.add('visible');
+        
+            // Automatically hide the error message after 4 seconds
+            const timeoutId = setTimeout(() => {
+            hideError();
+            }, 5000);
+        
+            // Allow the user to dismiss the message manually
+            dismissBtn.onclick = () => {
+            clearTimeout(timeoutId); // Cancel the automatic hide
+            hideError();
+            };
+        };
+        
+        function hideError() {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.classList.remove('visible');
+            errorMessage.classList.add('hidden');
+        };
+    
+    </script>
+    
+    <!-- Add this to your base template head -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<!--load rmbg_function.js file-->
+<script type="module" src="{% static 'recentProjects.js' %}" defer></script>
+
+</body>
+</html>

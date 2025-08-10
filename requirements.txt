@@ -35,7 +35,8 @@ requests==2.32.4
 rpds-py==0.20.1
 scikit-image==0.21.0
 scipy==1.10.1
-sqlparse==0.5.onnxruntime
+sqlparse==0.5
+onnxruntime
 sympy==1.13.3
 tifffile==2023.7.10
 tqdm==4.67.1

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Canceled - AutoBG Pro</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous">
+
+    <style>
+        body {
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .cancel-container {
+            max-width: 420px;
+            width: 100%;
+            background: #fff;
+            border-radius: 10px;
+            padding: 2rem 2.5rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .cancel-container h3 {
+            color: #4d4b4bff; /* nice red for cancel */
+            font-weight: 700;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .cancel-container p {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+
+        .cancel-container a.btn-primary {
+            background-color: #2563eb;
+            border-color: #2563eb;
+        }
+
+        .cancel-container a.btn-primary:hover {
+            background-color: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="cancel-container">
+    <h3>Registration Canceled</h3>
+    <p>Your registration process has been canceled. If this was a mistake, you can start again.</p>
+    <a href="{% url 'register' %}" class="btn btn-primary btn-block">Try Again</a>
+    <a href="{% url 'landing_page' %}" class="btn btn-outline-secondary btn-block mt-2">Back to AutoBG Pro</a>
+</div>
+
+</body>
+</html>

@@ -4,11 +4,18 @@
   #omg_container {
     display: flex;
     height: 95vh;
+    flex-direction: row; /* Change to row to place items side-by-side */
+    justify-content: center; /* Adjust as needed: space-between, flex-start */
+    align-items: flex-start; /* Align items to the top */
+    overflow-y: auto;
+    padding: 20px;
+    margin-left: 15%;
   }
 
    /* No Container for the layout */
    #no_container{
     display: flex;
+
   }
   
   /* Left Side: Scrollable Canvases */
@@ -73,6 +80,7 @@
   .omg_container {
     display: flex;
     height: 100vh;
+
   }
   
   /* Left Side: Scrollable Canvases */
@@ -270,7 +278,7 @@
     margin: 5px;
     background: #f0f0f0;
     color: #333;
-    border: 1px solid #ccc;
+    border: 1px solid #007bff;
     border-radius: 4px;
     font-size: 14px;
     cursor: pointer;

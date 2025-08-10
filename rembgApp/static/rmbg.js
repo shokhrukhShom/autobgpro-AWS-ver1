@@ -9,65 +9,94 @@ document.addEventListener('DOMContentLoaded', function() {
     //Background_Insert;
     document.getElementById("Background_Insert").addEventListener("click", Background_Insert);
     Checkmark_picture();
-    img_clicked();
+  
     document.getElementById("backToMainBtn").addEventListener("click", backToMainBtn);
     updateImages(); // update image whenever page loads, can be bad practice but meh...
     toggleDropdown;
     saveImage;
     textBtn;
     setupTemplateCreation();
+    delete_bg_image();
+    accountDropdown();
+    getUsage();
+    canvasEditBtn();
+
 })
 
-
-// when individual image clicked
-//Edit_Image_Btn Button proccessed here too
-function img_clicked() {
-
-    const clickableImages = document.querySelectorAll(".clickable-image");
-    const enlargedImageContainer = document.getElementById("enlarged-image-container");
-    const enlargedImage = document.getElementById("enlarged-image");
-    const closeButton = document.getElementById("close-button");
-    const imageEditPage = document.getElementById("image-edit-page");
-    const cancelBtn = document.getElementById("cancel");
-    const Edit_Image_Btn = document.getElementById("Edit_Image_Btn");
-    
-
-    clickableImages.forEach((image) => {
-        image.addEventListener("click", function() {
-            // Set the source of the enlarged image to the clicked image's source
-            enlargedImage.src = this.src;
-            // Show the enlarged image container
-            enlargedImageContainer.style.display = "flex"; // Use flex to center the content
-            // Show the image edit toolbar
-            imageEditPage.style.display = "block"; // Ensure the toolbar is visible
-            
-            // when Edit_Image_Btn clicked pass on the source of the image
-            let imgSrc = enlargedImage.src;
-            Edit_Image_Btn.addEventListener('click', function(){
-                Edit_Image(imgSrc);
-                //console.log(imgSrc);
-                
-            })
+function canvasEditBtn() {
+    const canvasEditBtns = document.querySelectorAll('#canvasEditBtn');
+    canvasEditBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const container = this.closest('.clickable-image');
+            const img = container.querySelector('img');
+            const imgSrc = img?.getAttribute('src');
+            console.log("Edit clicked! Image src:", imgSrc);
+            Edit_Image(imgSrc);
         });
     });
+}
 
-    // Close button functionality
-    closeButton.addEventListener("click", function() {
-        // Hide the enlarged image container
-        enlargedImageContainer.style.display = "none";
-        // Hide the image edit toolbar
-        imageEditPage.style.display = "none"; // Hide the toolbar when closing the enlarged image
-    });
 
-    // cancelBtn button functionality
-    cancelBtn.addEventListener("click", ()=> {
-        // Hide the enlarged image container
-        enlargedImageContainer.style.display = "none";
-        // Hide the image edit toolbar
-        imageEditPage.style.display = "none"; // Hide the toolbar when closing the enlarged image
-    })
+function Edit_Image(imageSrc) {
+    
+    // Getting Elements and assigning it to variable
+    const rmbg_images = document.getElementById("rmbg_images");
+    const tool_bar = document.getElementById("tool_bar");
+    const canvasPage = document.getElementById("canvasPage");
+    const main_preview = document.getElementById("main_preview")
 
-};
+    // Hiding div_rmbg_images when bg_intsert button clicked
+
+    rmbg_images.style.display = "none"; // hide
+    tool_bar.style.display = "none";  // hide
+    canvasPage.style.display = "block"; //show
+    main_preview.style.display = "none";
+
+    // removing data-path
+    //imageSrc = imageSrc.split('?')[0]; 
+
+    // Normalize the image source and add cache-busting parameter
+    imageSrc = new URL(imageSrc.split('?')[0], window.location.origin).href + '?t=' + Date.now();
+    
+
+    // replacing given path ".../output/..." with ".../rembg/..."
+    //let givenImageSrc = imageSrc.replace("output", "rembg");
+    // Get the path relative to media root
+    let givenImageSrc = new URL(imageSrc);
+
+    // Replace hardcoded path manipulations with more robust handling:
+    givenImageSrc = givenImageSrc.pathname.replace("cropped", "rembg") + '?t=' + Date.now(); // added Date.now for cache busting
+
+    // replacing given path ".../output/..." with ".../initialUpload/..." and also updating format to ".jpg"
+    //let originalImageSrc = imageSrc.replace("output", "initialUpload").replace(".png", ".jpg").replace("rembg", "initialUpload");
+    let originalImageSrc = new URL(imageSrc);
+    originalImageSrc = originalImageSrc.pathname
+        .replace("cropped", "initialUpload")
+        .replace(".png", ".jpg")
+        .replace("rembg", "initialUpload") + '?t=' + Date.now(); // added Date.now for cache busting
+
+
+    // Pass on the image source to canvasEdit
+    // it take two variables canvasEdit (givenImageSrc, originalImageSrc)
+    //debugging
+    console.log("imageSrc: ", imageSrc);
+    console.log("givenImageSrc: ", givenImageSrc);
+    console.log("originalImageSrc: ", originalImageSrc);
+    imageSrc = null; // reseting imageSrc to null
+
+    // call canvasEdit function and pass on values
+    canvasEdit(givenImageSrc, originalImageSrc);
+
+    // reset image sources
+    imageSrc = null;
+    givenImageSrc = null;
+    originalImageSrc= null;
+
+} 
+
+
+
+
 
 // background insert page
 window.Background_Insert = function(){
@@ -96,72 +125,233 @@ function backToMainBtn(){
     const rmbg_images = document.getElementById('rmbg_images');
     const tool_bar = document.getElementById('tool_bar');
     const canvasPage = document.getElementById('canvasPage');
+    const main_preview = document.getElementById('main_preview');
 
     bg_images.style.display = "none";
     rmbg_images.style.display = "block";
     tool_bar.style.display = "block";
-    canvasPage.style.display = "none"
+    canvasPage.style.display = "none";
+    main_preview.style.display = "block";
 
 
 }
 
-// checkmarking selected picture in "background insert"
+
+// Event delegation version of checkmarking selected picture
 function Checkmark_picture() {
-    const pictures = document.querySelectorAll('.picture');
-        selectedPicture = null;
+    const bgContainer = document.getElementById('bg_images');
+    let selectedPicture = null;
 
-        pictures.forEach(picture => {
-            picture.addEventListener('click', () => {
-                if (selectedPicture) {
-                    selectedPicture.classList.remove('selected');
-                }
-                selectedPicture = picture;
-                picture.classList.add('selected');
-            });
-        });
+    if (!bgContainer) return;
 
-        document.getElementById('submitBtn').addEventListener('click', () => {
+    bgContainer.addEventListener('click', (event) => {
+        const picture = event.target.closest('.picture');
+        if (!picture || !bgContainer.contains(picture)) return;
+
+        // Remove 'selected' class from previously selected picture
+        if (selectedPicture && selectedPicture !== picture) {
+            selectedPicture.classList.remove('selected');
+        }
+
+        // Toggle current picture selection
+        if (picture.classList.contains('selected')) {
+            picture.classList.remove('selected');
+            selectedPicture = null;
+        } else {
+            picture.classList.add('selected');
+            selectedPicture = picture;
+        }
+    });
+
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', () => {
             if (selectedPicture) {
-
-                const srcText = selectedPicture.getElementsByTagName('img')[0];
-                const srcAlt = srcText.alt;
-                console.log("fetch post: ", srcAlt);
-                
+                const img = selectedPicture.querySelector('img');
+                const srcAlt = img?.alt;
+                console.log("fetch post:", srcAlt);
                 Fetch_post_bg_path(srcAlt);
-
             } else {
-                showError("You have not selected picture. Please select a picture.", 'red');
-                
+                showError("You have not selected a picture. Please select one.", 'red');
             }
         });
-};
+    }
+}
+
+
+
+function delete_bg_image() {
+    const bgContainer = document.getElementById('bg_images');
+    if (!bgContainer) return;
+
+    // Modal elements
+    const modal = document.getElementById('confirmationModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const confirmBtn = document.getElementById('confirmDelete');
+    const cancelBtn = document.getElementById('cancelDelete');
+
+    // Variables to store the current deletion context
+    let currentPictureDiv = null;
+    let currentImageId = null;
+    let currentImagePath = null;
+
+    bgContainer.addEventListener('click', function(event) {
+        if (event.target.classList.contains('delete-btn')) {
+            event.stopPropagation();
+            currentPictureDiv = event.target.closest('.picture');
+            if (!currentPictureDiv) return;
+
+            currentImageId = currentPictureDiv.dataset.imageId;
+            currentImagePath = currentPictureDiv.querySelector('img').src;
+
+            // Show the modal
+            modalMessage.textContent = "Are you sure you want to delete this background image?";
+            modal.classList.remove('hidden');
+        }
+    });
+
+    // Confirm deletion
+    confirmBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+        if (currentPictureDiv) {
+            showLoadingSpinner();
+            
+            fetch(`/delete-background/${currentImageId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    image_path: currentImagePath
+                })
+            })
+            .then(response => {
+                hideLoadingSpinner();
+                if (response.ok) {
+                    currentPictureDiv.remove();
+                    showError("Background image deleted successfully", "green");
+                } else {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to delete image');
+                    });
+                }
+            })
+            .catch(err => {
+                hideLoadingSpinner();
+                console.error("Error deleting image:", err);
+                showError(err.message || "Error deleting image", "red");
+            });
+        }
+    });
+
+    // Cancel deletion
+    cancelBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+        // Reset current deletion context
+        currentPictureDiv = null;
+        currentImageId = null;
+        currentImagePath = null;
+    });
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+}
+
+
+
+// function Fetch_post_bg_path(textData) {
+
+//     showLoadingSpinner();
+//     //const formData = img_path; // Collect form data
+
+
+//     fetch('/rmbg', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',  // Specify JSON content
+//           'X-CSRFToken': '{{ csrf_token }}'    // CSRF token for Django
+//         },
+//         body: JSON.stringify({ text: textData })  // Send text as JSON
+//       })
+//       .then(response => {
+//         if (response.redirected) {
+//           window.location.href = response.url;  // Handle redirection if needed
+//         } else {
+//           return response.json();  // Handle the response as JSON
+//         }
+//       })
+//       .then(data => console.log(data))
+//       .catch(error => console.error('Error:', error));
+  
+    
+// };
 
 function Fetch_post_bg_path(textData) {
-
     showLoadingSpinner();
-    //const formData = img_path; // Collect form data
-
-
+    
     fetch('/rmbg', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',  // Specify JSON content
-          'X-CSRFToken': '{{ csrf_token }}'    // CSRF token for Django
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
         },
-        body: JSON.stringify({ text: textData })  // Send text as JSON
-      })
-      .then(response => {
-        if (response.redirected) {
-          window.location.href = response.url;  // Handle redirection if needed
-        } else {
-          return response.json();  // Handle the response as JSON
+        body: JSON.stringify({ text: textData })
+    })
+    .then(response => {
+        // Check if it's a redirect
+        if (response.redirected || response.status === 302) {
+            window.location.href = response.url || '/rmbg';
+            return null; // Don't try to parse as JSON
         }
-      })
-      .then(data => console.log(data))
-      .catch(error => console.error('Error:', error));
-  
-    
-};
+        
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            // If it's HTML (like an error page), handle it
+            return response.text().then(text => {
+                console.error('Received HTML instead of JSON:', text);
+                throw new Error('Server returned HTML instead of JSON');
+            });
+        }
+    })
+    .then(data => {
+        if (data) {
+            console.log('Success:', data);
+            // Handle successful JSON response here
+            if (data.status === 'success') {
+                console.log('Background path saved successfully');
+                // You can update UI here or redirect manually
+                // window.location.href = '/rmbg';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        hideLoadingSpinner(); // Make sure to hide spinner on error
+    });
+}
+
 
 function showError(message, color) {
     const errorMessage = document.getElementById('error-message');
@@ -196,6 +386,12 @@ function showError(message, color) {
     errorMessage.classList.add('hidden');
 };
 
+
+
+
+
+
+
 // Call updateImages whenever the user changes the background or edits an image
 // Example usage: updateImages();
 function updateImages() {
@@ -206,53 +402,6 @@ function updateImages() {
     });
 }
 
-
-// when Edit_Image_Btn clicked Edit_Image(x) called and canvasEdit(x,y)
-function Edit_Image(imageSrc) {
-    // Getting Elements and assigning it to variable
-    const rmbg_images = document.getElementById("rmbg_images");
-    const tool_bar = document.getElementById("tool_bar");
-    const canvasPage = document.getElementById("canvasPage");
-
-    // Hiding div_rmbg_images when bg_intsert button clicked
-
-    rmbg_images.style.display = "none"; // hide
-    tool_bar.style.display = "none";  // hide
-    canvasPage.style.display = "block"; //show
-
-    // removing data-path
-    //imageSrc = imageSrc.split('?')[0]; 
-    // Normalize the image source
-    imageSrc = new URL(imageSrc.split('?')[0], window.location.origin).href;
-    
-
-    // replacing given path ".../output/..." with ".../rembg/..."
-    //let givenImageSrc = imageSrc.replace("output", "rembg");
-    // Get the path relative to media root
-    let givenImageSrc = new URL(imageSrc);
-    // Replace hardcoded path manipulations with more robust handling:
-    givenImageSrc = givenImageSrc.pathname.replace("/media/", "").replace("output", "rembg");
-
-    // replacing given path ".../output/..." with ".../initialUpload/..." and also updating format to ".jpg"
-    //let originalImageSrc = imageSrc.replace("output", "initialUpload").replace(".png", ".jpg").replace("rembg", "initialUpload");
-    let originalImageSrc = new URL(imageSrc);
-    originalImageSrc = originalImageSrc.pathname.replace("/media/", "")
-        .replace("output", "initialUpload")
-        .replace(".png", ".jpg")
-        .replace("rembg", "initialUpload");
-
-
-    // Pass on the image source to canvasEdit
-    // it take two variables canvasEdit (givenImageSrc, originalImageSrc)
-
-    //debugging
-    // console.log("imageSrc: ", imageSrc);
-    // console.log("givenImageSrc: ", givenImageSrc);
-    // console.log("originalImageSrc: ", originalImageSrc);
-
-    canvasEdit(givenImageSrc, originalImageSrc);
-
-} 
 
 
 // Start - Toggles shadow dropdown 
@@ -345,8 +494,15 @@ function hideLoadingSpinner() {
 
 
 function textBtn(){ // new async added
+
     window.selectedPicture = []; // Reset to empty array when entering design mode
     //window.selectedCanvas = []; // Reset selected canvases // new
+
+    // hide canvas edit button
+    const canvasEditBtns = document.querySelectorAll('#canvasEditBtn');
+    canvasEditBtns.forEach(btn => {
+        btn.style.display = "none";
+    });
 
 
     console.log("text btn working");
@@ -432,11 +588,8 @@ function textBtn(){ // new async added
         
         // Add logic to proceed to text-editing functionality
         textEditing(selectedPicture);
-        
 
     });
-
-    
 };
 
 
@@ -477,18 +630,18 @@ function textEditing(selectedPicture){
 
 }
 
-
 // Create a Template START -------------------
 function setupTemplateCreation() {
     const createTemplateBtn = document.getElementById('create-template-btn');
     const templateModal = document.getElementById('template-creation-modal');
     const cancelTemplateBtn = document.getElementById('cancel-template-btn');
-    
+    const checkbox = document.getElementById('include-background');
+
     // Show modal when "Create a Template" is clicked
     createTemplateBtn.addEventListener('click', function() {
         // Reset form
         document.getElementById('template-title').value = '';
-        document.getElementById('include-background').checked = true;
+        //document.getElementById('include-background').checked;
         templateModal.style.display = 'flex';
     });
     
@@ -505,18 +658,19 @@ function setupTemplateCreation() {
             showError("Please enter a template title", "red");
             return;
         }
+        let background_path_update = false;
+        if (checkbox.checked){
+            background_path_update = true;
+            console.log("checkbox checked!!!! : ",background_path_update );
+        }
+
         
-        // Collect template data
-        const templateData = {
-            title: templateTitle,
-            background: document.getElementById('include-background').checked
-        };
         
         // Here you would typically send the templateData to your server
-        console.log("Template saved:", templateData);
+        //console.log("Template saved:", templateData);
         
         // Show success message and close modal
-        showError("Template \"" + templateData.title + "\" saved successefuly!", "green");
+        showError("Template \"" + templateTitle + "\" saved successefuly!", "green");
         
         
         
@@ -530,18 +684,28 @@ function setupTemplateCreation() {
         //     designMetadata: state
         // };
         // Prepare the data structure
-        const logo_path = state.logo.image.currentSrc;
-        const data = {
-            template_name: templateData.title,
-            project_id: project_id,
-            logo_path: logo_path,
-            designMetadata: {
-                header: state.header || {},
-                footer: state.footer || {},
-                logo: state.logo || {}
-            }
-        };
-        console.log("Logo path: ", state.logo.image.currentSrc);
+
+    
+      
+        const logo_path = state.logo.image?.currentSrc || "";
+
+    
+            const data = {
+                template_name: templateTitle,
+                project_id: window.project_id,
+                logo_path: logo_path,
+                designMetadata: {
+                    header: state.header || {},
+                    footer: state.footer || {},
+                    logo: state.logo || {},
+                    include_background: background_path_update // true or false flag
+                
+                }
+            };
+        
+        
+        console.log("Logo path: ", logo_path);
+
         
         // Fetch POST to save design template to sqlite database
 
@@ -568,6 +732,7 @@ function setupTemplateCreation() {
 
 
     });
+
 }
 
 // Function to get CSRF token from Django's cookies
@@ -577,3 +742,194 @@ function getCSRFToken() {
 }
 
 // Create a Template END -------------------
+
+
+// function for hover dropdown for account in top nav
+
+function accountDropdown() {
+    const accountDropdown = document.querySelector('.account-dropdown');
+    const dropdownContent = document.querySelector('.account-dropdown-content');
+    
+    if (accountDropdown) {
+        // Toggle dropdown on click
+        accountDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.classList.toggle('active');
+        });
+        
+        // Close when clicking elsewhere
+        document.addEventListener('click', function(e) {
+            if (!accountDropdown.contains(e.target)) {
+                accountDropdown.classList.remove('active');
+            }
+        });
+        
+        // Prevent dropdown from closing when clicking inside it
+        dropdownContent.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+}
+
+
+
+// Now you can query your own DB instead of Stripe
+async function getUsage() {
+    try {
+        console.log("getUsage started!")
+        const response = await fetch('/api/usage/');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load usage data');
+        }
+        
+        const data = await response.json();
+        console.log(data);
+        const display = document.getElementById('usage-display');
+        if (display) {
+            display.innerHTML = `
+                <strong>Plan:</strong> ${data.plan}<br>
+                <strong>Usage:</strong> ${data.used}/${data.limit} images<br>
+                <strong>Resets:</strong> ${data.reset_date}
+                <br>
+                ${data.message ? `<br><strong>${data.message}</strong>` : ''}
+            `;
+        }
+    } catch (error) {
+        console.error('Usage error:', error);
+        const display = document.getElementById('usage-display');
+        if (display) {
+            display.innerHTML = 'Usage data unavailable';
+        }
+    }
+}
+
+
+
+
+// // logo select 
+// function logoSelect() {
+//     const selectLogoBtn = document.getElementById('select-logo-btn');
+//     const logoModal = document.getElementById('logo-selector-modal');
+//     const logoGrid = document.getElementById('logo-grid');
+//     const cancelLogoSelect = document.getElementById('cancel-logo-select');
+
+//     // Show logo selector modal
+//     selectLogoBtn.addEventListener('click', function() {
+//         // Get all visible canvases (those not hidden by display:none)
+//         const visibleCanvases = Array.from(document.querySelectorAll('.rembg-canvas'))
+//             .filter(canvas => canvas.offsetParent !== null); // offsetParent is null for display:none elements
+        
+//         if (visibleCanvases.length === 0) {
+//             showError("No visible canvases found. Please select canvases first.", "red");
+//             return;
+//         }
+
+//         loadAvailableLogos();
+//         logoModal.classList.remove('hidden');
+//     });
+
+//     // Hide logo selector modal
+//     cancelLogoSelect.addEventListener('click', function() {
+//         logoModal.classList.add('hidden');
+//     });
+
+//     // Load available logos from server
+//     function loadAvailableLogos() {
+//         logoGrid.innerHTML = '<p>Loading logos...</p>';
+        
+//         fetch('/get_available_logos/')
+//             .then(response => response.json())
+//             .then(data => {
+//                 if (data.logos && data.logos.length > 0) {
+//                     renderLogoGrid(data.logos);
+//                 } else {
+//                     logoGrid.innerHTML = '<p>No logos found. Please upload one first.</p>';
+//                 }
+//             })
+//             .catch(error => {
+//                 console.error('Error loading logos:', error);
+//                 logoGrid.innerHTML = '<p>Error loading logos. Please try again.</p>';
+//             });
+//     }
+
+//     // Render logos in the grid
+//     function renderLogoGrid(logos) {
+//         logoGrid.innerHTML = '';
+        
+//         logos.forEach(logo => {
+//             const logoItem = document.createElement('div');
+//             logoItem.style.textAlign = 'center';
+            
+//             const img = document.createElement('img');
+//             img.src = logo.url;
+//             img.alt = 'Logo';
+//             img.className = 'logo-thumbnail';
+//             img.dataset.path = logo.path;
+            
+//             img.addEventListener('click', function() {
+//                 // Remove selection from all logos
+//                 document.querySelectorAll('.logo-thumbnail').forEach(thumb => {
+//                     thumb.classList.remove('selected-logo');
+//                 });
+                
+//                 // Select this logo
+//                 img.classList.add('selected-logo');
+                
+//                 handleLogoSelection({
+//                     name: logo.path.split('/').pop(),
+//                     path: logo.path,
+//                     url: logo.url
+//                 });
+                
+//                 setTimeout(() => {
+//                     logoModal.classList.add('hidden');
+//                 }, 300);
+//             });
+            
+//             logoItem.appendChild(img);
+//             logoGrid.appendChild(logoItem);
+//         });
+//     }
+
+//     function handleLogoSelection(file) {
+//         // Get all visible canvases
+//         const visibleCanvases = Array.from(document.querySelectorAll('.rembg-canvas'))
+//             .filter(canvas => canvas.offsetParent !== null);
+        
+//         if (visibleCanvases.length === 0) {
+//             showError("No visible canvases found", "red");
+//             return;
+//         }
+    
+//         const logoImg = new Image();
+//         logoImg.crossOrigin = "Anonymous";
+//         logoImg.src = file.url;
+    
+//         logoImg.onload = function() {
+//             // Update the global design state
+//             const state = getCanvasStateDesign();
+//             updateCanvasStateDesign({
+//                 logo: {
+//                     image: logoImg,
+//                     x: 100, // default x position
+//                     y: 100, // default y position
+//                     scale: 0.2 // default scale
+//                 }
+//             });
+    
+//             // Update the global state as well
+//             window.canvasStateDesignGlobal = getCanvasStateDesign();
+    
+//             // Dispatch the canvasDrawLogo event
+//             canvasDrawLogo();
+    
+//             showError("Logo added to visible canvases", "green");
+//         };
+    
+//         logoImg.onerror = function() {
+//             showError("Failed to load the selected logo", "red");
+//         };
+//     }
+// }
+// // end logo select
