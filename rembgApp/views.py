@@ -61,7 +61,11 @@ def login_view(request):
             return HttpResponseRedirect(reverse("rmbg"))
         else:
             return render(request, "rembgApp/login.html", {
-                "message": "Invalid username and/or password."
+                "message": "Invalid username and/or password.",
+                "form_data": {
+                    "username": username,
+                    "password": password
+                }
             })
     else:
         return render(request, "rembgApp/login.html")
@@ -1066,203 +1070,132 @@ def delete_background(request, image_id):
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
- 
-    
-# Saving images from uploadImg.html
+
+# ChatGPT Code - race condition safe - DB first - easy to scale     
 @csrf_exempt
 @login_required
-def imageProcessing(request): #API Processing
-    if request.method == "POST":
-        
-        # First check usage limits before processing # New code
-        profile = request.user.userprofile
-        files_count = len(request.FILES.getlist('images'))
-        
-        if profile.images_used_this_month + files_count > profile.monthly_image_limit:
-            messages.error(request, f"You've reached your monthly limit.")
-            return JsonResponse({
-                #"error": f"You've reached your monthly limit of {profile.monthly_image_limit} images. Upgrade your plan or wait until next month."
-            }, status=403)
-        
-        # End New code  
-        print("request.user:", request.user)
-        user_id = int(request.user.id) # save user id in user_id variable
-        images = request.FILES.getlist('images')  # 'images' should match the key in FormData
-        
+def imageProcessing(request):
+    """
+    Handles image uploads:
+    1. Checks monthly usage limit.
+    2. Creates a database record first (avoids race conditions).
+    3. Saves uploaded files to user-specific + post-specific folder.
+    4. Processes background removal and cropping.
+    """
 
-        print(f"ACTUAL USER ID: {user_id} (type: {type(user_id)})")  # Debug line
-        print(f"Session data: {dict(request.session)}")
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method"}, status=405)
 
-        if not images:
-            print("No files received.")  # This message should help diagnose the issue
-            return JsonResponse({"Error": "No image in the list"}, status=200) # If no files received
-        else:
-            print("Received files:")
-            for image in images:
-                print(f"File name: {image.name}, File size: {image.size} bytes")
-    
+    # ====== STEP 1: Check monthly usage limit ======
+    profile = request.user.userprofile
+    uploaded_files = request.FILES.getlist('images')  # Multiple files allowed
+    files_count = len(uploaded_files)
 
-         # Getting latest post_id to create inside the folder of the user
-        try:
-            queryset = Uploaded_Pictures.objects.latest('id') #get the latest post id and assign it to queryset
-            # make sure it is current user <---
-            
-            folder_inside_user_id = queryset.id # Assign the id to folder_inside_user_id
-            folder_inside_user_id = int(folder_inside_user_id) + 1 # convert to integer add 1 and assign/update variable folder_inside_user_id
+    if not uploaded_files:
+        return JsonResponse({"error": "No images uploaded"}, status=400)
 
-        # if db of user is empty, create first folder. if Uploaded_Pictures (is models.py post_id) empty create first post folder 0   
-        except Uploaded_Pictures.DoesNotExist:
-            folder_inside_user_id = 0
-            
+    if profile.images_used_this_month + files_count > profile.monthly_image_limit:
+        return JsonResponse({"error": "You've reached your monthly limit."}, status=403)
 
-        # Creating directory for uploaded pictures
-        # path_save_uploaded_picture = "/home/sh/Desktop/django-rembg-3v/rembg_w_python/media/images/user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id) + "/initialUpload/"
-        path_save_uploaded_picture = os.path.join(
-            settings.IMAGE_UPLOAD_ROOT,
-            f"user_id_{user_id}",
-            f"post_id_{folder_inside_user_id}",
-            "initialUpload"
-        )
-        
-        # Check if the directory exists
-        if not os.path.exists(path_save_uploaded_picture):
-            # If the directory doesn't exist, create it
-            os.makedirs(path_save_uploaded_picture)
+    # ====== STEP 2: Create DB record first ======
+    # We leave images_text empty for now, fill it in after saving files.
+    instance = Uploaded_Pictures.objects.create(
+        author=request.user,
+        images_text="",  # will be updated later
+        rmbg_picture=""  # will be updated later
+    )
 
-        
-        
-        counter = 0
-        image_names = ""
+    # Now we have a guaranteed unique `instance.id` to use for folder naming
+    user_id = request.user.id
+    post_id = instance.id  # Unique per post, safe for folder naming
 
-        for image in images:
+    # ====== STEP 3: Create directories ======
+    # Example: media/images/user_id_1/post_id_42/initialUpload
+    path_initial_upload = os.path.join(
+        settings.IMAGE_UPLOAD_ROOT,
+        f"user_id_{user_id}",
+        f"post_id_{post_id}",
+        "initialUpload"
+    )
+    path_rembg = os.path.join(
+        settings.IMAGE_UPLOAD_ROOT,
+        f"user_id_{user_id}",
+        f"post_id_{post_id}",
+        "rembg"
+    )
+    path_cropped = os.path.join(
+        settings.IMAGE_UPLOAD_ROOT,
+        f"user_id_{user_id}",
+        f"post_id_{post_id}",
+        "cropped"
+    )
 
-            
-            print(str(counter) + " : " + f"{image}")
-           
-            # renaming and saving original pictures
-            with open(path_save_uploaded_picture +"/"+ str(counter)+".jpg", 'wb+') as destination:
-                image_names = image_names + str(counter)+ ".jpg "
-                counter = int(counter) + 1  
-                for chunk in image.chunks():
-                    destination.write(chunk)
+    os.makedirs(path_initial_upload, exist_ok=True)
+    os.makedirs(path_rembg, exist_ok=True)
+    os.makedirs(path_cropped, exist_ok=True)
 
-       
-        # pushing image_names string to sqlite3 database
-        current_user = request.user
-        
-        instance = Uploaded_Pictures()
-        instance.author = current_user
-        instance.images_text = image_names
-        instance.rmbg_picture = image_names
-        
-        instance.save()
-        images = ""
-            
-        #------------under this line rembg library  codes --------------
+    # ====== STEP 4: Save uploaded files ======
+    image_names = []
+    for counter, image in enumerate(uploaded_files):
+        filename = f"{counter}.jpg"
+        file_path = os.path.join(path_initial_upload, filename)
 
-        # Create directory for bg removed pictures
-        # path_save_processed_rembg = "/home/sh/Desktop/django-rembg-3v/rembg_w_python/media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id) + "/rembg"
-        path_save_processed_rembg = os.path.join(
-            settings.IMAGE_UPLOAD_ROOT,
-            f"user_id_{user_id}",
-            f"post_id_{folder_inside_user_id}",
-            "rembg"
-        )
-        
-        # Check if the directory exists
-        if not os.path.exists(path_save_processed_rembg):
-            # If the directory doesn't exist, create it
-            os.makedirs(path_save_processed_rembg)
-            
-        
-        # Empty List to hold the image paths
-        image_files_path = []
-        
-        # Loop through the images in the folder and save it to image_files_path list
-        for filename in os.listdir(path_save_uploaded_picture):
-            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                file_path = os.path.join(path_save_uploaded_picture, filename)
-                image_files_path.append(file_path)
-                #print(file_path)
-        
+        with open(file_path, 'wb+') as destination:
+            for chunk in image.chunks():
+                destination.write(chunk)
 
-        #sorting image_files_path 0.png, 1.png, 2.png etc
-        # Sort by the numeric part of the filenames (code from chatgpt)
-        sorted_image_files_path = sorted(image_files_path, key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
+        image_names.append(filename)
 
-                        
-        # Counter to name the image (e.g. 0, 1, 2, etc)
-        counter_rembg = 0
-        # Loop the each path and remove background
-        for img_path in sorted_image_files_path:
-            print(" file path: " + img_path)
-            input_image = Image.open(img_path) # open img PIL
-            output_image = remove(input_image) #removing bg with rembg library
-            #output_image.save(path_save_processed_rembg + "/" + str(counter_rembg) + ".png") # Path to save the img inside rembg folder
-            output_path = os.path.join(path_save_processed_rembg, f"{counter_rembg}.png")
-            output_image.save(output_path, "PNG", optimize=False, compress_level=0)
-            counter_rembg = int(counter_rembg) + 1 # updating image name by adding one
-        
-        # Cropping png section ---------
+    # Update the DB record with the filenames
+    instance.images_text = " ".join(image_names)
+    instance.rmbg_picture = " ".join(image_names)
+    instance.save()
 
-        # Create a path
-        # path_save_cropped_rembg = "/home/sh/Desktop/django-rembg-3v/rembg_w_python/media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id) + "/cropped"
-        path_save_cropped_rembg = os.path.join(
-            settings.IMAGE_UPLOAD_ROOT,
-            f"user_id_{user_id}",
-            f"post_id_{folder_inside_user_id}",
-            "cropped"
-        )
-        
-        
-        # Check if the directory exists
-        if not os.path.exists(path_save_cropped_rembg):
-            # If the directory doesn't exist, create it
-            os.makedirs(path_save_cropped_rembg)
-            
-        
+    # ====== STEP 5: Background removal ======
 
-         # Loop through the rembg png images in the folder and save it to path_save_cropped_rembg list
-        for filename in os.listdir(path_save_processed_rembg):
-            if filename.endswith(('.png')):
-                file_path = os.path.join(path_save_processed_rembg, filename)
-                
-                # Open the PNG file
-                img = Image.open(file_path)
-                # Get the bounding box of the non-transparent areas
-                bbox = img.getbbox()
+    sorted_files = sorted(
+        os.listdir(path_initial_upload),
+        key=lambda x: int(os.path.splitext(x)[0])
+    )
 
-                # Crop the image to the bounding box
+    for counter, filename in enumerate(sorted_files):
+        if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+            img_path = os.path.join(path_initial_upload, filename)
+            input_image = Image.open(img_path)
+            output_image = remove(input_image)
+            output_image.save(
+                os.path.join(path_rembg, f"{counter}.png"),
+                "PNG",
+                optimize=False,
+                compress_level=0
+            )
+
+    # ====== STEP 6: Cropping PNGs ======
+    for filename in os.listdir(path_rembg):
+        if filename.lower().endswith('.png'):
+            img_path = os.path.join(path_rembg, filename)
+            img = Image.open(img_path)
+            bbox = img.getbbox()  # Bounding box of non-transparent area
+            if bbox:
                 cropped_img = img.crop(bbox)
+                cropped_img.save(os.path.join(path_cropped, filename))
 
-                # Save the cropped image
-                cropped_path_name = os.path.join(path_save_cropped_rembg, filename)
-                cropped_img.save(cropped_path_name)
-                
+    # ====== STEP 7: Track usage ======
+    try:
+        profile.images_used_this_month += files_count
+        profile.save()
+    except Exception as e:
+        print(f"Error updating usage stats: {str(e)}")
+        # We don't block the request if this fails
 
-        
+    print("Upload & processing complete for post:", post_id)
 
-        print("_______SUCCESS__________")
-        
-        
-        print("Current number of images: ", counter)
-        # New CODE for tracking
-        # After successful processing, track the usage
-        try:
-            profile.images_used_this_month += counter
-            profile.save()
-        except Exception as e:
-            print(f"Error tracking image usage: {str(e)}")
-            # Don't fail the request, just log the error
-        # end NEw
-        
-          
-
-        return JsonResponse({"Backend message": "image added",
-                             "redirect_url": "/rmbg" # this is url it will redirect 
-                             }, status=201)
-       
-    
+    return JsonResponse({
+        "Backend message": "Images uploaded and processed",
+        "post_id": post_id,
+        "redirect_url": "/rmbg"
+    }, status=201)
+  
   
 
 # @csrf_exempt
@@ -1392,6 +1325,8 @@ def imageProcessing(request): #API Processing
 #             return JsonResponse({"status": "error", "message": str(e)}, status=500)
 #     else:
 #         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)    
+
+
 @csrf_exempt
 @login_required
 def save_image_edit(request):
