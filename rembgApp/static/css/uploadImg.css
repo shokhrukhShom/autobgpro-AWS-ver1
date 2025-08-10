@@ -10,12 +10,30 @@ body {
     margin: 10px;  
 }
 
-.image-wrapper img {
+/* .image-wrapper img {
     width: 150px;
     height: 150px;
     object-fit: cover;
     border: 1px dotted #2175c9;
     border-radius: 8px;
+} */
+
+
+_::-webkit-full-page-media, _:future, :root .image-wrapper img {
+    width: 150px;
+    height: 150px;
+    
+}
+
+#imageForm #imageContainer .image-wrapper img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border: 1px dotted #2175c9;
+    border-radius: 8px;
+    border: 1px dotted #2175c9;
+    border-radius: 8px;
+    
 }
 
 .image-wrapper img:hover {

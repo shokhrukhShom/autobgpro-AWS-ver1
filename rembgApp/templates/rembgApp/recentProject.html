@@ -117,7 +117,14 @@
             </div>
         </div>
     {% endif %}
-    
+
+     <!--Error message Start-->
+     <div id="error-message" class="hidden" style="margin-top: 50px;">
+        <span id="error-text"></span>
+        <button id="dismiss-btn" class="dismiss-btn">&times;</button>
+    </div>
+    <!--Error message  END-->
+
     <div class="projects-container">
         <h1>Your Recent Projects</h1>
         
@@ -221,6 +228,9 @@
                 const button = e.target.classList.contains('download-project') ? 
                     e.target : e.target.closest('.download-project');
                 const projectId = button.dataset.projectId;
+
+                // Show loading state
+                showError('Preparing your download...', '#1b5e95'); 
                 
                 // Show loading state
                 const originalHtml = button.innerHTML;
@@ -230,11 +240,16 @@
                 // Trigger download using JavaScript processing
                 downloadRecentProject(projectId)
                     .then(() => {
+
+                        showError('Download completed successfully', 'green');
                         console.log('Download completed successfully');
                     })
                     .catch(error => {
                         console.error('Download failed:', error);
-                        alert('Download failed: ' + error.message);
+
+                        showError('Download failed:'+ error, 'red');
+
+                        //alert('Download failed: ' + error.message);
                     })
                     .finally(() => {
                         button.innerHTML = originalHtml;
@@ -244,6 +259,40 @@
         });
 
     });
+
+    function showError(message, color) {
+            const errorMessage = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            const dismissBtn = document.getElementById('dismiss-btn');
+        
+            // Set the custom error message
+            errorText.textContent = message;
+        
+            // Setting background color
+            errorMessage.style.backgroundColor = color;
+
+            // Show the error message
+            errorMessage.classList.remove('hidden');
+            errorMessage.classList.add('visible');
+        
+            // Automatically hide the error message after 4 seconds
+            const timeoutId = setTimeout(() => {
+            hideError();
+            }, 5000);
+        
+            // Allow the user to dismiss the message manually
+            dismissBtn.onclick = () => {
+            clearTimeout(timeoutId); // Cancel the automatic hide
+            hideError();
+            };
+        };
+        
+        function hideError() {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.classList.remove('visible');
+            errorMessage.classList.add('hidden');
+        };
+    
     </script>
     
     <!-- Add this to your base template head -->

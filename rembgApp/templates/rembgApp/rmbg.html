@@ -31,8 +31,8 @@
         <div class="user-nav">
             <!-- Debug info (left side) -->
             <div class="debug-info">
-                <span id="latest_upload_id">Project No.{{latest_upload_id}}</span>
-                <span> • User: <strong>{{ user.username }}</strong> (ID: <strong>{{user.id}}</strong>)</span>
+                <span id="latest_upload_id" style="display: none;">Project No.{{latest_upload_id}} •</span>
+                <span>  User: <strong>{{ user.username }}</strong> (ID: <strong>{{user.id}}</strong>)</span>
             </div>
             
             <!-- Navigation buttons (right side) -->
@@ -85,10 +85,10 @@
     <div class="tool-bar" id="tool_bar">
         <ul>
             <!-- <li onclick="Background_Insert()">BG Insert</li> -->
-            <li id="Background_Insert">BG Insert</li> 
-            <li onclick="textBtn()">Design</li>
+            <li id="Background_Insert" class="fa fa-picture-o" aria-hidden="true"> BG Insert</li> 
+            <li onclick="textBtn()" class="fa fa-pencil-square-o" aria-hidden="true"> Design</li>
             <li class="dropdown" onclick="toggleDropdown(event)">
-                <span id="shadowBtn">Shadow</span>
+                <span id="shadowBtn" class="fa fa-adjust" aria-hidden="true" > Shadow</span>
                 <div class="dropdown-content">
 
                     <label for="shadow-offset-y">Shadow Offset:</label> 
@@ -108,20 +108,20 @@
                 </div>
             </li>
             
-            <li id="template">
+            <li id="template" class="fa fa-file-text-o" aria-hidden="true" >
                 Template
                 <div id="template-dropdown" class="dropdown-content" style="display: none;">
                     <div id="template-list"></div>
                 </div>
             </li>
 
-            <li onclick="location.href='{% url  'uploadImg' %}'">New Project</li>
-            <li id="exportImages">Export</li>
+            <li onclick="location.href='{% url  'uploadImg' %}'" class="fa fa-plus-circle" aria-hidden="true"> New Project</li>
+            <li id="exportImages" class="fa fa-download" aria-hidden="true"> Download</li>
         </ul>
     </div>
 
     <div id="main_preview" style="display: block;">
-        <button id="saveChanges" class="saveChanges"> Save Changes</button>
+        <button id="saveChanges" class="saveChanges"> <span class="fa fa-floppy-o"></span> Save Changes</button>
         <h1>Preview</h1>
     </div>
     

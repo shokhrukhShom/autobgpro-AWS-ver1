@@ -1,68 +1,7 @@
-// static/js/recentProjects.js
 
-// function downloadRecentProject(projectId) {
-//     return new Promise((resolve, reject) => {
-//         // Get the current project's metadata from the server
-//         fetch(`/get_metadata/${projectId}/`)
-//             .then(response => {
-//                 if (!response.ok) throw new Error('Failed to fetch metadata');
-//                 return response.json();
-//             })
-//             .then(metadataList => {
-//                 if (!metadataList || metadataList.length === 0) {
-//                     throw new Error('No metadata found for this project');
-//                 }
-
-//                 // Get the project's image paths
-//                 fetch(`/get_project_images/${projectId}/`)
-//                     .then(response => {
-//                         if (!response.ok) throw new Error('Failed to fetch images');
-//                         return response.json();
-//                     })
-//                     .then(data => {
-//                         const imagePaths = data.images || [];
-//                         if (imagePaths.length === 0) {
-//                             throw new Error('No images found for this project');
-//                         }
-
-//                         const zip = new JSZip();
-//                         let processedImages = 0;
-//                         const totalImages = imagePaths.length;
-
-//                         imagePaths.forEach((imagePath, index) => {
-//                             // Find metadata for this specific image
-//                             const metadata = metadataList.find(m => 
-//                                 m.image_path && m.image_path.includes(imagePath.split('/').pop())
-//                             )|| metadataList[0];
-
-//                             processImageForDownload(imagePath, metadata, (canvas) => {
-//                                 // Convert canvas to image and add to zip
-//                                 canvas.toBlob((blob) => {
-//                                     const imageName = `image_${index + 1}.png`;
-//                                     zip.file(imageName, blob);
-                                    
-//                                     processedImages++;
-//                                     if (processedImages === totalImages) {
-//                                         generateZipFile(zip, "recent-project-images.zip");
-//                                         resolve();
-//                                     }
-//                                 }, 'image/png', 1.0);
-//                             });
-//                         });
-//                     })
-//                     .catch(error => {
-//                         console.error('Error fetching project images:', error);
-//                         reject(error);
-//                     });
-//             })
-//             .catch(error => {
-//                 console.error('Error fetching metadata:', error);
-//                 reject(error);
-//             });
-//     });
-// }
 
 function downloadRecentProject(projectId) {
+
     const now = new Date();
     const timestamp = now.toISOString().replace(/[:.]/g, '-'); // Replaces colons and dots to make it filename-safe
 
@@ -209,7 +148,7 @@ function processImageForDownload(imagePath, metadata, callback) {
             }
 
             // Calculate image position and scale
-            const scale = metadata.image_scale || 0.8;
+            const scale = metadata.image_scale || 0.9;
             const imgWidth = img.width * scale;
             const imgHeight = img.height * scale;
             const posX = (metadata.image_x || canvas.width / 2) - (imgWidth / 2);
