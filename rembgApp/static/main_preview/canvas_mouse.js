@@ -335,11 +335,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             canvas.style.height = `${displayHeight}px`;
         }
 
-        function calculateDefaultScale(img, canvas) {
-            const scaleX = canvas.width / img.naturalWidth;
-            const scaleY = canvas.height / img.naturalHeight;
-            return Math.min(scaleX, scaleY);
-        }
+        // Calculating image scale based on canvas to have full size car image
+        // function calculateDefaultScale(img, canvas) {
+        //     const scaleX = canvas.width / img.naturalWidth;
+        //     const scaleY = canvas.height / img.naturalHeight;
+        //     return Math.min(scaleX, scaleY);
+        // }
 
         // Prevent scrolling when using the mouse wheel on the canvas
         canvas.addEventListener('wheel', (event) => {
@@ -372,10 +373,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 // moved it to the bottom lower
                 // const scaleFactor = highResolutionFactor;
-                imageScale = calculateDefaultScale(img, canvas);
+                // Setting image scale to 0.9
+                imageScale = 0.9; //calculateDefaultScale(img, canvas);
                 // Center the image
                 imageX = canvas.width / 2;
-                imageY = canvas.height / 2;
+                imageY = canvas.height / 1.7; //closer to the ground
                 //new
                 shadowOffsetY = DEFAULT_SHADOW_OFFSET_Y;
                 shadowBlur = DEFAULT_SHADOW_BLUR;
@@ -390,8 +392,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             
                     // Apply saved properties from database that saved in metadata
                     imageX = metadata.image_x ?? canvas.width / 2;
-                    imageY = metadata.image_y ?? canvas.height / 2;
-                    imageScale = metadata.image_scale ?? 1;
+                    imageY = metadata.image_y ?? canvas.height / 1.8;
+                    imageScale = metadata.image_scale ?? 0.9; // default scale when metadata is not saved or not found
                     shadowOffsetY = metadata.shadow_offset_y ?? 0;
                     shadowBlur = metadata.shadow_blur ?? 0;
             
@@ -610,8 +612,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     // Event listener Click the Export button run download_zip function
     document.getElementById('exportImages').addEventListener('click', () => {
-        // console.log("exportImages initiated next download_zip function");
-        download_zip();  
+        console.log("exportImages initiated next download_zip function");
+        console.log("canvas mouse - window.project_id: ", project_id)
+
+        download_zip(project_id);  
     });
 
     // Add this near your other event listeners

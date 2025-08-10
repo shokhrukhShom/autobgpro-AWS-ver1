@@ -118,9 +118,9 @@ def register(request):
                 }
             })
             
-        if len(password) < 1:
+        if len(password) < 8:
             return render(request, "rembgApp/register.html", {
-                "message": "Sorry, password must be at least 8 characters. Please, create longer password",
+                "message": "Password must contain a minimum of 8 characters. Please enter a valid password.",
                 "form_data": {
                     "username": username,
                     "email": email,
