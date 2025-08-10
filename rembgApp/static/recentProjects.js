@@ -23,10 +23,20 @@ function downloadRecentProject(projectId) {
                         return response.json();
                     })
                     .then(data => {
-                        const imagePaths = data.images || [];
+                        let imagePaths = data.images || [];
                         if (imagePaths.length === 0) {
                             throw new Error('No images found for this project');
                         }
+
+                        //New
+                        // Sort images by their numerical filename (0.png, 1.png, etc.)
+                        imagePaths = imagePaths.sort((a, b) => {
+                            const getNumber = (path) => {
+                                const match = path.match(/(\d+)\.png$/);
+                                return match ? parseInt(match[1]) : Infinity;
+                            };
+                            return getNumber(a) - getNumber(b);
+                        });
 
                         const zip = new JSZip();
                         let processedImages = 0;
@@ -48,7 +58,7 @@ function downloadRecentProject(projectId) {
                                     
                                     processedImages++;
                                     if (processedImages === totalImages) {
-                                        generateZipFile(zip, `recent-project-images ${timestamp}.zip`);
+                                        generateZipFile(zip, `recent-project-AutoBGPRO ${timestamp}.zip`);
                                         resolve();
                                     }
                                 }, 'image/png', 1.0);
@@ -69,10 +79,20 @@ function downloadRecentProject(projectId) {
                         return response.json();
                     })
                     .then(data => {
-                        const imagePaths = data.images || [];
+                        let imagePaths = data.images || [];
                         if (imagePaths.length === 0) {
                             throw new Error('No images found for this project');
                         }
+
+                        //New
+                        // Sort images by their numerical filename (0.png, 1.png, etc.)
+                        imagePaths = imagePaths.sort((a, b) => {
+                            const getNumber = (path) => {
+                                const match = path.match(/(\d+)\.png$/);
+                                return match ? parseInt(match[1]) : Infinity;
+                            };
+                            return getNumber(a) - getNumber(b);
+                        });
 
                         const zip = new JSZip();
                         let processedImages = 0;
