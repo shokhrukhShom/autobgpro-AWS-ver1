@@ -27,6 +27,7 @@ urlpatterns = [
 
     #API Routes
     path("imageProcessing", views.imageProcessing, name="imageProcessing"), #AJAX API request processing for POST, GET, PUT, DELETE
+    path('check-processing-status/<int:post_id>/', views.check_processing_status, name='check_processing_status'),
     path("save_image_edit", views.save_image_edit, name="save_image_edit"),
     path("save_metadata", views.save_metadata, name="save_metadata"),
     path('get_metadata/<int:project_id>/', views.get_metadata, name='get_metadata'),
