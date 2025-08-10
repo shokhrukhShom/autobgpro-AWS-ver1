@@ -1072,23 +1072,144 @@ def delete_background(request, image_id):
 
 
 # ChatGPT Code - race condition safe - DB first - easy to scale     
+# @csrf_exempt
+# @login_required
+# def imageProcessing(request):
+#     """
+#     Handles image uploads:
+#     1. Checks monthly usage limit.
+#     2. Creates a database record first (avoids race conditions).
+#     3. Saves uploaded files to user-specific + post-specific folder.
+#     4. Processes background removal and cropping.
+#     """
+
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request method"}, status=405)
+
+#     # ====== STEP 1: Check monthly usage limit ======
+#     profile = request.user.userprofile
+#     uploaded_files = request.FILES.getlist('images')  # Multiple files allowed
+#     files_count = len(uploaded_files)
+
+#     if not uploaded_files:
+#         return JsonResponse({"error": "No images uploaded"}, status=400)
+
+#     if profile.images_used_this_month + files_count > profile.monthly_image_limit:
+#         return JsonResponse({"error": "You've reached your monthly limit."}, status=403)
+
+#     # ====== STEP 2: Create DB record first ======
+#     # We leave images_text empty for now, fill it in after saving files.
+#     instance = Uploaded_Pictures.objects.create(
+#         author=request.user,
+#         images_text="",  # will be updated later
+#         rmbg_picture=""  # will be updated later
+#     )
+
+#     # Now we have a guaranteed unique `instance.id` to use for folder naming
+#     user_id = request.user.id
+#     post_id = instance.id  # Unique per post, safe for folder naming
+
+#     # ====== STEP 3: Create directories ======
+#     # Example: media/images/user_id_1/post_id_42/initialUpload
+#     path_initial_upload = os.path.join(
+#         settings.IMAGE_UPLOAD_ROOT,
+#         f"user_id_{user_id}",
+#         f"post_id_{post_id}",
+#         "initialUpload"
+#     )
+#     path_rembg = os.path.join(
+#         settings.IMAGE_UPLOAD_ROOT,
+#         f"user_id_{user_id}",
+#         f"post_id_{post_id}",
+#         "rembg"
+#     )
+#     path_cropped = os.path.join(
+#         settings.IMAGE_UPLOAD_ROOT,
+#         f"user_id_{user_id}",
+#         f"post_id_{post_id}",
+#         "cropped"
+#     )
+
+#     os.makedirs(path_initial_upload, exist_ok=True)
+#     os.makedirs(path_rembg, exist_ok=True)
+#     os.makedirs(path_cropped, exist_ok=True)
+
+#     # ====== STEP 4: Save uploaded files ======
+#     image_names = []
+#     for counter, image in enumerate(uploaded_files):
+#         filename = f"{counter}.jpg"
+#         file_path = os.path.join(path_initial_upload, filename)
+
+#         with open(file_path, 'wb+') as destination:
+#             for chunk in image.chunks():
+#                 destination.write(chunk)
+
+#         image_names.append(filename)
+
+#     # Update the DB record with the filenames
+#     instance.images_text = " ".join(image_names)
+#     instance.rmbg_picture = " ".join(image_names)
+#     instance.save()
+
+#     # ====== STEP 5: Background removal ======
+
+#     sorted_files = sorted(
+#         os.listdir(path_initial_upload),
+#         key=lambda x: int(os.path.splitext(x)[0])
+#     )
+
+#     for counter, filename in enumerate(sorted_files):
+#         if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+#             img_path = os.path.join(path_initial_upload, filename)
+#             input_image = Image.open(img_path)
+#             output_image = remove(input_image)
+#             output_image.save(
+#                 os.path.join(path_rembg, f"{counter}.png"),
+#                 "PNG",
+#                 optimize=False,
+#                 compress_level=0
+#             )
+
+#     # ====== STEP 6: Cropping PNGs ======
+#     for filename in os.listdir(path_rembg):
+#         if filename.lower().endswith('.png'):
+#             img_path = os.path.join(path_rembg, filename)
+#             img = Image.open(img_path)
+#             bbox = img.getbbox()  # Bounding box of non-transparent area
+#             if bbox:
+#                 cropped_img = img.crop(bbox)
+#                 cropped_img.save(os.path.join(path_cropped, filename))
+
+#     # ====== STEP 7: Track usage ======
+#     try:
+#         profile.images_used_this_month += files_count
+#         profile.save()
+#     except Exception as e:
+#         print(f"Error updating usage stats: {str(e)}")
+#         # We don't block the request if this fails
+
+#     print("Upload & processing complete for post:", post_id)
+
+#     return JsonResponse({
+#         "Backend message": "Images uploaded and processed",
+#         "post_id": post_id,
+#         "redirect_url": "/rmbg"
+#     }, status=201)
+  
+
+# Send background job to Celery when image uploaded
+from .tasks import process_images_task
+import os
+from django.conf import settings
+
 @csrf_exempt
 @login_required
 def imageProcessing(request):
-    """
-    Handles image uploads:
-    1. Checks monthly usage limit.
-    2. Creates a database record first (avoids race conditions).
-    3. Saves uploaded files to user-specific + post-specific folder.
-    4. Processes background removal and cropping.
-    """
-
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request method"}, status=405)
 
-    # ====== STEP 1: Check monthly usage limit ======
     profile = request.user.userprofile
-    uploaded_files = request.FILES.getlist('images')  # Multiple files allowed
+    uploaded_files = request.FILES.getlist('images')
     files_count = len(uploaded_files)
 
     if not uploaded_files:
@@ -1097,105 +1218,93 @@ def imageProcessing(request):
     if profile.images_used_this_month + files_count > profile.monthly_image_limit:
         return JsonResponse({"error": "You've reached your monthly limit."}, status=403)
 
-    # ====== STEP 2: Create DB record first ======
-    # We leave images_text empty for now, fill it in after saving files.
+    # Create DB record first
     instance = Uploaded_Pictures.objects.create(
         author=request.user,
-        images_text="",  # will be updated later
-        rmbg_picture=""  # will be updated later
+        images_text="",
+        rmbg_picture=""
     )
 
-    # Now we have a guaranteed unique `instance.id` to use for folder naming
     user_id = request.user.id
-    post_id = instance.id  # Unique per post, safe for folder naming
+    post_id = instance.id
 
-    # ====== STEP 3: Create directories ======
-    # Example: media/images/user_id_1/post_id_42/initialUpload
+    # Prepare paths
     path_initial_upload = os.path.join(
-        settings.IMAGE_UPLOAD_ROOT,
-        f"user_id_{user_id}",
-        f"post_id_{post_id}",
-        "initialUpload"
+        settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "initialUpload"
     )
     path_rembg = os.path.join(
-        settings.IMAGE_UPLOAD_ROOT,
-        f"user_id_{user_id}",
-        f"post_id_{post_id}",
-        "rembg"
+        settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "rembg"
     )
     path_cropped = os.path.join(
-        settings.IMAGE_UPLOAD_ROOT,
-        f"user_id_{user_id}",
-        f"post_id_{post_id}",
-        "cropped"
+        settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "cropped"
     )
-
     os.makedirs(path_initial_upload, exist_ok=True)
-    os.makedirs(path_rembg, exist_ok=True)
-    os.makedirs(path_cropped, exist_ok=True)
 
-    # ====== STEP 4: Save uploaded files ======
+    # Save uploaded images
     image_names = []
     for counter, image in enumerate(uploaded_files):
         filename = f"{counter}.jpg"
-        file_path = os.path.join(path_initial_upload, filename)
-
-        with open(file_path, 'wb+') as destination:
+        with open(os.path.join(path_initial_upload, filename), 'wb+') as destination:
             for chunk in image.chunks():
                 destination.write(chunk)
-
         image_names.append(filename)
 
-    # Update the DB record with the filenames
     instance.images_text = " ".join(image_names)
     instance.rmbg_picture = " ".join(image_names)
     instance.save()
 
-    # ====== STEP 5: Background removal ======
+    # Track usage
+    profile.images_used_this_month += files_count
+    profile.save()
 
-    sorted_files = sorted(
-        os.listdir(path_initial_upload),
-        key=lambda x: int(os.path.splitext(x)[0])
-    )
-
-    for counter, filename in enumerate(sorted_files):
-        if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
-            img_path = os.path.join(path_initial_upload, filename)
-            input_image = Image.open(img_path)
-            output_image = remove(input_image)
-            output_image.save(
-                os.path.join(path_rembg, f"{counter}.png"),
-                "PNG",
-                optimize=False,
-                compress_level=0
-            )
-
-    # ====== STEP 6: Cropping PNGs ======
-    for filename in os.listdir(path_rembg):
-        if filename.lower().endswith('.png'):
-            img_path = os.path.join(path_rembg, filename)
-            img = Image.open(img_path)
-            bbox = img.getbbox()  # Bounding box of non-transparent area
-            if bbox:
-                cropped_img = img.crop(bbox)
-                cropped_img.save(os.path.join(path_cropped, filename))
-
-    # ====== STEP 7: Track usage ======
-    try:
-        profile.images_used_this_month += files_count
-        profile.save()
-    except Exception as e:
-        print(f"Error updating usage stats: {str(e)}")
-        # We don't block the request if this fails
-
-    print("Upload & processing complete for post:", post_id)
+    # Send background job to Celery
+    process_images_task.delay(user_id, post_id, path_initial_upload, path_rembg, path_cropped)
 
     return JsonResponse({
-        "Backend message": "Images uploaded and processed",
-        "post_id": post_id,
-        "redirect_url": "/rmbg"
+        "Backend message": "Upload received. Processing in background.",
+        "post_id": post_id #,
+        #"redirect_url": "/rmbg"
     }, status=201)
-  
+
+
+@csrf_exempt
+@login_required
+def check_processing_status(request, post_id):
+    try:
+        # Get the project
+        project = Uploaded_Pictures.objects.get(id=post_id, author=request.user)
+        
+        # Check if processing is complete by looking for cropped images
+        user_id = request.user.id
+        cropped_path = os.path.join(
+            settings.IMAGE_UPLOAD_ROOT,
+            f"user_id_{user_id}",
+            f"post_id_{post_id}",
+            "cropped"
+        )
+        
+        # If cropped directory exists and has files, processing is complete
+        if os.path.exists(cropped_path) and os.listdir(cropped_path):
+            return JsonResponse({
+                'status': 'complete',
+                'message': 'Processing complete'
+            })
+        else:
+            return JsonResponse({
+                'status': 'processing',
+                'message': 'Still processing'
+            })
+            
+    except Uploaded_Pictures.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Project not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
   
 
 # @csrf_exempt

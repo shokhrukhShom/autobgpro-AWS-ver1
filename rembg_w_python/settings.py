@@ -173,3 +173,12 @@ STRIPE_PRICE_ID_EXPERT_YEARLY = "price_1RsWfICaEGsYhfdv0nc56SQ4"
 STRIPE_WEBHOOK_SECRET = "whsec_41e9e9a887d089c9a67de75a49fb366623d8ad14dc0d11aebd392bdd1bc4d50c"
 
 
+# Celery settings (local Redis)
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+# Optional: Task serializer and time limits
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_TIME_LIMIT = 300  # 5 min max per task

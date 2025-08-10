@@ -336,11 +336,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         // Calculating image scale based on canvas to have full size car image
-        // function calculateDefaultScale(img, canvas) {
-        //     const scaleX = canvas.width / img.naturalWidth;
-        //     const scaleY = canvas.height / img.naturalHeight;
-        //     return Math.min(scaleX, scaleY);
-        // }
+        function calculateDefaultScale(img, canvas) {
+            const scaleX = canvas.width / img.naturalWidth/1.2;
+            const scaleY = canvas.height / img.naturalHeight/1.2;
+            return Math.min(scaleX, scaleY);
+        }
 
         // Prevent scrolling when using the mouse wheel on the canvas
         canvas.addEventListener('wheel', (event) => {
@@ -372,9 +372,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                 // moved it to the bottom lower
-                // const scaleFactor = highResolutionFactor;
+                const scaleFactor = highResolutionFactor;
                 // Setting image scale to 0.9
-                imageScale = 0.9; //calculateDefaultScale(img, canvas);
+                imageScale = calculateDefaultScale(img, canvas); // calculating scale of the image by ratio to picture size
                 // Center the image
                 imageX = canvas.width / 2;
                 imageY = canvas.height / 1.7; //closer to the ground
