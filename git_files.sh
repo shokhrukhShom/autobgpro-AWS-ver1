@@ -82,6 +82,12 @@ FILES=(
     # folder and imgs
     "rembgApp/static/images/"
 
+    # new py files
+    "rembgApp/tasks.py"
+    rembgApp/signals.py
+    
+    # app.py
+    "rembgApp/apps.py"
     
 )
 
