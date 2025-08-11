@@ -7,3 +7,6 @@ class RembgappConfig(AppConfig):
 
     def ready(self):
         import rembgApp.signals
+
+
+

@@ -82,7 +82,7 @@ class Metadata(models.Model):
 
     def __str__(self):
         return f"entry #: {self.id} | Metadata - project id: {self.project.id} | Image Scale: {self.image_scale} | Image path: {self.image_path}"
-    
+   
 
 
 class Template(models.Model):

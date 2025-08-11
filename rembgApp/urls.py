@@ -22,8 +22,8 @@ urlpatterns = [
     path("register/success", views.register_success, name="register/success"),
     #path("mainPage", views.mainPage, name="mainPage"), # this path not being used currently todo: delete/remove?
 
-    path("uploadImg", views.uploadImg, name="uploadImg"), #uploadImag.html
-    path("rmbg", views.rmbg, name="rmbg"), #uploadImag.html
+    path("uploadImg", views.uploadImg, name="uploadImg"), #uploadImag.html GET request
+    path("rmbg", views.rmbg, name="rmbg"), #uploadImag.html Get and Post request and BG upload
 
     #API Routes
     path("imageProcessing", views.imageProcessing, name="imageProcessing"), #AJAX API request processing for POST, GET, PUT, DELETE
