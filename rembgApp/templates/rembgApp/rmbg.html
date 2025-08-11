@@ -31,7 +31,7 @@
         <div class="user-nav">
             <!-- Debug info (left side) -->
             <div class="debug-info">
-                <span id="latest_upload_id" style="display: none;">Project No.{{latest_upload_id}} •</span>
+                <span id="latest_upload_id" style="display: inline;">Project No.{{latest_upload_id}} •</span>
                 <span>  User: <strong>{{ user.username }}</strong> (ID: <strong>{{user.id}}</strong>)</span>
             </div>
             
@@ -328,7 +328,7 @@
     <div id="bg_images" style="display: none;">
         
         <button class="nextBtn" id="backToMainBtn" >Back</button>
-        <button class="nextBtn" id="submitBtn" >Apply</button>
+        <button  class="nextBtn" id="submitBtn" >Apply</button> <!-- this will save metadata as well "saveChanges" class-->
         
         
        <!--"Background insert" pictures -->
