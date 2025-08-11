@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-vq!rgehvyf7(28=8$*f(7^6--jv=m*(z4y8w+6pe(pplkwalnf
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["3.144.156.218", "localhost", "autobgpro.com", "www.autobgpro.com"]
 
 
 # Application definition
