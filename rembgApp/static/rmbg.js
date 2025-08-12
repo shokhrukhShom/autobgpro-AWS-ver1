@@ -153,7 +153,7 @@ window.Background_Insert = async function() {
     hideLoadingSpinner(); 
 };
 
-// Make this available globally
+// saving metadata
 function saveChanges(){
     console.log("save btn pressed");
     
