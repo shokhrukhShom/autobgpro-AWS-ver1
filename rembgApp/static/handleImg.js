@@ -166,7 +166,9 @@ async function pollForTaskCompletion(postId) {
     
     // Start polling
     checkStatus();
+
 }
+
 
 
 

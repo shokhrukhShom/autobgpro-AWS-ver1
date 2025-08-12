@@ -6,4 +6,5 @@ class RembgappConfig(AppConfig):
     name = 'rembgApp'
 
     def ready(self):
+
         import rembgApp.signals

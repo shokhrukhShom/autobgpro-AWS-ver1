@@ -99,29 +99,6 @@ function Edit_Image(imageSrc) {
 
 
 // background insert page
-// window.Background_Insert = function(){
-
-//     saveChanges(); // save metadata when bg btn clicked
-
-//     //console.log('bg insert clicked');
-//     // Getting Elements and assigning it to variable
-//     const div_rmbg_images = document.getElementById("rmbg_images");
-//     const div_bg_images = document.getElementById("bg_images");
-//     const div_tool_bar = document.getElementById("tool_bar");
-
-//     // Hiding div_rmbg_images when bg_intsert button clicked
-
-//     div_rmbg_images.style.display = "none"; // hide div_rmbg_images element
-//     div_bg_images.style.display ="block"; // show div_bg_images element
-//     div_tool_bar.style.display = "none"; 
-//     document.getElementById("main_preview").style.display = "none";
-
-
-
-//     updateImages(); //update images if there were changes. Not thes practice to reload all pics i think!
-// };
-
-// background insert page
 window.Background_Insert = async function() {
     showLoadingSpinner("Saving changes...");
     try {
@@ -134,6 +111,7 @@ window.Background_Insert = async function() {
         const div_rmbg_images = document.getElementById("rmbg_images");
         const div_bg_images = document.getElementById("bg_images");
         const div_tool_bar = document.getElementById("tool_bar");
+
 
         div_rmbg_images.style.display = "none";
         div_bg_images.style.display = "block";
@@ -179,36 +157,9 @@ function saveChanges(){
     });
 }
 
-
-function saveChanges(){
-    console.log("saved/created metadata");
-    
-    const finalMetadataArray = Array.from(metadataMap.values()); // metadataMap 
-    console.log(finalMetadataArray);
-    
-    // Fetch POST to save sqlite database
-
-    fetch('save_metadata', {  // Adjust URL based on your Django URL structure
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken() // Include CSRF token
-        },
-        body: JSON.stringify({ metadata:finalMetadataArray }) 
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Response from server:", data);
-    })
-    .catch(error => {
-        console.error("Error saving metadata:", error);
-        showError("Error saving metadata: " + error, "red");
-    });
-}
-
-
 // back button in "background insert" logic
 function backToMainBtn(){
+
     //console.log("back clicked!")
     const bg_images = document.getElementById('bg_images');
     const rmbg_images = document.getElementById('rmbg_images');
@@ -255,6 +206,7 @@ function Checkmark_picture() {
     const submitBtn = document.getElementById('submitBtn');
     if (submitBtn) {
         submitBtn.addEventListener('click', () => {
+
             if (selectedPicture) {
                 const img = selectedPicture.querySelector('img');
                 const srcAlt = img?.alt;
@@ -362,35 +314,7 @@ function delete_bg_image() {
 
 
 
-// function Fetch_post_bg_path(textData) {
-
-//     showLoadingSpinner();
-//     //const formData = img_path; // Collect form data
-
-
-//     fetch('/rmbg', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',  // Specify JSON content
-//           'X-CSRFToken': '{{ csrf_token }}'    // CSRF token for Django
-//         },
-//         body: JSON.stringify({ text: textData })  // Send text as JSON
-//       })
-//       .then(response => {
-//         if (response.redirected) {
-//           window.location.href = response.url;  // Handle redirection if needed
-//         } else {
-//           return response.json();  // Handle the response as JSON
-//         }
-//       })
-//       .then(data => console.log(data))
-//       .catch(error => console.error('Error:', error));
-  
-    
-// };
-
 function Fetch_post_bg_path(textData) {
-    
     fetch('/rmbg', {
         method: 'POST',
         headers: {
@@ -892,132 +816,3 @@ async function getUsage() {
     }
 }
 
-
-
-
-// // logo select 
-// function logoSelect() {
-//     const selectLogoBtn = document.getElementById('select-logo-btn');
-//     const logoModal = document.getElementById('logo-selector-modal');
-//     const logoGrid = document.getElementById('logo-grid');
-//     const cancelLogoSelect = document.getElementById('cancel-logo-select');
-
-//     // Show logo selector modal
-//     selectLogoBtn.addEventListener('click', function() {
-//         // Get all visible canvases (those not hidden by display:none)
-//         const visibleCanvases = Array.from(document.querySelectorAll('.rembg-canvas'))
-//             .filter(canvas => canvas.offsetParent !== null); // offsetParent is null for display:none elements
-        
-//         if (visibleCanvases.length === 0) {
-//             showError("No visible canvases found. Please select canvases first.", "red");
-//             return;
-//         }
-
-//         loadAvailableLogos();
-//         logoModal.classList.remove('hidden');
-//     });
-
-//     // Hide logo selector modal
-//     cancelLogoSelect.addEventListener('click', function() {
-//         logoModal.classList.add('hidden');
-//     });
-
-//     // Load available logos from server
-//     function loadAvailableLogos() {
-//         logoGrid.innerHTML = '<p>Loading logos...</p>';
-        
-//         fetch('/get_available_logos/')
-//             .then(response => response.json())
-//             .then(data => {
-//                 if (data.logos && data.logos.length > 0) {
-//                     renderLogoGrid(data.logos);
-//                 } else {
-//                     logoGrid.innerHTML = '<p>No logos found. Please upload one first.</p>';
-//                 }
-//             })
-//             .catch(error => {
-//                 console.error('Error loading logos:', error);
-//                 logoGrid.innerHTML = '<p>Error loading logos. Please try again.</p>';
-//             });
-//     }
-
-//     // Render logos in the grid
-//     function renderLogoGrid(logos) {
-//         logoGrid.innerHTML = '';
-        
-//         logos.forEach(logo => {
-//             const logoItem = document.createElement('div');
-//             logoItem.style.textAlign = 'center';
-            
-//             const img = document.createElement('img');
-//             img.src = logo.url;
-//             img.alt = 'Logo';
-//             img.className = 'logo-thumbnail';
-//             img.dataset.path = logo.path;
-            
-//             img.addEventListener('click', function() {
-//                 // Remove selection from all logos
-//                 document.querySelectorAll('.logo-thumbnail').forEach(thumb => {
-//                     thumb.classList.remove('selected-logo');
-//                 });
-                
-//                 // Select this logo
-//                 img.classList.add('selected-logo');
-                
-//                 handleLogoSelection({
-//                     name: logo.path.split('/').pop(),
-//                     path: logo.path,
-//                     url: logo.url
-//                 });
-                
-//                 setTimeout(() => {
-//                     logoModal.classList.add('hidden');
-//                 }, 300);
-//             });
-            
-//             logoItem.appendChild(img);
-//             logoGrid.appendChild(logoItem);
-//         });
-//     }
-
-//     function handleLogoSelection(file) {
-//         // Get all visible canvases
-//         const visibleCanvases = Array.from(document.querySelectorAll('.rembg-canvas'))
-//             .filter(canvas => canvas.offsetParent !== null);
-        
-//         if (visibleCanvases.length === 0) {
-//             showError("No visible canvases found", "red");
-//             return;
-//         }
-    
-//         const logoImg = new Image();
-//         logoImg.crossOrigin = "Anonymous";
-//         logoImg.src = file.url;
-    
-//         logoImg.onload = function() {
-//             // Update the global design state
-//             const state = getCanvasStateDesign();
-//             updateCanvasStateDesign({
-//                 logo: {
-//                     image: logoImg,
-//                     x: 100, // default x position
-//                     y: 100, // default y position
-//                     scale: 0.2 // default scale
-//                 }
-//             });
-    
-//             // Update the global state as well
-//             window.canvasStateDesignGlobal = getCanvasStateDesign();
-    
-//             // Dispatch the canvasDrawLogo event
-//             canvasDrawLogo();
-    
-//             showError("Logo added to visible canvases", "green");
-//         };
-    
-//         logoImg.onerror = function() {
-//             showError("Failed to load the selected logo", "red");
-//         };
-//     }
-// }
-// // end logo select

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
+from decouple import config
 
 #my edit - This way we are telling Django to use our custom model "User"
 #https://docs.djangoproject.com/en/2.2/topics/auth/customizing/#substituting-a-custom-user-model
@@ -157,21 +158,40 @@ STATICFILES_DIRS = [
 IMAGE_UPLOAD_ROOT = os.path.join(MEDIA_ROOT, 'images')
 BG_TEMPLATES_ROOT = os.path.join(MEDIA_ROOT, 'bg-templates')
 
-STRIPE_SECRET_KEY = "sk_test_51RqkbeCaEGsYhfdvmNOLR87975Xd4i2tQXnIV2KiVyOou2P2KGg9lr2yCohopdeAHwNGQR7PJJjg4tlgL4JIJUZ200k3lRyEIg"
+# manually change if development or production
+ENVIRONMENT = 'production'
 
-STRIPE_PRICE_ID_STARTER = "price_1RqoRGCaEGsYhfdvl2BZqPWj"
-STRIPE_PRICE_ID_PRO = "price_1RqoTCCaEGsYhfdvPijlMlir"
-STRIPE_PRICE_ID_EXPERT = "price_1RsWbiCaEGsYhfdv4FlvqP69"
+if ENVIRONMENT == 'production':
+   
+   STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+   STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+   
 
-STRIPE_PRICE_ID_STARTER_YEARLY = "price_1RsWdPCaEGsYhfdvPny2VRwx"
-STRIPE_PRICE_ID_PRO_YEARLY = "price_1RsWeTCaEGsYhfdv8HQXJFAe"
-STRIPE_PRICE_ID_EXPERT_YEARLY = "price_1RsWfICaEGsYhfdv0nc56SQ4"
+   # monthly
+   STRIPE_PRICE_ID_STARTER = config("STRIPE_PRICE_ID_STARTER")
+   STRIPE_PRICE_ID_PRO = config("STRIPE_PRICE_ID_PRO")
+   STRIPE_PRICE_ID_EXPERT = config("STRIPE_PRICE_ID_EXPERT")
+   #yearly
+   STRIPE_PRICE_ID_STARTER_YEARLY = config("STRIPE_PRICE_ID_STARTER_YEARLY")
+   STRIPE_PRICE_ID_PRO_YEARLY = config("STRIPE_PRICE_ID_PRO_YEARLY")
+   STRIPE_PRICE_ID_EXPERT_YEARLY = config("STRIPE_PRICE_ID_EXPERT_YEARLY")
 
 
-# Run this command to get STRIPE_WEBHOOK_SECRET
-# stripe listen --forward-to 127.0.0.1:8000/webhooks/stripe/ 
-
-STRIPE_WEBHOOK_SECRET = "whsec_41e9e9a887d089c9a67de75a49fb366623d8ad14dc0d11aebd392bdd1bc4d50c"
+else:
+    # DEVELOPMENT
+    # Run this command to get STRIPE_WEBHOOK_SECRET
+    # stripe listen --forward-to 127.0.0.1:8000/webhooks/stripe/ 
+    STRIPE_WEBHOOK_SECRET = "whsec_41e9e9a887d089c9a67de75a49fb366623d8ad14dc0d11aebd392bdd1bc4d50c"
+    STRIPE_SECRET_KEY = "sk_test_51RqkbeCaEGsYhfdvmNOLR87975Xd4i2tQXnIV2KiVyOou2P2KGg9lr2yCohopdeAHwNGQR7PJJjg4tlgL4JIJUZ200k3lRyEIg"
+    # monthly price id
+    STRIPE_PRICE_ID_STARTER = "price_1RqoRGCaEGsYhfdvl2BZqPWj"
+    STRIPE_PRICE_ID_PRO = "price_1RqoTCCaEGsYhfdvPijlMlir"
+    STRIPE_PRICE_ID_EXPERT = "price_1RsWbiCaEGsYhfdv4FlvqP69"
+    # yearlt price id
+    STRIPE_PRICE_ID_STARTER_YEARLY = "price_1RsWdPCaEGsYhfdvPny2VRwx"
+    STRIPE_PRICE_ID_PRO_YEARLY = "price_1RsWeTCaEGsYhfdv8HQXJFAe"
+    STRIPE_PRICE_ID_EXPERT_YEARLY = "price_1RsWfICaEGsYhfdv0nc56SQ4"
+    
 
 
 # Celery settings (local Redis)
