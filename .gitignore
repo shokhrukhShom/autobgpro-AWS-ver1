@@ -54,3 +54,11 @@ staticfiles/
 
 # Ignore all files inside media/images/
 rembg_w_python/media/images/*
+
+# Ignore all files inside media/
+rembg_w_python/media
+
+# packagess
+vvv/lib/python3.9/site-packages/
+vvv/lib/python3.9/site-packages/cv2/cv2.abi3.so
+vvv/lib/python3.9/site-packages/llvmlite/binding/libllvmlite.so
