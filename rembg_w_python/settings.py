@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-vq!rgehvyf7(28=8$*f(7^6--jv=m*(z4y8w+6pe(pplkwalnf
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["3.144.156.218", "localhost", "autobgpro.com", "www.autobgpro.com"]
+ALLOWED_HOSTS = ["18.218.173.51", "localhost", "autobgpro.com", "www.autobgpro.com"]
 
 
 # Application definition
@@ -133,6 +133,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Media file settings
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'rembg_w_python','media')
+
 
 CACHE_MIDDLEWARE_SECONDS = 0
 

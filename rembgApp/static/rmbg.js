@@ -99,24 +99,113 @@ function Edit_Image(imageSrc) {
 
 
 // background insert page
-window.Background_Insert = function(){
-    //console.log('bg insert clicked');
-    // Getting Elements and assigning it to variable
-    const div_rmbg_images = document.getElementById("rmbg_images");
-    const div_bg_images = document.getElementById("bg_images");
-    const div_tool_bar = document.getElementById("tool_bar");
+// window.Background_Insert = function(){
 
-    // Hiding div_rmbg_images when bg_intsert button clicked
+//     saveChanges(); // save metadata when bg btn clicked
 
-    div_rmbg_images.style.display = "none"; // hide div_rmbg_images element
-    div_bg_images.style.display ="block"; // show div_bg_images element
-    div_tool_bar.style.display = "none"; 
-    document.getElementById("main_preview").style.display = "none";
+//     //console.log('bg insert clicked');
+//     // Getting Elements and assigning it to variable
+//     const div_rmbg_images = document.getElementById("rmbg_images");
+//     const div_bg_images = document.getElementById("bg_images");
+//     const div_tool_bar = document.getElementById("tool_bar");
+
+//     // Hiding div_rmbg_images when bg_intsert button clicked
+
+//     div_rmbg_images.style.display = "none"; // hide div_rmbg_images element
+//     div_bg_images.style.display ="block"; // show div_bg_images element
+//     div_tool_bar.style.display = "none"; 
+//     document.getElementById("main_preview").style.display = "none";
 
 
 
-    updateImages(); //update images if there were changes. Not thes practice to reload all pics i think!
+//     updateImages(); //update images if there were changes. Not thes practice to reload all pics i think!
+// };
+
+// background insert page
+window.Background_Insert = async function() {
+    showLoadingSpinner("Saving changes...");
+    try {
+        // Wait for saveChanges() to complete
+        await saveChanges();
+        
+        // Proceed only after saving is done
+        showLoadingSpinner("Loading background...");
+        
+        const div_rmbg_images = document.getElementById("rmbg_images");
+        const div_bg_images = document.getElementById("bg_images");
+        const div_tool_bar = document.getElementById("tool_bar");
+
+        div_rmbg_images.style.display = "none";
+        div_bg_images.style.display = "block";
+        div_tool_bar.style.display = "none"; 
+        document.getElementById("main_preview").style.display = "none";
+        
+        await updateImages(); // If updateImages is async, await it too
+        
+    } catch (error) {
+        console.error("Error in Background_Insert:", error);
+        showError("Error: " + error.message, "red");
+    } finally {
+        console.log("Finito!!!!");
+        hideLoadingSpinner(); // Ensure spinner is hidden even if an error occurs
+    }
+    hideLoadingSpinner(); 
 };
+
+// saving metadata
+function saveChanges(){
+    console.log("save btn pressed");
+    
+    const finalMetadataArray = Array.from(metadataMap.values());
+    console.log(finalMetadataArray);
+    
+    fetch('save_metadata', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({ metadata:finalMetadataArray }) 
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Response from server:", data);
+        console.log("Metadata saved");
+        //showError("Saved", "green")
+    })
+    .catch(error => {
+        console.error("Error saving metadata:", error);
+        showError("Error saving metadata: " + error, "red");
+    });
+}
+
+
+function saveChanges(){
+    console.log("saved/created metadata");
+    
+    const finalMetadataArray = Array.from(metadataMap.values()); // metadataMap 
+    console.log(finalMetadataArray);
+    
+    // Fetch POST to save sqlite database
+
+    fetch('save_metadata', {  // Adjust URL based on your Django URL structure
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken() // Include CSRF token
+        },
+        body: JSON.stringify({ metadata:finalMetadataArray }) 
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Response from server:", data);
+    })
+    .catch(error => {
+        console.error("Error saving metadata:", error);
+        showError("Error saving metadata: " + error, "red");
+    });
+}
+
 
 // back button in "background insert" logic
 function backToMainBtn(){
@@ -214,7 +303,7 @@ function delete_bg_image() {
     confirmBtn.addEventListener('click', function() {
         modal.classList.add('hidden');
         if (currentPictureDiv) {
-            showLoadingSpinner();
+            showLoadingSpinner("Processing... Please do not reload the page");
             
             fetch(`/delete-background/${currentImageId}/`, {
                 method: 'POST',
@@ -301,7 +390,6 @@ function delete_bg_image() {
 // };
 
 function Fetch_post_bg_path(textData) {
-    showLoadingSpinner();
     
     fetch('/rmbg', {
         method: 'POST',
@@ -435,7 +523,7 @@ document.addEventListener('click', () => {
 });
 
 
-function showLoadingSpinner() {
+function showLoadingSpinner(textMessage) {
     // Create spinner container
     const spinnerContainer = document.createElement("div");
     spinnerContainer.id = "spinner-container";
@@ -462,7 +550,7 @@ function showLoadingSpinner() {
 
     // Create message
     const message = document.createElement("p");
-    message.textContent = "Processing... Please do not reload the page.";
+    message.textContent = textMessage; //"Processing... Please do not reload the page.";
     message.style.color = "white";
     message.style.marginTop = "10px";
     message.style.fontSize = "16px";
