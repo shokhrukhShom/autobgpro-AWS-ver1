@@ -163,8 +163,8 @@ ENVIRONMENT = 'production'
 
 if ENVIRONMENT == 'production':
    
-   STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-   STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+   STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET")
+   STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY")
    
 
    # monthly
