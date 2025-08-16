@@ -22,9 +22,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Validation constraints
-        const MAX_FILES = 20;
-        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
-        const MAX_TOTAL_SIZE = 30 * 1024 * 1024; // 30MB
+        // const MAX_FILES = 20;
+        // const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+        // const MAX_TOTAL_SIZE = 30 * 1024 * 1024; // 30MB
+        const MAX_FILES = 20;                      // keep max 20 files
+        const MAX_FILE_SIZE = 10 * 1024 * 1024;   // allow up to 10MB per file
+        const MAX_TOTAL_SIZE = 150 * 1024 * 1024; // allow total of 150MB (20 x ~7.5MB avg)
+
 
         // Validate file count
         if (fileArray.length > MAX_FILES) {
@@ -123,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Add this new function to poll for task completion
 async function pollForTaskCompletion(postId) {
-    const maxAttempts = 60; // 60 attempts (30 seconds with 0.5s interval)
+    const maxAttempts = 120; // 60 attempts (30 seconds with 0.5s interval)
     let attempts = 0;
     
     const checkStatus = async () => {
@@ -142,7 +146,7 @@ async function pollForTaskCompletion(postId) {
                 // Still processing - check again after delay
                 if (attempts < maxAttempts) {
                     setTimeout(checkStatus, 1000); // Check every 1 seconds
-                    console.log('processing...');
+                    console.log(attempts+' seconds: processing...');
                     showLoadingSpinner('Processing... It may take a minute.');
                 } else {
                     // Timeout reached

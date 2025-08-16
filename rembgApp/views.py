@@ -807,9 +807,6 @@ def rmbg(request):
         picture = get_object_or_404(Uploaded_Pictures, id=latest_upload_id)
         current_bg = picture.background_image
         
-        # PNG images ----------Start-----------
-        # this code doesn't work on mac
-        #path_rembg = "media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(latest_upload_id) + "/cropped" 
         
         #this code works on mac (fuck it!!!)
         path_rembg = os.path.join(

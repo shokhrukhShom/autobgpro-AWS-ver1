@@ -158,12 +158,12 @@ IMAGE_UPLOAD_ROOT = os.path.join(MEDIA_ROOT, 'images')
 BG_TEMPLATES_ROOT = os.path.join(MEDIA_ROOT, 'bg-templates')
 
 # manually change if development or production
-ENVIRONMENT = 'production'
+ENVIRONMENT = 'development'
 
 if ENVIRONMENT == 'production':
    
-   STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-   STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+   STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET")
+   STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY")
    
 
    # monthly
@@ -202,3 +202,19 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_TIME_LIMIT = 300  # 5 min max per task
+
+
+
+
+#Email setup
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.ionos.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "noreply@autobgpro.com"
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+
+
+# Default sender email
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
