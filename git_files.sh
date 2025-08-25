@@ -74,14 +74,9 @@ FILES=(
     "rembgApp/templates/rembgApp/canvasPage.html"
     "rembgApp/templates/rembgApp/recentProject.html"
 
-    
-
-
     # Migrations - coonsistent db record
     "rembgApp/migrations/*.py"
 
-    # folder and imgs
-    "rembgApp/static/images/"
 
     # new py files
     "rembgApp/tasks.py"
