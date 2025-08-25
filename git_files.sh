@@ -68,6 +68,7 @@ FILES=(
     "rembgApp/templates/rembgApp/password_reset.html"
     "rembgApp/templates/rembgApp/register_cancel.html"
     "rembgApp/templates/rembgApp/register_success.html"
+    "rembgApp/templates/rembgApp/password_reset_confirm.html"
     # html templates
     "rembgApp/templates/rembgApp/uploadImg.html"
     "rembgApp/templates/rembgApp/canvasPage.html"
