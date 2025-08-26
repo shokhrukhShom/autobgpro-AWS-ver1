@@ -1247,7 +1247,7 @@ def imageProcessing(request):
 
     # Prepare paths
     path_initial_upload = os.path.join(
-        settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "initialUpload"
+        settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", ""
     )
     path_rembg = os.path.join(
         settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "rembg"
