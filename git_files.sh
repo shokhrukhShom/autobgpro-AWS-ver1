@@ -69,20 +69,14 @@ FILES=(
     "rembgApp/templates/rembgApp/register_cancel.html"
     "rembgApp/templates/rembgApp/register_success.html"
     "rembgApp/templates/rembgApp/password_reset_confirm.html"
-
     # html templates
     "rembgApp/templates/rembgApp/uploadImg.html"
     "rembgApp/templates/rembgApp/canvasPage.html"
     "rembgApp/templates/rembgApp/recentProject.html"
 
-    
-
-
     # Migrations - coonsistent db record
     "rembgApp/migrations/*.py"
 
-    # folder and imgs
-    "rembgApp/static/images/"
 
     # new py files
     "rembgApp/tasks.py"

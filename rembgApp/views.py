@@ -751,13 +751,33 @@ import random
 @login_required
 def rmbg(request):
     # getting latest post_id by current user
-    latest_upload = Uploaded_Pictures.objects.filter(author = request.user).order_by('-id').first()
+    latest_upload = Uploaded_Pictures.objects.filter(author = request.user).order_by('-id') #.first()
     
     user_id = str(request.user.id) # Get the current user
     
+    latest_valid_upload = None
     # if user has not uploaded images yet
     if latest_upload:
-        latest_upload_id = latest_upload.id
+        #latest_upload_id = latest_upload.id
+        
+        # checking if leatest upload_upload_id was successfull
+        for upload in latest_upload:
+            cropped_dir = os.path.join(
+                settings.MEDIA_ROOT,
+                "images",
+                f"user_id_{user_id}",
+                f"post_id_{upload.id}",
+                "cropped"
+            )
+        
+            # Check if directory exists and has PNG files
+            if os.path.exists(cropped_dir) and any(fname.endswith('.png') for fname in os.listdir(cropped_dir)):
+                latest_valid_upload = upload
+                break
+        
+        #assigning latest valid upload id 
+        latest_upload_id = latest_valid_upload.id
+
     else:
         bg_img_paths = []
         # bg_img_templates_path = "media/bg-templates/"
@@ -807,9 +827,6 @@ def rmbg(request):
         picture = get_object_or_404(Uploaded_Pictures, id=latest_upload_id)
         current_bg = picture.background_image
         
-        # PNG images ----------Start-----------
-        # this code doesn't work on mac
-        #path_rembg = "media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(latest_upload_id) + "/cropped" 
         
         #this code works on mac (fuck it!!!)
         path_rembg = os.path.join(
@@ -926,12 +943,18 @@ def update_background(request):
             project_id = data.get('project_id')
             background_path = data.get('background_path')
             
-            if not project_id or not background_path:
-                return JsonResponse({'error': 'Missing required fields'}, status=400)
+            if not project_id:
+                return JsonResponse({'error': 'Project ID is required'}, status=400)
                 
             project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
-            project.background_image = background_path
-            project.save()
+            
+            # Only update if background_path is provided, not empty, and not just whitespace
+            if background_path and background_path.strip():
+                project.background_image = background_path.strip()
+                project.save()
+                print(f"Background updated to: {background_path.strip()}")
+            else:
+                print("Background path is empty or None, keeping existing background")
             
             return JsonResponse({'status': 'success'})
             
@@ -940,34 +963,30 @@ def update_background(request):
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-# @csrf_exempt  # Optional if you handle CSRF token manually in JS
+# @csrf_exempt
 # @login_required
-# def upload_background(request):
-#     if request.method == 'POST' and request.FILES.get('image'):
-        
-#         user_id = str(request.user.id)
-#         uploaded_file = request.FILES['image']
-        
-#         # Create a unique filename using uuid to avoid overwriting
-#         file_ext = os.path.splitext(uploaded_file.name)[1]
-#         file_name = f"{uuid.uuid4().hex}{file_ext}"
-        
-#         # Define upload path: media/images/user_id_X/user_backgrounds/
-#         upload_path = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}','user_backgrounds')
-#         os.makedirs(upload_path, exist_ok=True)
-
-#         file_path = os.path.join(upload_path, file_name)
-        
-#         # Save uploaded image to disk
-#         with open(file_path, 'wb+') as f:
-#             for chunk in uploaded_file.chunks():
-#                 f.write(chunk)
+# def update_background(request):
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body)
+#             project_id = data.get('project_id')
+#             background_path = data.get('background_path')
+            
+#             if not project_id or not background_path:
+#                 return JsonResponse({'error': 'Missing required fields'}, status=400)
                 
-#         # Return image URL so frontend can display it
-#         file_url = f"{settings.MEDIA_URL}images/user_id_{user_id}/user_backgrounds/{file_name}"
-#         return JsonResponse({'url': file_url})
+#             project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
+#             project.background_image = background_path
+#             project.save()
+            
+#             return JsonResponse({'status': 'success'})
+            
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+    
+#     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-#     return JsonResponse({'error': 'Invalid request'}, status=400)
+
 
 @csrf_exempt
 @login_required
@@ -1071,130 +1090,6 @@ def delete_background(request, image_id):
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
-# ChatGPT Code - race condition safe - DB first - easy to scale     
-# @csrf_exempt
-# @login_required
-# def imageProcessing(request):
-#     """
-#     Handles image uploads:
-#     1. Checks monthly usage limit.
-#     2. Creates a database record first (avoids race conditions).
-#     3. Saves uploaded files to user-specific + post-specific folder.
-#     4. Processes background removal and cropping.
-#     """
-
-#     if request.method != "POST":
-#         return JsonResponse({"error": "Invalid request method"}, status=405)
-
-#     # ====== STEP 1: Check monthly usage limit ======
-#     profile = request.user.userprofile
-#     uploaded_files = request.FILES.getlist('images')  # Multiple files allowed
-#     files_count = len(uploaded_files)
-
-#     if not uploaded_files:
-#         return JsonResponse({"error": "No images uploaded"}, status=400)
-
-#     if profile.images_used_this_month + files_count > profile.monthly_image_limit:
-#         return JsonResponse({"error": "You've reached your monthly limit."}, status=403)
-
-#     # ====== STEP 2: Create DB record first ======
-#     # We leave images_text empty for now, fill it in after saving files.
-#     instance = Uploaded_Pictures.objects.create(
-#         author=request.user,
-#         images_text="",  # will be updated later
-#         rmbg_picture=""  # will be updated later
-#     )
-
-#     # Now we have a guaranteed unique `instance.id` to use for folder naming
-#     user_id = request.user.id
-#     post_id = instance.id  # Unique per post, safe for folder naming
-
-#     # ====== STEP 3: Create directories ======
-#     # Example: media/images/user_id_1/post_id_42/initialUpload
-#     path_initial_upload = os.path.join(
-#         settings.IMAGE_UPLOAD_ROOT,
-#         f"user_id_{user_id}",
-#         f"post_id_{post_id}",
-#         "initialUpload"
-#     )
-#     path_rembg = os.path.join(
-#         settings.IMAGE_UPLOAD_ROOT,
-#         f"user_id_{user_id}",
-#         f"post_id_{post_id}",
-#         "rembg"
-#     )
-#     path_cropped = os.path.join(
-#         settings.IMAGE_UPLOAD_ROOT,
-#         f"user_id_{user_id}",
-#         f"post_id_{post_id}",
-#         "cropped"
-#     )
-
-#     os.makedirs(path_initial_upload, exist_ok=True)
-#     os.makedirs(path_rembg, exist_ok=True)
-#     os.makedirs(path_cropped, exist_ok=True)
-
-#     # ====== STEP 4: Save uploaded files ======
-#     image_names = []
-#     for counter, image in enumerate(uploaded_files):
-#         filename = f"{counter}.jpg"
-#         file_path = os.path.join(path_initial_upload, filename)
-
-#         with open(file_path, 'wb+') as destination:
-#             for chunk in image.chunks():
-#                 destination.write(chunk)
-
-#         image_names.append(filename)
-
-#     # Update the DB record with the filenames
-#     instance.images_text = " ".join(image_names)
-#     instance.rmbg_picture = " ".join(image_names)
-#     instance.save()
-
-#     # ====== STEP 5: Background removal ======
-
-#     sorted_files = sorted(
-#         os.listdir(path_initial_upload),
-#         key=lambda x: int(os.path.splitext(x)[0])
-#     )
-
-#     for counter, filename in enumerate(sorted_files):
-#         if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
-#             img_path = os.path.join(path_initial_upload, filename)
-#             input_image = Image.open(img_path)
-#             output_image = remove(input_image)
-#             output_image.save(
-#                 os.path.join(path_rembg, f"{counter}.png"),
-#                 "PNG",
-#                 optimize=False,
-#                 compress_level=0
-#             )
-
-#     # ====== STEP 6: Cropping PNGs ======
-#     for filename in os.listdir(path_rembg):
-#         if filename.lower().endswith('.png'):
-#             img_path = os.path.join(path_rembg, filename)
-#             img = Image.open(img_path)
-#             bbox = img.getbbox()  # Bounding box of non-transparent area
-#             if bbox:
-#                 cropped_img = img.crop(bbox)
-#                 cropped_img.save(os.path.join(path_cropped, filename))
-
-#     # ====== STEP 7: Track usage ======
-#     try:
-#         profile.images_used_this_month += files_count
-#         profile.save()
-#     except Exception as e:
-#         print(f"Error updating usage stats: {str(e)}")
-#         # We don't block the request if this fails
-
-#     print("Upload & processing complete for post:", post_id)
-
-#     return JsonResponse({
-#         "Backend message": "Images uploaded and processed",
-#         "post_id": post_id,
-#         "redirect_url": "/rmbg"
-#     }, status=201)
   
 
 # Send background job to Celery when image uploaded
@@ -1240,13 +1135,39 @@ def imageProcessing(request):
     )
     os.makedirs(path_initial_upload, exist_ok=True)
 
-    # Save uploaded images
+    # Save uploaded images with resolution check
     image_names = []
     for counter, image in enumerate(uploaded_files):
         filename = f"{counter}.jpg"
-        with open(os.path.join(path_initial_upload, filename), 'wb+') as destination:
-            for chunk in image.chunks():
-                destination.write(chunk)
+        file_path = os.path.join(path_initial_upload, filename)
+        
+        # Open the image
+        img = Image.open(image)
+        original_width, original_height = img.width, img.height
+        
+        # Only resize if either dimension exceeds 1200px
+        if original_width > 1200 or original_height > 1200:
+            # Calculate scaling factors for both dimensions
+            width_scale = 1200 / original_width
+            height_scale = 1200 / original_height  # Use 1200 for both dimensions
+            
+            # Use the smaller scaling factor to ensure both dimensions fit within 1200px
+            scale_factor = min(width_scale, height_scale)
+            
+            # Calculate new dimensions
+            new_width = int(original_width * scale_factor)
+            new_height = int(original_height * scale_factor)
+            
+            print(f"Resizing image {filename} from {original_width}×{original_height} to {new_width}×{new_height}")
+            
+            # Resize the image
+            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        else:
+            # Image is already within our size limits, no need to resize
+            print(f"Image {filename} is within limits: {original_width}×{original_height}")
+        
+        # Save the image with high quality
+        img.save(file_path, "JPEG", quality=90)
         image_names.append(filename)
 
     instance.images_text = " ".join(image_names)
@@ -1262,9 +1183,9 @@ def imageProcessing(request):
 
     return JsonResponse({
         "Backend message": "Upload received. Processing in background.",
-        "post_id": post_id #,
-        #"redirect_url": "/rmbg"
+        "post_id": post_id
     }, status=201)
+
 
 
 @csrf_exempt
@@ -1305,135 +1226,6 @@ def check_processing_status(request, post_id):
             'status': 'error',
             'message': str(e)
         }, status=500)
-  
-
-# @csrf_exempt
-# @login_required
-# def save_image_edit(request):
-#     if request.method == "POST":
-#         try:
-#             # Parse the JSON data from the request body
-#             data = json.loads(request.body)
-#             image_data = data.get("image")  # Base64 encoded image data
-#             image_path = data.get("image_path", "")  # Relative path to the image
-            
-#             if not image_data or not image_path:
-#                 return JsonResponse({"status": "error", "message": "Missing image data or path"}, status=400)
-            
-#             # Extract the filename from the path
-#             filename = os.path.basename(image_path)
-            
-#             # Get user ID and project ID from the path
-#             path_parts = image_path.split('/')
-#             user_id = None
-#             project_id = None
-            
-#             # Parse the path to get user_id and project_id
-#             for i, part in enumerate(path_parts):
-#                 if part.startswith('user_id_'):
-#                     user_id = part.replace('user_id_', '')
-#                 elif part.startswith('post_id_'):
-#                     project_id = part.replace('post_id_', '')
-            
-#             if not user_id or not project_id:
-#                 return JsonResponse({"status": "error", "message": "Invalid image path format"}, status=400)
-            
-#             # Create the destination directory paths
-#             rembg_dir = os.path.join(
-#                 settings.MEDIA_ROOT,
-#                 'images',
-#                 f'user_id_{user_id}',
-#                 f'post_id_{project_id}',
-#                 'rembg'
-#             )
-            
-#             cropped_dir = os.path.join(
-#                 settings.MEDIA_ROOT,
-#                 'images',
-#                 f'user_id_{user_id}',
-#                 f'post_id_{project_id}',
-#                 'cropped'
-#             )
-            
-#             # Ensure directories exist
-#             os.makedirs(rembg_dir, exist_ok=True)
-#             os.makedirs(cropped_dir, exist_ok=True)
-            
-#             # Full paths to the image files
-#             rembg_path = os.path.join(rembg_dir, filename)
-#             cropped_path = os.path.join(cropped_dir, filename)
-            
-#             # Remove existing files if they exist
-#             for path in [rembg_path, cropped_path]:
-#                 if os.path.exists(path):
-#                     os.remove(path)
-            
-#             # Save the new image to rembg folder
-#             # The image data comes as "data:image/png;base64,..." so we need to split it
-#             format, imgstr = image_data.split(';base64,') 
-#             ext = format.split('/')[-1]  # Get the file extension
-            
-#             # Decode the base64 data
-#             data = ContentFile(base64.b64decode(imgstr), name=filename)
-            
-#             # Save to rembg file
-#             with open(rembg_path, 'wb+') as destination:
-#                 for chunk in data.chunks():
-#                     destination.write(chunk)
-            
-#             # Now process the cropped version
-#             try:
-#                 # Open the saved image
-#                 img = Image.open(rembg_path)
-                
-#                 # Get the bounding box of the non-transparent areas
-#                 bbox = img.getbbox()
-                
-#                 if bbox:  # Only crop if we found a bounding box
-#                     # Crop the image to the bounding box
-#                     cropped_img = img.crop(bbox)
-                    
-#                     # Save the cropped image
-#                     cropped_img.save(cropped_path)
-#                 else:
-#                     # If no bounding box found (shouldn't happen with transparent PNGs), just copy the original
-#                     img.save(cropped_path)
-            
-#             except Exception as e:
-#                 print(f"Error cropping image: {str(e)}")
-#                 # If cropping fails, just copy the original to cropped folder
-#                 with open(rembg_path, 'rb') as src, open(cropped_path, 'wb') as dst:
-#                     dst.write(src.read())
-            
-#             # Return the new paths (relative to MEDIA_URL)
-#             rembg_relative_path = os.path.join(
-#                 'images',
-#                 f'user_id_{user_id}',
-#                 f'post_id_{project_id}',
-#                 'rembg',
-#                 filename
-#             )
-            
-#             cropped_relative_path = os.path.join(
-#                 'images',
-#                 f'user_id_{user_id}',
-#                 f'post_id_{project_id}',
-#                 'cropped',
-#                 filename
-#             )
-            
-#             return JsonResponse({
-#                 "status": "success", 
-#                 "rembg_path": rembg_relative_path,
-#                 "cropped_path": cropped_relative_path,
-#                 "rembg_absolute_url": request.build_absolute_uri(settings.MEDIA_URL + rembg_relative_path),
-#                 "cropped_absolute_url": request.build_absolute_uri(settings.MEDIA_URL + cropped_relative_path)
-#             })
-
-#         except Exception as e:
-#             return JsonResponse({"status": "error", "message": str(e)}, status=500)
-#     else:
-#         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)    
 
 
 @csrf_exempt
@@ -1655,8 +1447,18 @@ def handle_design_elements(request, data):
         print("image path: ",image_path)
 
         # Update background image if included in design_data True or Flase
-        if 'background_path' in design_data and design_data['background_path']:
-            project.background_image = design_data['background_path']
+        # if 'background_path' in design_data and design_data['background_path']:
+        #     project.background_image = design_data['background_path']
+        
+        # Update project background image only if new background_path is not empty
+        new_background_path = design_data.get('background_path')
+        if new_background_path:  # This checks for non-empty, non-None values
+            print("Updating project background image to:", new_background_path)
+            project.background_image = new_background_path
+            project.save()
+        else:
+            print("No new background path provided; keeping existing background image.")
+            
 
         # Use same pattern as handle_shadow_settings
         metadata, created = Metadata.objects.get_or_create(
@@ -1679,7 +1481,8 @@ def handle_design_elements(request, data):
                 'logo_y': design_data.get('logo_y', 100),
                 'logo_scale': design_data.get('logo_scale', 0.1), 
 
-                'background_path': design_data.get('background_path', None)  # Save background path to metadata
+                # 'background_path': design_data.get('background_path', None)  # Save background path to metadata
+                'background_path': design_data.get('background_path') if design_data.get('background_path') else None  # Only set if not empty
             }
         )
 
@@ -1709,9 +1512,12 @@ def handle_design_elements(request, data):
                 metadata.logo_scale = design_data['logo_scale']
 
             # Update background path if it exists in design_data
-            if 'background_path' in design_data:
-                metadata.background_path = design_data['background_path']
+            #if 'background_path' in design_data: metadata.background_path = design_data['background_path']
             
+            # Update background path ONLY if it exists in design_data AND is not empty
+            if 'background_path' in design_data and design_data['background_path']:
+                metadata.background_path = design_data['background_path']
+                
             metadata.save()
 
     return JsonResponse({'message': 'Design elements saved successfully!'}, status=201)

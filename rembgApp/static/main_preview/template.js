@@ -300,6 +300,8 @@ async function save_selected_pictures_with_new_template(selectedPicturesTemplate
     console.log("(inside save func) Template metadata: ", templateMetadata);
     console.log("templateBG path: ", templateMetadata.background_path);
 
+    showLoadingSpinner("Applying template, please wait...");
+
     selectedPicturesTemplate = selectedPicturesTemplate.map(url => 
         //url.replace('http://127.0.0.1:8000', '')
         url.replace(window.location.origin, '')
@@ -326,7 +328,7 @@ async function save_selected_pictures_with_new_template(selectedPicturesTemplate
             if (!updateBgResponse.ok) {
                 throw new Error(`Failed to update background image: ${updateBgResponse.status}`);
             }
-        }
+        } 
 
 
         // save the template metadata
@@ -368,6 +370,9 @@ async function save_selected_pictures_with_new_template(selectedPicturesTemplate
 
         const data = await response.json();
         console.log("Save response:", data);
+
+        // Hide loading spinner before redirecting
+        hideLoadingSpinner();
         
         // Redirect to rmbg page with refresh
         window.location.href = '/rmbg';
@@ -396,3 +401,57 @@ function getCookie(name) {
 }
 
 
+function showLoadingSpinner(textMessage) {
+    // Create spinner container
+    const spinnerContainer = document.createElement("div");
+    spinnerContainer.id = "spinner-container";
+    spinnerContainer.style.position = "fixed";
+    spinnerContainer.style.top = "0";
+    spinnerContainer.style.left = "0";
+    spinnerContainer.style.width = "100%";
+    spinnerContainer.style.height = "100%";
+    spinnerContainer.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+    spinnerContainer.style.display = "flex";
+    spinnerContainer.style.justifyContent = "center";
+    spinnerContainer.style.alignItems = "center";
+    spinnerContainer.style.zIndex = "9999";
+
+    // Create spinner
+    const spinner = document.createElement("div");
+    spinner.style.border = "8px solid #f3f3f3";
+    spinner.style.borderTop = "8px solid #3498db";
+    spinner.style.borderRadius = "50%";
+    spinner.style.width = "60px";
+    spinner.style.height = "60px";
+    spinner.style.animation = "spin 1s linear infinite";
+    spinnerContainer.appendChild(spinner);
+
+    // Create message
+    const message = document.createElement("p");
+    message.textContent = textMessage; //"Processing... Please do not reload the page.";
+    message.style.color = "white";
+    message.style.marginTop = "10px";
+    message.style.fontSize = "16px";
+    message.style.padding = "10px";
+    spinnerContainer.appendChild(message);
+
+    // Add spinner container to the body
+    document.body.appendChild(spinnerContainer);
+
+    // Add CSS animation for spinner
+    const style = document.createElement("style");
+    style.innerHTML = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+};
+
+function hideLoadingSpinner() {
+    const spinnerContainer = document.getElementById("spinner-container");
+    if (spinnerContainer) {
+        spinnerContainer.remove();
+    }
+};

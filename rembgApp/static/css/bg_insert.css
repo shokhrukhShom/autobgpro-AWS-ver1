@@ -39,7 +39,8 @@
 /* button start*/
 
 .nextBtn {
-    margin-top: 30px;
+    margin-top: 5px;
+    margin-bottom: 5px;
     border: 1px solid gray;
     border-radius: 5px;
     padding: 10px 30px 10px 30px;

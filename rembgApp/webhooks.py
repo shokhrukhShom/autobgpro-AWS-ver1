@@ -9,7 +9,6 @@ from .models import User
 from django.utils import timezone # Import timezone
 
 
-
 # Enhanced webhook with detailed logging
 @csrf_exempt
 def stripe_webhook(request):
@@ -232,12 +231,10 @@ def handle_subscription_deleted(subscription):
         raise
 
 
-
-
 # # 3rd versiion 
 # @csrf_exempt
 # def stripe_webhook(request):
-#     print("----------------------------WEBHOOK FUNCTION HIT!----------------------") # <--- ADD THIS LINE HERE
+#     print("WEBHOOK FUNCTION HIT!") # <--- ADD THIS LINE HERE
 #     if request.method != 'POST':
 #         return HttpResponseBadRequest("Only POST requests are accepted")
     
@@ -277,7 +274,7 @@ def handle_subscription_deleted(subscription):
 
 
 # def handle_subscription_update(subscription):
-#     print("----- Processing subscription update: --------")
+#     print("Processing subscription update:")
 #     try:
 #         profile = UserProfile.objects.get(stripe_customer_id=subscription['customer'])
 
@@ -328,9 +325,7 @@ def handle_subscription_deleted(subscription):
 #         # Update plan info
 #         # The price_id is correctly accessed from the subscription item
 #         price_id = subscription['items']['data'][0]['price']['id']
-
-#         print('price id: ', price_id)
-
+        
 #         if price_id == settings.STRIPE_PRICE_ID_STARTER:
 #             profile.plan_type = 'starter'
 #             profile.monthly_image_limit = 500

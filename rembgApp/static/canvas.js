@@ -1,6 +1,11 @@
 
 function canvasEdit (givenImageSrc, originalImageSrc) {
 
+    // Show loading spinner immediately
+    showLoadingSpinner("Image loading...");
+    
+    
+
     let draw_color = ''; // set drawing color fully transparent
     let cursor_color = 'white';
     let draw_width = 50;   // Default width
@@ -19,32 +24,7 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
     let restore_array_redo = [];
     let index_redo = -1;
 
-    // if (window.updateCursorWidth) {
-    //     window.updateCursorWidth(draw_width);
-    // }
-
-    // // Reset the pen-range slider to default (50) on initialization
-    // const penRangeSlider = document.querySelector('.pen-range');
-    // if (penRangeSlider) {
-    //     penRangeSlider.value = 50; // Set slider value
-    // }
     
-    // document.getElementById('exitWithoutSaving').addEventListener('click', function(){
-    //     // Clear the canvas context
-    //     const canvas = document.getElementById('canvas');
-    //     const context = canvas.getContext('2d');
-    //     context.clearRect(0, 0, canvas.width, canvas.height);
-        
-    //     // Reset the image source variables
-    //     givenImageSrc = null;
-    //     originalImageSrc = null;
-        
-    //     // Go back to main view
-    //     backToMainBtn();
-    // });
-
-    //console.log("Canvas Edit function called");
-    //console.log(givenImageSrc, originalImageSrc);
 
     const canvas = document.getElementById('canvas');
     //canvas.width = window.innerWidth - 60;
@@ -81,6 +61,14 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
 
         // Draw the image on the canvas
         context.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+    };
+
+    // Handle image loading errors
+    img.onerror = function() {
+        hideLoadingSpinner();
+        console.error("Failed to load image:", givenImageSrc);
+        alert("Failed to load the image. Please try again.");
     };
     //chatgpt edit BG code End ------------->
 
@@ -98,6 +86,7 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
 
         // Draw the image on the canvas
         //context.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+        hideLoadingSpinner();
     };
 
     //ChatGPT code restore ENDS  <------------
@@ -451,6 +440,65 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
         originalImageSrc = null
         
     });
+
+
+
+
+
+    function showLoadingSpinner(textMessage) {
+        // Create spinner container
+        const spinnerContainer = document.createElement("div");
+        spinnerContainer.id = "spinner-container";
+        spinnerContainer.style.position = "fixed";
+        spinnerContainer.style.top = "0";
+        spinnerContainer.style.left = "0";
+        spinnerContainer.style.width = "100%";
+        spinnerContainer.style.height = "100%";
+        spinnerContainer.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+        spinnerContainer.style.display = "flex";
+        spinnerContainer.style.justifyContent = "center";
+        spinnerContainer.style.alignItems = "center";
+        spinnerContainer.style.zIndex = "9999";
+
+        // Create spinner
+        const spinner = document.createElement("div");
+        spinner.style.border = "8px solid #f3f3f3";
+        spinner.style.borderTop = "8px solid #3498db";
+        spinner.style.borderRadius = "50%";
+        spinner.style.width = "60px";
+        spinner.style.height = "60px";
+        spinner.style.animation = "spin 1s linear infinite";
+        spinnerContainer.appendChild(spinner);
+
+        // Create message
+        const message = document.createElement("p");
+        message.textContent = textMessage; //"Processing... Please do not reload the page.";
+        message.style.color = "white";
+        message.style.marginTop = "10px";
+        message.style.fontSize = "16px";
+        message.style.padding = "10px";
+        spinnerContainer.appendChild(message);
+
+        // Add spinner container to the body
+        document.body.appendChild(spinnerContainer);
+
+        // Add CSS animation for spinner
+        const style = document.createElement("style");
+        style.innerHTML = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    function hideLoadingSpinner() {
+        const spinnerContainer = document.getElementById("spinner-container");
+        if (spinnerContainer) {
+            spinnerContainer.remove();
+        }
+    };
 
 
 };

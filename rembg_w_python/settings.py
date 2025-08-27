@@ -135,7 +135,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'rembg_w_python','media')
 
-
 CACHE_MIDDLEWARE_SECONDS = 0
 
 
@@ -175,6 +174,7 @@ if ENVIRONMENT == 'production':
    STRIPE_PRICE_ID_STARTER_YEARLY = config("STRIPE_PRICE_ID_STARTER_YEARLY")
    STRIPE_PRICE_ID_PRO_YEARLY = config("STRIPE_PRICE_ID_PRO_YEARLY")
    STRIPE_PRICE_ID_EXPERT_YEARLY = config("STRIPE_PRICE_ID_EXPERT_YEARLY")
+   EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
 
 else:
@@ -191,6 +191,7 @@ else:
     STRIPE_PRICE_ID_STARTER_YEARLY = "price_1RsWdPCaEGsYhfdvPny2VRwx"
     STRIPE_PRICE_ID_PRO_YEARLY = "price_1RsWeTCaEGsYhfdv8HQXJFAe"
     STRIPE_PRICE_ID_EXPERT_YEARLY = "price_1RsWfICaEGsYhfdv0nc56SQ4"
+    EMAIL_HOST_PASSWORD = ""
     
 
 
@@ -213,7 +214,7 @@ EMAIL_HOST = "smtp.ionos.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "noreply@autobgpro.com"
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+#EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
 
 # Default sender email
