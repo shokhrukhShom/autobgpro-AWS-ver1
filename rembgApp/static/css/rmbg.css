@@ -765,8 +765,3 @@ canvas {
     margin-top: 40px; /* Adjust based on button height */
 }
 
-
-#canvasPage {
-    background-color: #64748b;
-    height: 100%;
-}
