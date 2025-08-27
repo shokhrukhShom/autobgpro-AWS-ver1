@@ -328,7 +328,7 @@ async function save_selected_pictures_with_new_template(selectedPicturesTemplate
             if (!updateBgResponse.ok) {
                 throw new Error(`Failed to update background image: ${updateBgResponse.status}`);
             }
-        }
+        } 
 
 
         // save the template metadata

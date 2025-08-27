@@ -948,10 +948,13 @@ def update_background(request):
                 
             project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
             
-            # Only update if background_path is provided and not empty
-            if background_path:
-                project.background_image = background_path
+            # Only update if background_path is provided, not empty, and not just whitespace
+            if background_path and background_path.strip():
+                project.background_image = background_path.strip()
                 project.save()
+                print(f"Background updated to: {background_path.strip()}")
+            else:
+                print("Background path is empty or None, keeping existing background")
             
             return JsonResponse({'status': 'success'})
             
@@ -1444,8 +1447,18 @@ def handle_design_elements(request, data):
         print("image path: ",image_path)
 
         # Update background image if included in design_data True or Flase
-        if 'background_path' in design_data and design_data['background_path']:
-            project.background_image = design_data['background_path']
+        # if 'background_path' in design_data and design_data['background_path']:
+        #     project.background_image = design_data['background_path']
+        
+        # Update project background image only if new background_path is not empty
+        new_background_path = design_data.get('background_path')
+        if new_background_path:  # This checks for non-empty, non-None values
+            print("Updating project background image to:", new_background_path)
+            project.background_image = new_background_path
+            project.save()
+        else:
+            print("No new background path provided; keeping existing background image.")
+            
 
         # Use same pattern as handle_shadow_settings
         metadata, created = Metadata.objects.get_or_create(
@@ -1468,7 +1481,8 @@ def handle_design_elements(request, data):
                 'logo_y': design_data.get('logo_y', 100),
                 'logo_scale': design_data.get('logo_scale', 0.1), 
 
-                'background_path': design_data.get('background_path', None)  # Save background path to metadata
+                # 'background_path': design_data.get('background_path', None)  # Save background path to metadata
+                'background_path': design_data.get('background_path') if design_data.get('background_path') else None  # Only set if not empty
             }
         )
 
@@ -1498,9 +1512,12 @@ def handle_design_elements(request, data):
                 metadata.logo_scale = design_data['logo_scale']
 
             # Update background path if it exists in design_data
-            if 'background_path' in design_data:
-                metadata.background_path = design_data['background_path']
+            #if 'background_path' in design_data: metadata.background_path = design_data['background_path']
             
+            # Update background path ONLY if it exists in design_data AND is not empty
+            if 'background_path' in design_data and design_data['background_path']:
+                metadata.background_path = design_data['background_path']
+                
             metadata.save()
 
     return JsonResponse({'message': 'Design elements saved successfully!'}, status=201)
