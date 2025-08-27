@@ -528,7 +528,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const { mouseX, mouseY } = getScaledMouseCoordinates(canvas, e);
             if (isMouseOverImage(mouseX, mouseY)) { 
-                const delta = e.deltaY > 0 ? -0.02 : 0.02;
+                const delta = e.deltaY > 0 ? -0.015 : 0.02;
                 imageScale = Math.max(0.1, imageScale + delta); // Ensure scale doesn't go below 0.1
                 
                 showBorder = true;
