@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-vq!rgehvyf7(28=8$*f(7^6--jv=m*(z4y8w+6pe(pplkwalnf'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["18.218.173.51", "localhost", "autobgpro.com", "www.autobgpro.com"]
 
@@ -203,3 +203,18 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_TIME_LIMIT = 300  # 5 min max per task
+
+
+
+#Email setup
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.ionos.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "noreply@autobgpro.com"
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+
+
+# Default sender email
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

@@ -22,9 +22,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Validation constraints
-        const MAX_FILES = 20;
-        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
-        const MAX_TOTAL_SIZE = 30 * 1024 * 1024; // 30MB
+        // const MAX_FILES = 20;
+        // const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+        // const MAX_TOTAL_SIZE = 30 * 1024 * 1024; // 30MB
+        const MAX_FILES = 20;                      // keep max 20 files
+        const MAX_FILE_SIZE = 10 * 1024 * 1024;   // allow up to 10MB per file
+        const MAX_TOTAL_SIZE = 150 * 1024 * 1024; // allow total of 150MB (20 x ~7.5MB avg)
+        
 
         // Validate file count
         if (fileArray.length > MAX_FILES) {
