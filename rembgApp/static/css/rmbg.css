@@ -741,3 +741,32 @@ canvas {
     transition: opacity 300ms ease, transform 220ms ease; 
 }
 
+/* Sticky button container */
+.sticky-button-container {
+    margin-top: 0%;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: white;
+    padding: 5px 0;
+    box-shadow: 0 2px 1px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Adjust the main container to account for sticky buttons */
+#bg_images {
+    position: relative;
+}
+
+/* Make sure content doesn't jump under sticky buttons */
+#bg_images > h1:first-of-type {
+    margin-top: 40px; /* Adjust based on button height */
+}
+
+
+#canvasPage {
+    background-color: #64748b;
+    height: 100%;
+}

@@ -119,3 +119,13 @@ canvas {
 
 
 
+#canvasPage {
+    background-color: gray;
+    height: 100vh; /* Cover full viewport height */
+    width: 100%; /* Cover full width */
+    position: relative;
+    display: block; /* Make sure it's displayed */
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevent any scrolling */
+}
