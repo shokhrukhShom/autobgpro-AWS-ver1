@@ -1136,6 +1136,7 @@ def imageProcessing(request):
         return JsonResponse({"error": "Invalid request method"}, status=405)
 
     try:
+        print("_____imageProcessing started_______")
         profile = request.user.userprofile
         uploaded_files = request.FILES.getlist('images')
         files_count = len(uploaded_files)
@@ -1156,14 +1157,20 @@ def imageProcessing(request):
         user_id = request.user.id
         post_id = instance.id
 
-        # Prepare paths (use relative paths without 'media/' prefix)
-        s3_base_path = f"images/user_id_{user_id}/post_id_{post_id}"
+        # Use S3 paths (relative to media root)
+        s3_base_path = f"images_uploads/user_id_{user_id}/post_id_{post_id}"
         initial_upload_path = f"{s3_base_path}/initialUpload"
         
-        # Save uploaded images
+        # Ensure the S3 directory structure exists by creating a dummy file first
+        from django.core.files.storage import default_storage
+        dummy_path = f"{initial_upload_path}/.keep"
+        if not default_storage.exists(dummy_path):
+            default_storage.save(dummy_path, ContentFile(b''))
+        
+        # Save uploaded images to S3 with proper numeric naming
         image_names = []
         for counter, image in enumerate(uploaded_files):
-            filename = f"{counter}.jpg"
+            filename = f"{counter}.jpg"  # Ensure numeric naming: 0.jpg, 1.jpg, 2.jpg, etc.
             s3_key = f"{initial_upload_path}/{filename}"
             
             # Process image
@@ -1184,11 +1191,11 @@ def imageProcessing(request):
             img.save(buffer, "JPEG", quality=90)
             buffer.seek(0)
             
-            # Upload to storage (S3 or local)
-            from django.core.files.storage import default_storage
+            # Upload to S3
             default_storage.save(s3_key, ContentFile(buffer.getvalue()))
             
             image_names.append(filename)
+            print(f"Uploaded {s3_key} to S3")
 
         instance.images_text = " ".join(image_names)
         instance.rmbg_picture = " ".join(image_names)
@@ -1198,14 +1205,14 @@ def imageProcessing(request):
         profile.images_used_this_month += files_count
         profile.save()
 
-        # Send to Celery
-        from .tasks import process_images_task
+        # Send to Celery with S3 paths
         process_images_task.delay(user_id, post_id, initial_upload_path, 
                                  f"{s3_base_path}/rembg", f"{s3_base_path}/cropped")
 
         return JsonResponse({
             "message": "Upload received. Processing in background.",
-            "post_id": post_id
+            "post_id": post_id,
+            "file_count": files_count
         }, status=201)
 
     except Exception as e:
@@ -1218,94 +1225,6 @@ def imageProcessing(request):
             "details": str(e)
         }, status=500)
 
-# @csrf_exempt
-# @login_required
-# def imageProcessing(request):
-#     if request.method != "POST":
-#         return JsonResponse({"error": "Invalid request method"}, status=405)
-
-#     profile = request.user.userprofile
-#     uploaded_files = request.FILES.getlist('images')
-#     files_count = len(uploaded_files)
-
-#     if not uploaded_files:
-#         return JsonResponse({"error": "No images uploaded"}, status=400)
-
-#     if profile.images_used_this_month + files_count > profile.monthly_image_limit:
-#         return JsonResponse({"error": "You've reached your monthly limit."}, status=403)
-
-#     # Create DB record first
-#     instance = Uploaded_Pictures.objects.create(
-#         author=request.user,
-#         images_text="",
-#         rmbg_picture=""
-#     )
-
-#     user_id = request.user.id
-#     post_id = instance.id
-
-#     # Prepare paths
-#     path_initial_upload = os.path.join(
-#         settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "initialUpload"
-#     )
-#     path_rembg = os.path.join(
-#         settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "rembg"
-#     )
-#     path_cropped = os.path.join(
-#         settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "cropped"
-#     )
-#     os.makedirs(path_initial_upload, exist_ok=True)
-
-#     # Save uploaded images with resolution check
-#     image_names = []
-#     for counter, image in enumerate(uploaded_files):
-#         filename = f"{counter}.jpg"
-#         file_path = os.path.join(path_initial_upload, filename)
-        
-#         # Open the image
-#         img = Image.open(image)
-#         original_width, original_height = img.width, img.height
-        
-#         # Only resize if either dimension exceeds 1200px
-#         if original_width > 1200 or original_height > 1200:
-#             # Calculate scaling factors for both dimensions
-#             width_scale = 1200 / original_width
-#             height_scale = 1200 / original_height  # Use 1200 for both dimensions
-            
-#             # Use the smaller scaling factor to ensure both dimensions fit within 1200px
-#             scale_factor = min(width_scale, height_scale)
-            
-#             # Calculate new dimensions
-#             new_width = int(original_width * scale_factor)
-#             new_height = int(original_height * scale_factor)
-            
-#             print(f"Resizing image {filename} from {original_width}×{original_height} to {new_width}×{new_height}")
-            
-#             # Resize the image
-#             img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-#         else:
-#             # Image is already within our size limits, no need to resize
-#             print(f"Image {filename} is within limits: {original_width}×{original_height}")
-        
-#         # Save the image with high quality
-#         img.save(file_path, "JPEG", quality=90)
-#         image_names.append(filename)
-
-#     instance.images_text = " ".join(image_names)
-#     instance.rmbg_picture = " ".join(image_names)
-#     instance.save()
-
-#     # Track usage
-#     profile.images_used_this_month += files_count
-#     profile.save()
-
-#     # Send background job to Celery
-#     process_images_task.delay(user_id, post_id, path_initial_upload, path_rembg, path_cropped)
-
-#     return JsonResponse({
-#         "Backend message": "Upload received. Processing in background.",
-#         "post_id": post_id
-#     }, status=201)
 
 
 @csrf_exempt

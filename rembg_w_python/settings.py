@@ -198,7 +198,7 @@ if ENVIRONMENT == 'production':
    
    # AWS S3 storage 
    #DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
-   DEFAULT_FILE_STORAGE =  "storages.backends.s3boto3.S3Boto3Storage" #'rembg_w_python.storage_backends.MediaStorage' #
+   DEFAULT_FILE_STORAGE =  "rembg_w_python.storage_backends.MediaStorage" #"storages.backends.s3boto3.S3Boto3Storage"
    #DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
    STATICFILES_STORAGE = "storages.backends.s3.S3Storage"
    
