@@ -86,6 +86,7 @@ FILES=(
 
     # app.py
     "rembgApp/apps.py"
+    "rembg_w_python/storage_backends.py"
     
     
 )

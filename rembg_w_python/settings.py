@@ -25,8 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-vq!rgehvyf7(28=8$*f(7^6--jv=m*(z4y8w+6pe(pplkwalnf'
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -44,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rembgApp',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -132,8 +132,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #MEDIA_URL = '/media/'
 
 # Media file settings
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'rembg_w_python','media')
+#MEDIA_URL = '/media/'
+#MEDIA_ROOT = os.path.join(BASE_DIR, 'rembg_w_python','media')
 
 CACHE_MIDDLEWARE_SECONDS = 0
 
@@ -153,14 +153,14 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-# Custom file paths settings
-IMAGE_UPLOAD_ROOT = os.path.join(MEDIA_ROOT, 'images')
-BG_TEMPLATES_ROOT = os.path.join(MEDIA_ROOT, 'bg-templates')
 
 # manually change if development or production
 ENVIRONMENT = 'production'
 
 if ENVIRONMENT == 'production':
+    
+   # SECURITY WARNING: keep the secret key used in production secret!
+   SECRET_KEY = config('SECRET_KEY')
    
    STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET")
    STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY")
@@ -175,10 +175,55 @@ if ENVIRONMENT == 'production':
    STRIPE_PRICE_ID_PRO_YEARLY = config("STRIPE_PRICE_ID_PRO_YEARLY")
    STRIPE_PRICE_ID_EXPERT_YEARLY = config("STRIPE_PRICE_ID_EXPERT_YEARLY")
    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
-
+   
+   # AWS S3 Settings
+   AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID") #config("AWS_ACCESS_KEY_ID")
+   AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
+   AWS_STORAGE_BUCKET_NAME = "autobgpro-bkt"
+   AWS_S3_REGION_NAME = "us-east-2"  # match your bucket region
+   
+   # Force private storage
+   AWS_DEFAULT_ACL = None  # This is the key setting to fix the error
+   AWS_QUERYSTRING_AUTH = False  # requires signed URLs
+   AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+   }
+   
+   # Your AWS S3 bucket name
+   AWS_STORAGE_BUCKET_NAME = 'autobgpro-bkt'
+   # Set the custom domain for S3. This should be the CNAME record you set up
+   # or the default S3 URL for your bucket. 
+   AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+   
+   
+   # AWS S3 storage 
+   #DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
+   DEFAULT_FILE_STORAGE =  "storages.backends.s3boto3.S3Boto3Storage" #'rembg_w_python.storage_backends.MediaStorage' #
+   #DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+   STATICFILES_STORAGE = "storages.backends.s3.S3Storage"
+   
+   # Media file settings
+   MEDIA_URL = 'https://autobgpro-bkt.s3.amazonaws.com/media/'
+   MEDIA_ROOT = os.path.join(BASE_DIR, 'rembg_w_python','media')
+   
+   # Custom file paths settings
+   BG_TEMPLATES_ROOT = os.path.join(MEDIA_ROOT, 'bg-templates')
+   
+   IMAGE_UPLOAD_ROOT = os.path.join(MEDIA_ROOT, 'images_uploads')
+  
 
 else:
+    
+    # Media file settings
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'rembg_w_python','media')
+    # Custom file paths settings
+    IMAGE_UPLOAD_ROOT = os.path.join(MEDIA_ROOT, 'images')
+    BG_TEMPLATES_ROOT = os.path.join(MEDIA_ROOT, 'bg-templates')
+    
     # DEVELOPMENT
+    SECRET_KEY = "jjsdfsomethingsecretforlocaldevhfsdjkfhdsjkfhsdkjfhsdkjfh"  # only for development
+    
     # Run this command to get STRIPE_WEBHOOK_SECRET
     # stripe listen --forward-to 127.0.0.1:8000/webhooks/stripe/ 
     STRIPE_WEBHOOK_SECRET = "whsec_41e9e9a887d089c9a67de75a49fb366623d8ad14dc0d11aebd392bdd1bc4d50c"
@@ -206,7 +251,6 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_TIME_LIMIT = 300  # 5 min max per task
 
 
-
 #Email setup
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -215,7 +259,6 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "noreply@autobgpro.com"
 #EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
-
 
 # Default sender email
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

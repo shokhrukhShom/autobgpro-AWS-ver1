@@ -42,3 +42,52 @@ def process_images_task(user_id, post_id, path_initial_upload, path_rembg, path_
                 cropped_img.save(os.path.join(path_cropped, filename))
 
     print(f"[Celery] Finished processing post {post_id} for user {user_id}")
+
+
+# # rembgApp/tasks.py
+# from celery import shared_task
+# from rembg import remove
+# from PIL import Image
+# import io
+# from django.core.files.storage import default_storage
+
+# @shared_task
+# def process_images_task(user_id, post_id, initial_upload_path, rembg_path, cropped_path):
+#     # List files in initial upload folder on S3
+#     initial_files = []
+#     for filename in default_storage.listdir(initial_upload_path)[1]:
+#         if filename.endswith('.jpg'):
+#             initial_files.append(filename)
+    
+#     for filename in sorted(initial_files):
+#         # Download from S3
+#         initial_key = f"{initial_upload_path}/{filename}"
+#         with default_storage.open(initial_key, 'rb') as f:
+#             input_data = f.read()
+        
+#         # Process with rembg
+#         output_data = remove(input_data)
+        
+#         # Save rembg version to S3
+#         rembg_key = f"{rembg_path}/{filename.replace('.jpg', '.png')}"
+#         with default_storage.open(rembg_key, 'wb') as f:
+#             f.write(output_data)
+        
+#         # Process cropped version
+#         img = Image.open(io.BytesIO(output_data))
+#         bbox = img.getbbox()
+        
+#         if bbox:
+#             cropped_img = img.crop(bbox)
+#             buffer = io.BytesIO()
+#             cropped_img.save(buffer, format='PNG')
+#             buffer.seek(0)
+            
+#             # Save cropped version to S3
+#             cropped_key = f"{cropped_path}/{filename.replace('.jpg', '.png')}"
+#             with default_storage.open(cropped_key, 'wb') as f:
+#                 f.write(buffer.getvalue())
+#         else:
+#             # If no bounding box, copy the rembg image
+#             with default_storage.open(cropped_key, 'wb') as f:
+#                 f.write(output_data)

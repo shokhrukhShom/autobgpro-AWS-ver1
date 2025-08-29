@@ -987,7 +987,6 @@ def update_background(request):
 #     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
-
 @csrf_exempt
 @login_required
 def upload_background(request):
@@ -996,46 +995,81 @@ def upload_background(request):
         uploaded_file = request.FILES['image']
         
         # Check current number of backgrounds
-        user_bg_dir = os.path.join(
-            settings.MEDIA_ROOT,
-            'images',
-            f'user_id_{user_id}',
-            'user_backgrounds'
-        )
+        from django.core.files.storage import default_storage
+        user_bg_prefix = f"media/images/user_id_{user_id}/user_backgrounds/"
         
-        # Count existing background images
-        current_count = 0
-        if os.path.exists(user_bg_dir):
-            current_count = len([
-                f for f in os.listdir(user_bg_dir) 
-                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif'))
-            ])
+        # Count existing background images (this might need optimization for large numbers)
+        existing_files = default_storage.listdir(user_bg_prefix)[1]
+        current_count = len([f for f in existing_files if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif'))])
         
-        # Enforce 5-image limit
         if current_count >= 20:
             return JsonResponse({
                 'error': 'You can only have up to 20 background uploads. Delete old pictures to upload more.',
                 'limit_reached': True
             }, status=400)
         
-        # Create a unique filename using uuid to avoid overwriting
+        # Create a unique filename
         file_ext = os.path.splitext(uploaded_file.name)[1]
         file_name = f"{uuid.uuid4().hex}{file_ext}"
+        s3_key = f"{user_bg_prefix}{file_name}"
         
-        # Define upload path
-        upload_path = os.path.join(user_bg_dir, file_name)
-        os.makedirs(user_bg_dir, exist_ok=True)
-
-        # Save uploaded image to disk
-        with open(upload_path, 'wb+') as f:
-            for chunk in uploaded_file.chunks():
-                f.write(chunk)
+        # Save to S3
+        default_storage.save(s3_key, uploaded_file)
                 
         # Return image URL
-        file_url = f"{settings.MEDIA_URL}images/user_id_{user_id}/user_backgrounds/{file_name}"
+        file_url = default_storage.url(s3_key)
         return JsonResponse({'url': file_url})
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+# @csrf_exempt
+# @login_required
+# def upload_background(request):
+#     if request.method == 'POST' and request.FILES.get('image'):
+#         user_id = str(request.user.id)
+#         uploaded_file = request.FILES['image']
+        
+#         # Check current number of backgrounds
+#         user_bg_dir = os.path.join(
+#             settings.MEDIA_ROOT,
+#             'images',
+#             f'user_id_{user_id}',
+#             'user_backgrounds'
+#         )
+        
+#         # Count existing background images
+#         current_count = 0
+#         if os.path.exists(user_bg_dir):
+#             current_count = len([
+#                 f for f in os.listdir(user_bg_dir) 
+#                 if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif'))
+#             ])
+        
+#         # Enforce 5-image limit
+#         if current_count >= 20:
+#             return JsonResponse({
+#                 'error': 'You can only have up to 20 background uploads. Delete old pictures to upload more.',
+#                 'limit_reached': True
+#             }, status=400)
+        
+#         # Create a unique filename using uuid to avoid overwriting
+#         file_ext = os.path.splitext(uploaded_file.name)[1]
+#         file_name = f"{uuid.uuid4().hex}{file_ext}"
+        
+#         # Define upload path
+#         upload_path = os.path.join(user_bg_dir, file_name)
+#         os.makedirs(user_bg_dir, exist_ok=True)
+
+#         # Save uploaded image to disk
+#         with open(upload_path, 'wb+') as f:
+#             for chunk in uploaded_file.chunks():
+#                 f.write(chunk)
+                
+#         # Return image URL
+#         file_url = f"{settings.MEDIA_URL}images/user_id_{user_id}/user_backgrounds/{file_name}"
+#         return JsonResponse({'url': file_url})
+
+#     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
 @login_required
@@ -1089,13 +1123,11 @@ def delete_background(request, image_id):
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-
-  
-
 # Send background job to Celery when image uploaded
 from .tasks import process_images_task
 import os
 from django.conf import settings
+from django.core.files.storage import default_storage
 
 @csrf_exempt
 @login_required
@@ -1103,89 +1135,177 @@ def imageProcessing(request):
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request method"}, status=405)
 
-    profile = request.user.userprofile
-    uploaded_files = request.FILES.getlist('images')
-    files_count = len(uploaded_files)
+    try:
+        profile = request.user.userprofile
+        uploaded_files = request.FILES.getlist('images')
+        files_count = len(uploaded_files)
 
-    if not uploaded_files:
-        return JsonResponse({"error": "No images uploaded"}, status=400)
+        if not uploaded_files:
+            return JsonResponse({"error": "No images uploaded"}, status=400)
 
-    if profile.images_used_this_month + files_count > profile.monthly_image_limit:
-        return JsonResponse({"error": "You've reached your monthly limit."}, status=403)
+        if profile.images_used_this_month + files_count > profile.monthly_image_limit:
+            return JsonResponse({"error": "You've reached your monthly limit."}, status=403)
 
-    # Create DB record first
-    instance = Uploaded_Pictures.objects.create(
-        author=request.user,
-        images_text="",
-        rmbg_picture=""
-    )
+        # Create DB record first
+        instance = Uploaded_Pictures.objects.create(
+            author=request.user,
+            images_text="",
+            rmbg_picture=""
+        )
 
-    user_id = request.user.id
-    post_id = instance.id
+        user_id = request.user.id
+        post_id = instance.id
 
-    # Prepare paths
-    path_initial_upload = os.path.join(
-        settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "initialUpload"
-    )
-    path_rembg = os.path.join(
-        settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "rembg"
-    )
-    path_cropped = os.path.join(
-        settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "cropped"
-    )
-    os.makedirs(path_initial_upload, exist_ok=True)
-
-    # Save uploaded images with resolution check
-    image_names = []
-    for counter, image in enumerate(uploaded_files):
-        filename = f"{counter}.jpg"
-        file_path = os.path.join(path_initial_upload, filename)
+        # Prepare paths (use relative paths without 'media/' prefix)
+        s3_base_path = f"images/user_id_{user_id}/post_id_{post_id}"
+        initial_upload_path = f"{s3_base_path}/initialUpload"
         
-        # Open the image
-        img = Image.open(image)
-        original_width, original_height = img.width, img.height
+        # Save uploaded images
+        image_names = []
+        for counter, image in enumerate(uploaded_files):
+            filename = f"{counter}.jpg"
+            s3_key = f"{initial_upload_path}/{filename}"
+            
+            # Process image
+            img = Image.open(image)
+            original_width, original_height = img.width, img.height
+            
+            # Resize if needed
+            if original_width > 1200 or original_height > 1200:
+                width_scale = 1200 / original_width
+                height_scale = 1200 / original_height
+                scale_factor = min(width_scale, height_scale)
+                new_width = int(original_width * scale_factor)
+                new_height = int(original_height * scale_factor)
+                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+            # Save to buffer
+            buffer = io.BytesIO()
+            img.save(buffer, "JPEG", quality=90)
+            buffer.seek(0)
+            
+            # Upload to storage (S3 or local)
+            from django.core.files.storage import default_storage
+            default_storage.save(s3_key, ContentFile(buffer.getvalue()))
+            
+            image_names.append(filename)
+
+        instance.images_text = " ".join(image_names)
+        instance.rmbg_picture = " ".join(image_names)
+        instance.save()
+
+        # Track usage
+        profile.images_used_this_month += files_count
+        profile.save()
+
+        # Send to Celery
+        from .tasks import process_images_task
+        process_images_task.delay(user_id, post_id, initial_upload_path, 
+                                 f"{s3_base_path}/rembg", f"{s3_base_path}/cropped")
+
+        return JsonResponse({
+            "message": "Upload received. Processing in background.",
+            "post_id": post_id
+        }, status=201)
+
+    except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
+        print(f"ERROR in imageProcessing: {error_traceback}")
         
-        # Only resize if either dimension exceeds 1200px
-        if original_width > 1200 or original_height > 1200:
-            # Calculate scaling factors for both dimensions
-            width_scale = 1200 / original_width
-            height_scale = 1200 / original_height  # Use 1200 for both dimensions
-            
-            # Use the smaller scaling factor to ensure both dimensions fit within 1200px
-            scale_factor = min(width_scale, height_scale)
-            
-            # Calculate new dimensions
-            new_width = int(original_width * scale_factor)
-            new_height = int(original_height * scale_factor)
-            
-            print(f"Resizing image {filename} from {original_width}×{original_height} to {new_width}×{new_height}")
-            
-            # Resize the image
-            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        else:
-            # Image is already within our size limits, no need to resize
-            print(f"Image {filename} is within limits: {original_width}×{original_height}")
+        return JsonResponse({
+            "error": "Internal server error",
+            "details": str(e)
+        }, status=500)
+
+# @csrf_exempt
+# @login_required
+# def imageProcessing(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request method"}, status=405)
+
+#     profile = request.user.userprofile
+#     uploaded_files = request.FILES.getlist('images')
+#     files_count = len(uploaded_files)
+
+#     if not uploaded_files:
+#         return JsonResponse({"error": "No images uploaded"}, status=400)
+
+#     if profile.images_used_this_month + files_count > profile.monthly_image_limit:
+#         return JsonResponse({"error": "You've reached your monthly limit."}, status=403)
+
+#     # Create DB record first
+#     instance = Uploaded_Pictures.objects.create(
+#         author=request.user,
+#         images_text="",
+#         rmbg_picture=""
+#     )
+
+#     user_id = request.user.id
+#     post_id = instance.id
+
+#     # Prepare paths
+#     path_initial_upload = os.path.join(
+#         settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "initialUpload"
+#     )
+#     path_rembg = os.path.join(
+#         settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "rembg"
+#     )
+#     path_cropped = os.path.join(
+#         settings.IMAGE_UPLOAD_ROOT, f"user_id_{user_id}", f"post_id_{post_id}", "cropped"
+#     )
+#     os.makedirs(path_initial_upload, exist_ok=True)
+
+#     # Save uploaded images with resolution check
+#     image_names = []
+#     for counter, image in enumerate(uploaded_files):
+#         filename = f"{counter}.jpg"
+#         file_path = os.path.join(path_initial_upload, filename)
         
-        # Save the image with high quality
-        img.save(file_path, "JPEG", quality=90)
-        image_names.append(filename)
+#         # Open the image
+#         img = Image.open(image)
+#         original_width, original_height = img.width, img.height
+        
+#         # Only resize if either dimension exceeds 1200px
+#         if original_width > 1200 or original_height > 1200:
+#             # Calculate scaling factors for both dimensions
+#             width_scale = 1200 / original_width
+#             height_scale = 1200 / original_height  # Use 1200 for both dimensions
+            
+#             # Use the smaller scaling factor to ensure both dimensions fit within 1200px
+#             scale_factor = min(width_scale, height_scale)
+            
+#             # Calculate new dimensions
+#             new_width = int(original_width * scale_factor)
+#             new_height = int(original_height * scale_factor)
+            
+#             print(f"Resizing image {filename} from {original_width}×{original_height} to {new_width}×{new_height}")
+            
+#             # Resize the image
+#             img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+#         else:
+#             # Image is already within our size limits, no need to resize
+#             print(f"Image {filename} is within limits: {original_width}×{original_height}")
+        
+#         # Save the image with high quality
+#         img.save(file_path, "JPEG", quality=90)
+#         image_names.append(filename)
 
-    instance.images_text = " ".join(image_names)
-    instance.rmbg_picture = " ".join(image_names)
-    instance.save()
+#     instance.images_text = " ".join(image_names)
+#     instance.rmbg_picture = " ".join(image_names)
+#     instance.save()
 
-    # Track usage
-    profile.images_used_this_month += files_count
-    profile.save()
+#     # Track usage
+#     profile.images_used_this_month += files_count
+#     profile.save()
 
-    # Send background job to Celery
-    process_images_task.delay(user_id, post_id, path_initial_upload, path_rembg, path_cropped)
+#     # Send background job to Celery
+#     process_images_task.delay(user_id, post_id, path_initial_upload, path_rembg, path_cropped)
 
-    return JsonResponse({
-        "Backend message": "Upload received. Processing in background.",
-        "post_id": post_id
-    }, status=201)
-
+#     return JsonResponse({
+#         "Backend message": "Upload received. Processing in background.",
+#         "post_id": post_id
+#     }, status=201)
 
 
 @csrf_exempt
@@ -1195,25 +1315,43 @@ def check_processing_status(request, post_id):
         # Get the project
         project = Uploaded_Pictures.objects.get(id=post_id, author=request.user)
         
-        # Check if processing is complete by looking for cropped images
+        # Check if processing is complete by looking for cropped images in S3
         user_id = request.user.id
-        cropped_path = os.path.join(
-            settings.IMAGE_UPLOAD_ROOT,
-            f"user_id_{user_id}",
-            f"post_id_{post_id}",
-            "cropped"
-        )
+        cropped_path = f"images/user_id_{user_id}/post_id_{post_id}/cropped"
         
-        # If cropped directory exists and has files, processing is complete
-        if os.path.exists(cropped_path) and os.listdir(cropped_path):
-            return JsonResponse({
-                'status': 'complete',
-                'message': 'Processing complete'
-            })
-        else:
+        # Use Django's storage backend to check S3
+        from django.core.files.storage import default_storage
+        
+        # Check if the cropped directory exists and has files in S3
+        try:
+            # List files in the cropped directory
+            _, files = default_storage.listdir(cropped_path)
+            
+            # Filter for image files
+            image_files = [f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            
+            if image_files:
+                return JsonResponse({
+                    'status': 'complete',
+                    'message': 'Processing complete',
+                    'file_count': len(image_files)
+                })
+            else:
+                return JsonResponse({
+                    'status': 'processing',
+                    'message': 'Still processing - no images found yet'
+                })
+                
+        except FileNotFoundError:
             return JsonResponse({
                 'status': 'processing',
-                'message': 'Still processing'
+                'message': 'Still processing - directory not found'
+            })
+        except Exception as dir_error:
+            # If listdir fails, the directory might not exist yet
+            return JsonResponse({
+                'status': 'processing',
+                'message': f'Still processing - {str(dir_error)}'
             })
             
     except Uploaded_Pictures.DoesNotExist:
@@ -1227,35 +1365,69 @@ def check_processing_status(request, post_id):
             'message': str(e)
         }, status=500)
 
+# @csrf_exempt
+# @login_required
+# def check_processing_status(request, post_id):
+#     try:
+#         # Get the project
+#         project = Uploaded_Pictures.objects.get(id=post_id, author=request.user)
+        
+#         # Check if processing is complete by looking for cropped images
+#         user_id = request.user.id
+#         cropped_path = os.path.join(
+#             settings.IMAGE_UPLOAD_ROOT,
+#             f"user_id_{user_id}",
+#             f"post_id_{post_id}",
+#             "cropped"
+#         )
+        
+#         # If cropped directory exists and has files, processing is complete
+#         if os.path.exists(cropped_path) and os.listdir(cropped_path):
+#             return JsonResponse({
+#                 'status': 'complete',
+#                 'message': 'Processing complete'
+#             })
+#         else:
+#             return JsonResponse({
+#                 'status': 'processing',
+#                 'message': 'Still processing'
+#             })
+            
+#     except Uploaded_Pictures.DoesNotExist:
+#         return JsonResponse({
+#             'status': 'error',
+#             'message': 'Project not found'
+#         }, status=404)
+#     except Exception as e:
+#         return JsonResponse({
+#             'status': 'error',
+#             'message': str(e)
+#         }, status=500)
 
 @csrf_exempt
 @login_required
 def save_image_edit(request):
     if request.method == "POST":
         try:
-            # Parse the JSON data from the request body
             data = json.loads(request.body)
-            image_data = data.get("image")  # Base64 encoded image data
-            image_path = data.get("image_path", "")  # Relative path to the image
-            filename = data.get("filename")  # NEW: Get filename explicitly
+            image_data = data.get("image")
+            image_path = data.get("image_path", "")
+            filename = data.get("filename")
             
             if not image_data or not image_path:
                 return JsonResponse({"status": "error", "message": "Missing image data or path"}, status=400)
             
-            # Use explicit filename if provided, otherwise extract from path
             if not filename:
                 filename = os.path.basename(image_path)
             
-            # Validate filename format (should be like "0.png", "1.png", etc.)
             if not filename or not filename.lower().endswith('.png'):
                 return JsonResponse({"status": "error", "message": "Invalid filename format"}, status=400)
             
-            # Get user ID and project ID from the path
+            # Parse path to get user_id and project_id
             path_parts = image_path.split('/')
             user_id = None
             project_id = None
             
-            # Parse the path to get user_id and project_id
             for i, part in enumerate(path_parts):
                 if part.startswith('user_id_'):
                     user_id = part.replace('user_id_', '')
@@ -1265,103 +1437,203 @@ def save_image_edit(request):
             if not user_id or not project_id:
                 return JsonResponse({"status": "error", "message": "Invalid image path format"}, status=400)
             
-            # Create the destination directory paths
-            rembg_dir = os.path.join(
-                settings.MEDIA_ROOT,
-                'images',
-                f'user_id_{user_id}',
-                f'post_id_{project_id}',
-                'rembg'
-            )
+            # S3 paths
+            rembg_s3_key = f"media/images/user_id_{user_id}/post_id_{project_id}/rembg/{filename}"
+            cropped_s3_key = f"media/images/user_id_{user_id}/post_id_{project_id}/cropped/{filename}"
             
-            cropped_dir = os.path.join(
-                settings.MEDIA_ROOT,
-                'images',
-                f'user_id_{user_id}',
-                f'post_id_{project_id}',
-                'cropped'
-            )
+            # Remove existing files from S3 if they exist
+            from django.core.files.storage import default_storage
+            if default_storage.exists(rembg_s3_key):
+                default_storage.delete(rembg_s3_key)
+            if default_storage.exists(cropped_s3_key):
+                default_storage.delete(cropped_s3_key)
             
-            # Ensure directories exist
-            os.makedirs(rembg_dir, exist_ok=True)
-            os.makedirs(cropped_dir, exist_ok=True)
-            
-            # Full paths to the image files
-            rembg_path = os.path.join(rembg_dir, filename)
-            cropped_path = os.path.join(cropped_dir, filename)
-            
-            # Remove existing files if they exist
-            for path in [rembg_path, cropped_path]:
-                if os.path.exists(path):
-                    os.remove(path)
-            
-            # Save the new image to rembg folder
-            # The image data comes as "data:image/png;base64,..." so we need to split it
+            # Save the new image to S3 (rembg folder)
             format, imgstr = image_data.split(';base64,') 
-            ext = format.split('/')[-1]  # Get the file extension
+            ext = format.split('/')[-1]
             
-            # Decode the base64 data
-            data = ContentFile(base64.b64decode(imgstr), name=filename)
+            image_content = ContentFile(base64.b64decode(imgstr))
+            default_storage.save(rembg_s3_key, image_content)
             
-            # Save to rembg file
-            with open(rembg_path, 'wb+') as destination:
-                for chunk in data.chunks():
-                    destination.write(chunk)
-            
-            # Now process the cropped version
+            # Process cropped version
             try:
-                # Open the saved image
-                img = Image.open(rembg_path)
+                # Download from S3 to process
+                rembg_file = default_storage.open(rembg_s3_key)
+                img = Image.open(rembg_file)
                 
-                # Get the bounding box of the non-transparent areas
                 bbox = img.getbbox()
-                
-                if bbox:  # Only crop if we found a bounding box
-                    # Crop the image to the bounding box
+                if bbox:
                     cropped_img = img.crop(bbox)
                     
-                    # Save the cropped image
-                    cropped_img.save(cropped_path)
+                    # Save cropped image to buffer
+                    buffer = io.BytesIO()
+                    cropped_img.save(buffer, format='PNG')
+                    buffer.seek(0)
+                    
+                    # Upload cropped image to S3
+                    default_storage.save(cropped_s3_key, buffer)
                 else:
-                    # If no bounding box found (shouldn't happen with transparent PNGs), just copy the original
-                    img.save(cropped_path)
+                    # Copy original to cropped folder
+                    rembg_file.seek(0)
+                    default_storage.save(cropped_s3_key, rembg_file)
+                
+                rembg_file.close()
             
             except Exception as e:
                 print(f"Error cropping image: {str(e)}")
-                # If cropping fails, just copy the original to cropped folder
-                with open(rembg_path, 'rb') as src, open(cropped_path, 'wb') as dst:
-                    dst.write(src.read())
-            
-            # Return the new paths (relative to MEDIA_URL)
-            rembg_relative_path = os.path.join(
-                'images',
-                f'user_id_{user_id}',
-                f'post_id_{project_id}',
-                'rembg',
-                filename
-            )
-            
-            cropped_relative_path = os.path.join(
-                'images',
-                f'user_id_{user_id}',
-                f'post_id_{project_id}',
-                'cropped',
-                filename
-            )
+                # Copy original to cropped folder
+                rembg_file = default_storage.open(rembg_s3_key)
+                default_storage.save(cropped_s3_key, rembg_file)
+                rembg_file.close()
             
             return JsonResponse({
                 "status": "success", 
-                "rembg_path": rembg_relative_path,
-                "cropped_path": cropped_relative_path,
-                "rembg_absolute_url": request.build_absolute_uri(settings.MEDIA_URL + rembg_relative_path),
-                "cropped_absolute_url": request.build_absolute_uri(settings.MEDIA_URL + cropped_relative_path),
-                "saved_filename": filename  # Return the actual filename that was saved
+                "rembg_path": rembg_s3_key.replace('media/', ''),
+                "cropped_path": cropped_s3_key.replace('media/', ''),
+                "rembg_absolute_url": default_storage.url(rembg_s3_key),
+                "cropped_absolute_url": default_storage.url(cropped_s3_key),
+                "saved_filename": filename
             })
 
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+    
+# @csrf_exempt
+# @login_required
+# def save_image_edit(request):
+#     if request.method == "POST":
+#         try:
+#             # Parse the JSON data from the request body
+#             data = json.loads(request.body)
+#             image_data = data.get("image")  # Base64 encoded image data
+#             image_path = data.get("image_path", "")  # Relative path to the image
+#             filename = data.get("filename")  # NEW: Get filename explicitly
+            
+#             if not image_data or not image_path:
+#                 return JsonResponse({"status": "error", "message": "Missing image data or path"}, status=400)
+            
+#             # Use explicit filename if provided, otherwise extract from path
+#             if not filename:
+#                 filename = os.path.basename(image_path)
+            
+#             # Validate filename format (should be like "0.png", "1.png", etc.)
+#             if not filename or not filename.lower().endswith('.png'):
+#                 return JsonResponse({"status": "error", "message": "Invalid filename format"}, status=400)
+            
+#             # Get user ID and project ID from the path
+#             path_parts = image_path.split('/')
+#             user_id = None
+#             project_id = None
+            
+#             # Parse the path to get user_id and project_id
+#             for i, part in enumerate(path_parts):
+#                 if part.startswith('user_id_'):
+#                     user_id = part.replace('user_id_', '')
+#                 elif part.startswith('post_id_'):
+#                     project_id = part.replace('post_id_', '')
+            
+#             if not user_id or not project_id:
+#                 return JsonResponse({"status": "error", "message": "Invalid image path format"}, status=400)
+            
+#             # Create the destination directory paths
+#             rembg_dir = os.path.join(
+#                 settings.MEDIA_ROOT,
+#                 'images',
+#                 f'user_id_{user_id}',
+#                 f'post_id_{project_id}',
+#                 'rembg'
+#             )
+            
+#             cropped_dir = os.path.join(
+#                 settings.MEDIA_ROOT,
+#                 'images',
+#                 f'user_id_{user_id}',
+#                 f'post_id_{project_id}',
+#                 'cropped'
+#             )
+            
+#             # Ensure directories exist
+#             os.makedirs(rembg_dir, exist_ok=True)
+#             os.makedirs(cropped_dir, exist_ok=True)
+            
+#             # Full paths to the image files
+#             rembg_path = os.path.join(rembg_dir, filename)
+#             cropped_path = os.path.join(cropped_dir, filename)
+            
+#             # Remove existing files if they exist
+#             for path in [rembg_path, cropped_path]:
+#                 if os.path.exists(path):
+#                     os.remove(path)
+            
+#             # Save the new image to rembg folder
+#             # The image data comes as "data:image/png;base64,..." so we need to split it
+#             format, imgstr = image_data.split(';base64,') 
+#             ext = format.split('/')[-1]  # Get the file extension
+            
+#             # Decode the base64 data
+#             data = ContentFile(base64.b64decode(imgstr), name=filename)
+            
+#             # Save to rembg file
+#             with open(rembg_path, 'wb+') as destination:
+#                 for chunk in data.chunks():
+#                     destination.write(chunk)
+            
+#             # Now process the cropped version
+#             try:
+#                 # Open the saved image
+#                 img = Image.open(rembg_path)
+                
+#                 # Get the bounding box of the non-transparent areas
+#                 bbox = img.getbbox()
+                
+#                 if bbox:  # Only crop if we found a bounding box
+#                     # Crop the image to the bounding box
+#                     cropped_img = img.crop(bbox)
+                    
+#                     # Save the cropped image
+#                     cropped_img.save(cropped_path)
+#                 else:
+#                     # If no bounding box found (shouldn't happen with transparent PNGs), just copy the original
+#                     img.save(cropped_path)
+            
+#             except Exception as e:
+#                 print(f"Error cropping image: {str(e)}")
+#                 # If cropping fails, just copy the original to cropped folder
+#                 with open(rembg_path, 'rb') as src, open(cropped_path, 'wb') as dst:
+#                     dst.write(src.read())
+            
+#             # Return the new paths (relative to MEDIA_URL)
+#             rembg_relative_path = os.path.join(
+#                 'images',
+#                 f'user_id_{user_id}',
+#                 f'post_id_{project_id}',
+#                 'rembg',
+#                 filename
+#             )
+            
+#             cropped_relative_path = os.path.join(
+#                 'images',
+#                 f'user_id_{user_id}',
+#                 f'post_id_{project_id}',
+#                 'cropped',
+#                 filename
+#             )
+            
+#             return JsonResponse({
+#                 "status": "success", 
+#                 "rembg_path": rembg_relative_path,
+#                 "cropped_path": cropped_relative_path,
+#                 "rembg_absolute_url": request.build_absolute_uri(settings.MEDIA_URL + rembg_relative_path),
+#                 "cropped_absolute_url": request.build_absolute_uri(settings.MEDIA_URL + cropped_relative_path),
+#                 "saved_filename": filename  # Return the actual filename that was saved
+#             })
+
+#         except Exception as e:
+#             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+#     else:
+#         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
 
 
 
