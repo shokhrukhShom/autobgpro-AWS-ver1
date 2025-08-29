@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["18.218.173.51", "localhost", "autobgpro.com", "www.autobgpro.com"]
 
@@ -138,7 +138,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CACHE_MIDDLEWARE_SECONDS = 0
 
 
-#DEBUG = False
 
 # Path where static files will be collected
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -209,7 +208,7 @@ if ENVIRONMENT == 'production':
    # Custom file paths settings
    BG_TEMPLATES_ROOT = os.path.join(MEDIA_ROOT, 'bg-templates')
    
-   IMAGE_UPLOAD_ROOT = os.path.join(MEDIA_ROOT, 'images_uploads')
+   USE_UPLOAD = os.path.join(MEDIA_ROOT, 'user_upload')
   
 
 else:

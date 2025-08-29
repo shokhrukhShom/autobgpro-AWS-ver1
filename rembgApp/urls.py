@@ -37,7 +37,6 @@ urlpatterns = [
     path('get_template/<int:template_id>/', views.get_template_metadata, name='get_template_metadata'),
     path('delete_template/<int:template_id>/', views.delete_template, name='delete_template'),
     path('upload-background/', views.upload_background, name='upload_background'),  
-    path('background_upload_page/', views.background_upload_page, name='background_upload_page'),  
     path('delete-background/<str:image_id>/', views.delete_background, name='delete_background'),
     
     path("password_reset/", auth_views.PasswordResetView.as_view(template_name="rembgApp/password_reset.html"), name="password_reset"),

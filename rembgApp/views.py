@@ -890,17 +890,42 @@ def rmbg(request):
                 bg_img_paths_road.append(file_path)   
                 
                 
+        # # User uploaded background
+        # bg_img_paths_user = []
+        # bg_img_templates_path_user = f"{settings.MEDIA_URL}/user_upload/user_id_{user_id}/user_backgrounds/"
+        # # Create the folder if it doesn't exist
+        # os.makedirs(bg_img_templates_path_user, exist_ok=True)     
+        # for filename in os.listdir(bg_img_templates_path_user):
+        #     if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+        #         # file_path = os.path.join(bg_img_templates_path, filename)
+        #         # bg_img_paths.append(file_path)
+        #         file_path = f"{settings.MEDIA_URL}/user_upload/user_id_{user_id}/user_backgrounds/{filename}"
+        #         bg_img_paths_user.append(file_path)
         # User uploaded background
         bg_img_paths_user = []
-        bg_img_templates_path_user = os.path.join(settings.MEDIA_ROOT, "images", f"user_id_{user_id}", "user_backgrounds")
-        # Create the folder if it doesn't exist
-        os.makedirs(bg_img_templates_path_user, exist_ok=True)     
-        for filename in os.listdir(bg_img_templates_path_user):
-            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                # file_path = os.path.join(bg_img_templates_path, filename)
-                # bg_img_paths.append(file_path)
-                file_path = f"{settings.MEDIA_URL}/images/user_id_{user_id}/user_backgrounds/{filename}"
-                bg_img_paths_user.append(file_path)                
+        user_bg_prefix = f"user_upload/user_id_{user_id}/user_backgrounds/"
+
+        try:
+            # Use S3 storage to list files
+            from django.core.files.storage import default_storage
+            
+            # List files in the S3 directory
+            dirs, files = default_storage.listdir(user_bg_prefix)
+            
+            for filename in files:
+                if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                    # Construct the S3 key
+                    s3_key = f"{user_bg_prefix}{filename}"
+                    
+                    # Get the URL for the file
+                    file_url = default_storage.url(s3_key)
+                    
+                    bg_img_paths_user.append(file_url)
+        except FileNotFoundError:
+            # Directory doesn't exist yet (no backgrounds uploaded)
+            print(f"No user backgrounds found in S3 for user {user_id}")
+        except Exception as e:
+            print(f"Error listing user backgrounds from S3: {str(e)}")                    
         
         context = {
             'now': now(), 
@@ -963,29 +988,6 @@ def update_background(request):
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-# @csrf_exempt
-# @login_required
-# def update_background(request):
-#     if request.method == 'POST':
-#         try:
-#             data = json.loads(request.body)
-#             project_id = data.get('project_id')
-#             background_path = data.get('background_path')
-            
-#             if not project_id or not background_path:
-#                 return JsonResponse({'error': 'Missing required fields'}, status=400)
-                
-#             project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
-#             project.background_image = background_path
-#             project.save()
-            
-#             return JsonResponse({'status': 'success'})
-            
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-    
-#     return JsonResponse({'error': 'Invalid request method'}, status=400)
-
 
 @csrf_exempt
 @login_required
@@ -996,7 +998,7 @@ def upload_background(request):
         
         # Check current number of backgrounds
         from django.core.files.storage import default_storage
-        user_bg_prefix = f"media/images/user_id_{user_id}/user_backgrounds/"
+        user_bg_prefix = f"user_upload/user_id_{user_id}/user_backgrounds/"
         
         # Count existing background images (this might need optimization for large numbers)
         existing_files = default_storage.listdir(user_bg_prefix)[1]
@@ -1022,70 +1024,7 @@ def upload_background(request):
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-# @csrf_exempt
-# @login_required
-# def upload_background(request):
-#     if request.method == 'POST' and request.FILES.get('image'):
-#         user_id = str(request.user.id)
-#         uploaded_file = request.FILES['image']
-        
-#         # Check current number of backgrounds
-#         user_bg_dir = os.path.join(
-#             settings.MEDIA_ROOT,
-#             'images',
-#             f'user_id_{user_id}',
-#             'user_backgrounds'
-#         )
-        
-#         # Count existing background images
-#         current_count = 0
-#         if os.path.exists(user_bg_dir):
-#             current_count = len([
-#                 f for f in os.listdir(user_bg_dir) 
-#                 if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif'))
-#             ])
-        
-#         # Enforce 5-image limit
-#         if current_count >= 20:
-#             return JsonResponse({
-#                 'error': 'You can only have up to 20 background uploads. Delete old pictures to upload more.',
-#                 'limit_reached': True
-#             }, status=400)
-        
-#         # Create a unique filename using uuid to avoid overwriting
-#         file_ext = os.path.splitext(uploaded_file.name)[1]
-#         file_name = f"{uuid.uuid4().hex}{file_ext}"
-        
-#         # Define upload path
-#         upload_path = os.path.join(user_bg_dir, file_name)
-#         os.makedirs(user_bg_dir, exist_ok=True)
 
-#         # Save uploaded image to disk
-#         with open(upload_path, 'wb+') as f:
-#             for chunk in uploaded_file.chunks():
-#                 f.write(chunk)
-                
-#         # Return image URL
-#         file_url = f"{settings.MEDIA_URL}images/user_id_{user_id}/user_backgrounds/{file_name}"
-#         return JsonResponse({'url': file_url})
-
-#     return JsonResponse({'error': 'Invalid request'}, status=400)
-
-
-@login_required
-def background_upload_page(request):
-    user_id = request.user.id
-    user_folder = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', 'user_backgrounds')
-
-    bg_paths = []
-    if os.path.exists(user_folder):
-        for file in os.listdir(user_folder):
-            url_path = f"{settings.MEDIA_URL}images/user_id_{user_id}/user_backgrounds/{file}"
-            bg_paths.append(url_path)
-
-    return render(request, 'upload_background.html', {
-        'user_backgrounds': bg_paths
-    })
 
 @csrf_exempt
 @login_required
@@ -1099,21 +1038,19 @@ def delete_background(request, image_id):
             # Extract filename from path safely
             filename = os.path.basename(image_path)
             
-            # Build the full file path securely
-            user_folder = os.path.join(
-                settings.MEDIA_ROOT,
-                'images',
-                f'user_id_{user_id}',
-                'user_backgrounds'
-            )
+            # Build the S3 key (not local filesystem path)
+            s3_key = f"user_upload/user_id_{user_id}/user_backgrounds/{filename}"
             
-            # Protect against path traversal
-            safe_path = os.path.normpath(os.path.join(user_folder, filename))
-            if not safe_path.startswith(user_folder):
+            # Security check - ensure the file belongs to this user
+            expected_prefix = f"user_upload/user_id_{user_id}/user_backgrounds/"
+            if not s3_key.startswith(expected_prefix):
                 return JsonResponse({'error': 'Invalid file path'}, status=400)
 
-            if os.path.exists(safe_path):
-                os.remove(safe_path)
+            # Use S3 storage to delete the file
+            from django.core.files.storage import default_storage
+            
+            if default_storage.exists(s3_key):
+                default_storage.delete(s3_key)
                 return JsonResponse({'success': True})
             else:
                 return JsonResponse({'error': 'File does not exist'}, status=404)
@@ -1122,6 +1059,8 @@ def delete_background(request, image_id):
             return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
 
 # Send background job to Celery when image uploaded
 from .tasks import process_images_task
@@ -1158,7 +1097,7 @@ def imageProcessing(request):
         post_id = instance.id
 
         # Use S3 paths (relative to media root)
-        s3_base_path = f"images_uploads/user_id_{user_id}/post_id_{post_id}"
+        s3_base_path = f"images/user_id_{user_id}/post_id_{post_id}"
         initial_upload_path = f"{s3_base_path}/initialUpload"
         
         # Ensure the S3 directory structure exists by creating a dummy file first
@@ -1284,44 +1223,6 @@ def check_processing_status(request, post_id):
             'message': str(e)
         }, status=500)
 
-# @csrf_exempt
-# @login_required
-# def check_processing_status(request, post_id):
-#     try:
-#         # Get the project
-#         project = Uploaded_Pictures.objects.get(id=post_id, author=request.user)
-        
-#         # Check if processing is complete by looking for cropped images
-#         user_id = request.user.id
-#         cropped_path = os.path.join(
-#             settings.IMAGE_UPLOAD_ROOT,
-#             f"user_id_{user_id}",
-#             f"post_id_{post_id}",
-#             "cropped"
-#         )
-        
-#         # If cropped directory exists and has files, processing is complete
-#         if os.path.exists(cropped_path) and os.listdir(cropped_path):
-#             return JsonResponse({
-#                 'status': 'complete',
-#                 'message': 'Processing complete'
-#             })
-#         else:
-#             return JsonResponse({
-#                 'status': 'processing',
-#                 'message': 'Still processing'
-#             })
-            
-#     except Uploaded_Pictures.DoesNotExist:
-#         return JsonResponse({
-#             'status': 'error',
-#             'message': 'Project not found'
-#         }, status=404)
-#     except Exception as e:
-#         return JsonResponse({
-#             'status': 'error',
-#             'message': str(e)
-#         }, status=500)
 
 @csrf_exempt
 @login_required
