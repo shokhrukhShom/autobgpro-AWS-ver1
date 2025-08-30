@@ -1722,7 +1722,7 @@ def upload_logo(request):
         try:
             user_id = str(request.user.id)
             logo_file = request.FILES.get('logo')
-            project_id = request.POST.get('project_id')  # Get the project ID from the POST data
+            project_id = request.POST.get('project_id')
 
             # Handle logo reset case
             if not logo_file:
@@ -1740,21 +1740,26 @@ def upload_logo(request):
                     'message': 'Logo cleared successfully',
                     'logo_path': None
                 })
-                
-            # End of logo reset
-       
             
-            # Create logos directory if it doesn't exist
-            logo_dir = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', 'logos')
-            os.makedirs(logo_dir, exist_ok=True)
-
-            # Count existing logo images
+            # S3 STORAGE IMPLEMENTATION
+            from django.core.files.storage import default_storage
+            
+            # S3 path where logos will be stored
+            # Format: user_upload/user_id_{user_id}/logos/
+            s3_logos_prefix = f"user_upload/user_id_{user_id}/logos/"
+            
+            # Check current number of logos in S3
             current_count = 0
-            if os.path.exists(logo_dir):
-                current_count = len([
-                    f for f in os.listdir(logo_dir) 
-                    if f.lower().endswith(('.png', '.jpg', '.jpeg'))
-                ])
+            try:
+                # List existing logo files in S3
+                subdirs, files = default_storage.listdir(s3_logos_prefix)
+                current_count = len([f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
+            except FileNotFoundError:
+                # Directory doesn't exist yet, so count is 0
+                current_count = 0
+            except Exception as e:
+                print(f"Error counting existing logos: {str(e)}")
+                current_count = 0
             
             # Enforce 20-logo limit
             if current_count >= 20:
@@ -1762,66 +1767,71 @@ def upload_logo(request):
                     'error': 'You have 20 logo images saved. Please delete old logos to upload more.',
                     'limit_reached': True
                 }, status=400)
-
-
             
-            # Generate a unique filename (you can customize this)
+            # Generate a unique filename
             timestamp = int(time.time())
-            logo_filename = f'logo_{timestamp}{os.path.splitext(logo_file.name)[1]}'
-            logo_path = os.path.join(logo_dir, logo_filename)
+            file_ext = os.path.splitext(logo_file.name)[1]
+            logo_filename = f'logo_{timestamp}{file_ext}'
             
-            # Save the file
-            with open(logo_path, 'wb+') as destination:
-                for chunk in logo_file.chunks():
-                    destination.write(chunk)
+            # Full S3 key (path) for the new logo
+            s3_key = f"{s3_logos_prefix}{logo_filename}"
             
-            # Return the relative path that can be used in the frontend
-            relative_path = os.path.join('media', 'images', f'user_id_{user_id}', 'logos', logo_filename)
-            print(relative_path)
+            # Save the file to S3
+            default_storage.save(s3_key, logo_file)
+            print(f"Logo saved to S3: {s3_key}")
             
+            # Get the public URL for the S3 object
+            logo_url = default_storage.url(s3_key)
             
-            # New code
-            selected_pictures_json = request.POST.get('selectedPictures') # Get the JSON string from the POST data
+            # For database storage, we can use either:
+            # Option 1: Store the S3 key (recommended - consistent across environments)
+            db_logo_path = s3_key  # "user_upload/user_id_1/logos/logo_1234567890.png"
+            
+            # Option 2: Store the full URL (if frontend needs direct URL)
+            # db_logo_path = logo_url
+            
+            # Option 3: Store relative path (if you want consistency with local dev)
+            # db_logo_path = f"media/{s3_key}"  # "media/user_upload/user_id_1/logos/logo_1234567890.png"
+            
+            # Update metadata for selected pictures
+            selected_pictures_json = request.POST.get('selectedPictures')
             selected_pictures = json.loads(selected_pictures_json) if selected_pictures_json else []
             
             if selected_pictures:
                 print("Selected pictures:", selected_pictures)
                 
                 for pic in selected_pictures:
-                    # print("Picture from selected pictures array: ", pic)
                     selected_canvas = Metadata.objects.filter(project__id=project_id, image_path=pic).first()
-                    print("Selected canvas: ", selected_canvas)
-
+                    
                     if selected_canvas:
                         # Get or create metadata for this project
                         metadata, created = Metadata.objects.get_or_create(
                             project=selected_canvas.project,
                             image_path=pic,
                             defaults={
-                                'logo_path': relative_path,
-                                # 'logo_x': 100,  # Default X position
-                                # 'logo_y': 100,  # Default Y position
-                                # 'logo_scale': 0.1  # Default scale
+                                'logo_path': db_logo_path,  # Use S3 key or URL
+                                # 'logo_x': 100,
+                                # 'logo_y': 100, 
+                                # 'logo_scale': 0.1
                             }
-                    )
+                        )
                     
-                    if not created:
-                        # Update existing metadata
-                        # metadata.logo_path = 'http://127.0.0.1:8000/'+relative_path
-                        # Update existing metadata with proper URL construction
-                        # metadata.logo_path = request.build_absolute_uri('/')[:-1] + relative_path
-                        # Alternative: If you want just the path without domain (recommended if you're using MEDIA_URL in templates)
-                        metadata.logo_path = relative_path
-                        metadata.save()
-
-            # End new code
+                        if not created:
+                            # Update existing metadata
+                            metadata.logo_path = db_logo_path  # Use S3 key or URL
+                            metadata.save()
 
             return JsonResponse({
                 'status': 'success',
-                'logo_path': relative_path
+                'logo_path': logo_url,  # Return URL for frontend display
+                's3_key': s3_key,      # Return S3 key for database/reference
+                'filename': logo_filename
             })
             
         except Exception as e:
+            print(f"Error uploading logo: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
