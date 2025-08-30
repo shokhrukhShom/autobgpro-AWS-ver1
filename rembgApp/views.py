@@ -750,76 +750,66 @@ import random
 @csrf_exempt
 @login_required
 def rmbg(request):
-    # getting latest post_id by current user
-    latest_upload = Uploaded_Pictures.objects.filter(author = request.user).order_by('-id') #.first()
-    
-    user_id = str(request.user.id) # Get the current user
-    
+        
+    # Get the latest upload by current user
+    latest_upload = Uploaded_Pictures.objects.filter(author=request.user).order_by('-id')
+    user_id = str(request.user.id)
+
     latest_valid_upload = None
-    # if user has not uploaded images yet
+
+    # If user has uploaded images before
     if latest_upload:
-        #latest_upload_id = latest_upload.id
-        
-        # checking if leatest upload_upload_id was successfull
+        # Check each upload to find the latest one that has processed images
         for upload in latest_upload:
-            cropped_dir = os.path.join(
-                settings.MEDIA_ROOT,
-                "images",
-                f"user_id_{user_id}",
-                f"post_id_{upload.id}",
-                "cropped"
-            )
+            # For S3 storage, we need to use the storage backend instead of os.path
+            # The S3 path structure would be: images/user_id_{user_id}/post_id_{upload.id}/cropped/
+            s3_cropped_prefix = f"images/user_id_{user_id}/post_id_{upload.id}/cropped/"
+            
+            try:
+                # Use Django's storage backend (works with both local and S3)
+                from django.core.files.storage import default_storage
+                
+                # Check if the cropped directory exists in S3
+                # default_storage.listdir() returns (subdirectories, files)
+                subdirs, files = default_storage.listdir(s3_cropped_prefix)
+                
+                # Check if there are any PNG files in the directory
+                has_png_files = any(fname.lower().endswith('.png') for fname in files)
+                
+                if has_png_files:
+                    latest_valid_upload = upload
+                    print(f"Found valid upload: post_id {upload.id} with {len(files)} processed images")
+                    break
+                else:
+                    print(f"Upload {upload.id} exists but has no PNG files")
+                    
+            except FileNotFoundError:
+                # Directory doesn't exist in S3 yet (still processing or failed)
+                print(f"Upload {upload.id} cropped directory not found in S3")
+                continue
+            except Exception as e:
+                print(f"Error checking S3 for upload {upload.id}: {str(e)}")
+                continue
         
-            # Check if directory exists and has PNG files
-            if os.path.exists(cropped_dir) and any(fname.endswith('.png') for fname in os.listdir(cropped_dir)):
-                latest_valid_upload = upload
-                break
-        
-        #assigning latest valid upload id 
-        latest_upload_id = latest_valid_upload.id
-
+        # Assign the latest valid upload ID if found
+        if latest_valid_upload:
+            latest_upload_id = latest_valid_upload.id
+            print(f"Using latest valid upload ID: {latest_upload_id}")
+        else:
+            # No valid uploads found with processed images
+            latest_upload_id = None
+            print("No valid uploads found with processed images")
     else:
-        bg_img_paths = []
-        # bg_img_templates_path = "media/bg-templates/"
-        bg_img_templates_path = settings.BG_TEMPLATES_ROOT+"/default"
-        
-        for filename in os.listdir(bg_img_templates_path):
-            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                # file_path = os.path.join(bg_img_templates_path, filename)
-                # bg_img_paths.append(file_path)
-                file_path = f"{settings.MEDIA_URL}bg-templates/default/{filename}"
-                bg_img_paths.append(file_path)
-        
-        # Garage Folder BG
-        bg_img_paths_garage = []
-        bg_img_templates_path_garage = settings.BG_TEMPLATES_ROOT+"/garage"        
-        for filename in os.listdir(bg_img_templates_path_garage):
-            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                # file_path = os.path.join(bg_img_templates_path, filename)
-                # bg_img_paths.append(file_path)
-                file_path = f"{settings.MEDIA_URL}bg-templates/garage/{filename}"
-                bg_img_paths_garage.append(file_path)
-        
-        # Road Folder BG        
-        bg_img_paths_road = []
-        bg_img_templates_path_road = settings.BG_TEMPLATES_ROOT+"/road"        
-        for filename in os.listdir(bg_img_templates_path_road):
-            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                # file_path = os.path.join(bg_img_templates_path, filename)
-                # bg_img_paths.append(file_path)
-                file_path = f"{settings.MEDIA_URL}bg-templates/road/{filename}"
-                bg_img_paths_road.append(file_path)   
-            
-        
-        context = {
-            
-            # 'sorted_rembg_files_path': sorted_rembg_files_path,
-            "bg_img_paths" : bg_img_paths,
-            "bg_img_paths_garage": bg_img_paths_garage,
-            "bg_img_paths_road": bg_img_paths_road,
+        # No uploads at all
+        latest_upload_id = None
+        print("User has no uploads yet")
+        # Handle case where user has no uploads
+        if request.method == "GET":
+            sorted_rembg_files_path = []
+            context = {
+                "sorted_rembg_files_path" : sorted_rembg_files_path
             }
-        return render(request, "rembgApp/rmbg.html", context)
-
+            return render(request, "rembgApp/rmbg.html", context)
 
     if request.method == "GET":
 
@@ -828,28 +818,60 @@ def rmbg(request):
         current_bg = picture.background_image
         
         
-        #this code works on mac (fuck it!!!)
-        path_rembg = os.path.join(
-            settings.MEDIA_ROOT,
-            "images",
-            f"user_id_{user_id}",
-            f"post_id_{latest_upload_id}",
-            "cropped"
-        )
-  
+        # S3 storage implementation for accessing processed images
         rembg_files_path = []
-        
-        # Loop through the images in the folder and save it to image_files_path list
-        for filename in os.listdir(path_rembg):
-            if filename.endswith(('.png')):
-                #file_path = os.path.join(path_rembg, filename)
-                file_path = f"media/images/user_id_{user_id}/post_id_{latest_upload_id}/cropped/{filename}"
-                rembg_files_path.append(file_path)
+
+        if latest_upload_id:
+            # For S3 storage, we use a prefix (key prefix) instead of local filesystem path
+            # S3 prefix structure: images/user_id_{user_id}/post_id_{latest_upload_id}/cropped/
+            s3_cropped_prefix = f"images/user_id_{user_id}/post_id_{latest_upload_id}/cropped/"
+            
+            try:
+                # Use Django's storage backend (works for both local and S3)
+                from django.core.files.storage import default_storage
                 
-                # cache-busting parameter : Current timestamp (milliseconds)
-                cache_buster = int(time.time() * 1000)
-                file_path = f"{file_path}?v={cache_buster}"
-        
+                # List files in the S3 directory
+                # default_storage.listdir() returns (subdirectories, files)
+                subdirs, files = default_storage.listdir(s3_cropped_prefix)
+                
+                #print(f"Found {len(files)} files in S3 directory: {s3_cropped_prefix}")
+                
+                # Filter for PNG files and sort them numerically
+                png_files = [f for f in files if f.lower().endswith('.png')]
+                
+                # Sort files numerically by their base name (0.png, 1.png, 2.png, etc.)
+                try:
+                    png_files.sort(key=lambda x: int(os.path.splitext(x)[0]))
+                except ValueError:
+                    # Fallback: if filenames aren't numeric, use natural sort
+                    png_files.sort()
+                
+                # Generate S3 URLs for each file
+                for filename in png_files:
+                    # Construct the full S3 key for this file
+                    s3_key = f"{s3_cropped_prefix}{filename}"
+                    
+                    # Get the public URL for the S3 object
+                    # default_storage.url() generates a pre-signed URL that expires
+                    file_url = default_storage.url(s3_key)
+                    
+                    # Add cache-busting parameter to prevent browser caching
+                    cache_buster = int(time.time() * 1000)
+                    file_url_with_cache = f"{file_url}?v={cache_buster}"
+                    
+                    rembg_files_path.append(file_url_with_cache)
+                    #print(f"Added S3 image: {file_url_with_cache}")
+                    
+            except FileNotFoundError:
+                print(f"S3 directory not found: {s3_cropped_prefix}")
+                # Directory doesn't exist yet (images still processing)
+                rembg_files_path = []
+            except Exception as e:
+                print(f"Error accessing S3 images: {str(e)}")
+                rembg_files_path = []
+        else:
+            # No valid upload ID
+            rembg_files_path = []
             
                 
         
@@ -857,51 +879,119 @@ def rmbg(request):
         sorted_rembg_files_path = sorted(rembg_files_path, key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
         #PNG images ------Finish--------
 
-        #Loop through Background Image Folder (media/bg-templates)
+        # Loop through Background Image Folder (bg-templates/default)--------------------
         bg_img_paths = []
-        # bg_img_templates_path = "media/bg-templates/"
-        bg_img_templates_path = settings.BG_TEMPLATES_ROOT+"/default"
         
-        for filename in os.listdir(bg_img_templates_path):
-            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                # file_path = os.path.join(bg_img_templates_path, filename)
-                # bg_img_paths.append(file_path)
-                file_path = f"{settings.MEDIA_URL}bg-templates/default/{filename}"
-                bg_img_paths.append(file_path)
+        # Production with S3 - use storage backend
+        from django.core.files.storage import default_storage
+        
+        # S3 path (key) where background templates are stored
+        # Note: This is NOT a filesystem path, but an S3 object key
+        s3_bg_prefix = "bg-templates/default/"
+        
+        try:
+            # default_storage.listdir() works with S3 and returns (subdirectories, files)
+            # This is the S3 equivalent of os.listdir()
+            subdirs, files = default_storage.listdir(s3_bg_prefix)
+            
+            #print(f"Found {len(files)} files in S3 directory: {s3_bg_prefix}")
+            
+            for filename in files:
+                if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                    # Construct the full S3 key for this file
+                    s3_key = f"{s3_bg_prefix}{filename}"
+                    
+                    # Get the public URL for the S3 object
+                    # default_storage.url() generates a signed URL with expiration
+                    file_url = default_storage.url(s3_key)
+                    
+                    bg_img_paths.append(file_url)
+                    #3print(f"Added S3 background: {file_url}")
+                    
+        except FileNotFoundError:
+            print(f"S3 directory not found: {s3_bg_prefix}")
+        except Exception as e:
+            print(f"Error accessing S3 background templates: {str(e)}")
+                
+                
+        #-------------        
         
         # Garage Folder BG
         bg_img_paths_garage = []
-        bg_img_templates_path_garage = settings.BG_TEMPLATES_ROOT+"/garage"        
-        for filename in os.listdir(bg_img_templates_path_garage):
-            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                # file_path = os.path.join(bg_img_templates_path, filename)
-                # bg_img_paths.append(file_path)
-                file_path = f"{settings.MEDIA_URL}bg-templates/garage/{filename}"
-                bg_img_paths_garage.append(file_path)
+        
+        
+         # Production with S3 - use storage backend
+        from django.core.files.storage import default_storage
+        
+        # S3 path (key) where background templates are stored
+        # Note: This is NOT a filesystem path, but an S3 object key
+        s3_bg_prefix = "bg-templates/garage/"
+        
+        try:
+            # default_storage.listdir() works with S3 and returns (subdirectories, files)
+            # This is the S3 equivalent of os.listdir()
+            subdirs, files = default_storage.listdir(s3_bg_prefix)
+            
+            print(f"Found {len(files)} files in S3 directory: {s3_bg_prefix}")
+            
+            for filename in files:
+                if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                    # Construct the full S3 key for this file
+                    s3_key = f"{s3_bg_prefix}{filename}"
+                    
+                    # Get the public URL for the S3 object
+                    # default_storage.url() generates a signed URL with expiration
+                    file_url = default_storage.url(s3_key)
+                    
+                    bg_img_paths_garage.append(file_url)
+                    print(f"Added S3 background: {file_url}")
+                    
+        except FileNotFoundError:
+            print(f"S3 directory not found: {s3_bg_prefix}")
+        except Exception as e:
+            print(f"Error accessing S3 background templates: {str(e)}")
+            
+        #-------------
+                
+                
+                
+                
         
         # Road Folder BG        
         bg_img_paths_road = []
-        bg_img_templates_path_road = settings.BG_TEMPLATES_ROOT+"/road"        
-        for filename in os.listdir(bg_img_templates_path_road):
-            if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                # file_path = os.path.join(bg_img_templates_path, filename)
-                # bg_img_paths.append(file_path)
-                file_path = f"{settings.MEDIA_URL}bg-templates/road/{filename}"
-                bg_img_paths_road.append(file_path)   
+        # Production with S3 - use storage backend
+        from django.core.files.storage import default_storage
+        
+        # S3 path (key) where background templates are stored
+        # Note: This is NOT a filesystem path, but an S3 object key
+        s3_bg_prefix = "bg-templates/road/"
+        
+        try:
+            # default_storage.listdir() works with S3 and returns (subdirectories, files)
+            # This is the S3 equivalent of os.listdir()
+            subdirs, files = default_storage.listdir(s3_bg_prefix)
+            
+            print(f"Found {len(files)} files in S3 directory: {s3_bg_prefix}")
+            
+            for filename in files:
+                if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                    # Construct the full S3 key for this file
+                    s3_key = f"{s3_bg_prefix}{filename}"
+                    
+                    # Get the public URL for the S3 object
+                    # default_storage.url() generates a signed URL with expiration
+                    file_url = default_storage.url(s3_key)
+                    
+                    bg_img_paths_road.append(file_url)
+                    print(f"Added S3 background: {file_url}")
+                    
+        except FileNotFoundError:
+            print(f"S3 directory not found: {s3_bg_prefix}")
+        except Exception as e:
+            print(f"Error accessing S3 background templates: {str(e)}") 
                 
                 
-        # # User uploaded background
-        # bg_img_paths_user = []
-        # bg_img_templates_path_user = f"{settings.MEDIA_URL}/user_upload/user_id_{user_id}/user_backgrounds/"
-        # # Create the folder if it doesn't exist
-        # os.makedirs(bg_img_templates_path_user, exist_ok=True)     
-        # for filename in os.listdir(bg_img_templates_path_user):
-        #     if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-        #         # file_path = os.path.join(bg_img_templates_path, filename)
-        #         # bg_img_paths.append(file_path)
-        #         file_path = f"{settings.MEDIA_URL}/user_upload/user_id_{user_id}/user_backgrounds/{filename}"
-        #         bg_img_paths_user.append(file_path)
-        # User uploaded background
+        # User uploaded background ------------------------------
         bg_img_paths_user = []
         user_bg_prefix = f"user_upload/user_id_{user_id}/user_backgrounds/"
 
@@ -1532,8 +1622,17 @@ def handle_design_elements(request, data):
             print("Error: no image path!!!!")
             
         # image_path = "http://127.0.0.1:8000"+image_path 
-        image_path = settings.MEDIA_URL + image_path
-        image_path = image_path.replace('media/', '').lstrip('/')
+        # image_path = settings.MEDIA_URL + image_path
+        # image_path = image_path.replace('media/', '').lstrip('/')
+        image_path = element.get('image_path')
+        if image_path is None:
+            print("Error: no image path!!!!")
+
+        # Only prepend MEDIA_URL if it's a relative path
+        if not image_path.startswith("http"):
+            image_path = settings.MEDIA_URL + image_path.lstrip('/')
+
+        print("image path:", image_path)
         
         design_data = element.get('design_data', {})
         print("image path: ",image_path)
