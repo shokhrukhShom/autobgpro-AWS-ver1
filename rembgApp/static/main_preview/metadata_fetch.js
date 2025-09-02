@@ -198,6 +198,59 @@ async function fetchMetadataAPI(project_id) { // export new added
 }
 
 
+// export async function fetchMetadataForImage(imgPath, project_id) {
+//     try {
+//         const response = await fetch(`/get_metadata/${project_id}/`);
+//         if (!response.ok) {
+//             console.warn("Failed to fetch metadata");
+//             return null;
+//         }
+
+//         const metadataList = await response.json();
+        
+//         if (!metadataList || !metadataList.length) {
+//             return null;
+//         }
+
+//         // Find metadata for the specific image path
+//         const metadata = metadataList.find(item => {
+//             // Handle both full URLs and relative paths
+//             const dbPath = item.image_path;
+//             return dbPath.includes(imgPath.replace(window.location.origin, '').replace(/^\/media\//, '').split('?')[0]) //|| imgPath.includes(dbPath);
+//         });
+
+//         if (!metadata) {
+//             console.log(`No metadata found for image: ${imgPath}`);
+//             return null;
+//         }
+
+//         // Return the relevant design data
+//         return {
+//             header: {
+//                 height: metadata.header_height || 0,
+//                 color: metadata.header_color || 'rgba(0, 0, 0, 0.5)',
+//                 opacity: metadata.header_opacity || 0.7
+//             },
+//             footer: {
+//                 height: metadata.footer_height || 0,
+//                 color: metadata.footer_color || 'rgba(0, 0, 0, 0.5)',
+//                 opacity: metadata.footer_opacity || 0.5,
+//                 texts: metadata.texts || []
+//             },
+//             logo: {
+//                 x: metadata.logo_x || 100,
+//                 y: metadata.logo_y || 100,
+//                 scale: metadata.logo_scale || 0.1,
+//                 path: metadata.logo_path || null
+//             }
+//         };
+
+//     } catch (error) {
+//         console.error("Error fetching metadata for image:", error);
+//         return null;
+//     }
+// }
+
 export async function fetchMetadataForImage(imgPath, project_id) {
     try {
         const response = await fetch(`/get_metadata/${project_id}/`);
@@ -212,15 +265,34 @@ export async function fetchMetadataForImage(imgPath, project_id) {
             return null;
         }
 
+        // Extract just the relative path from the full URL
+        let relativePath = imgPath;
+        
+        // Remove domain and protocol if present
+        if (imgPath.includes('://')) {
+            const url = new URL(imgPath);
+            relativePath = url.pathname;
+            
+            // Remove leading slash if it's a relative path in your database
+            relativePath = relativePath.replace(/^\//, '');
+            
+            // Also handle the case where database stores paths without 'media/' prefix
+            relativePath = relativePath.replace(/^media\//, '');
+        }
+
+        console.log("Looking for metadata for path:", relativePath);
+
         // Find metadata for the specific image path
         const metadata = metadataList.find(item => {
-            // Handle both full URLs and relative paths
             const dbPath = item.image_path;
-            return dbPath.includes(imgPath.replace(window.location.origin, '').replace(/^\/media\//, '').split('?')[0]) //|| imgPath.includes(dbPath);
+            
+            // Compare both paths after normalizing
+            return dbPath.includes(relativePath) || relativePath.includes(dbPath);
         });
 
         if (!metadata) {
-            console.log(`No metadata found for image: ${imgPath}`);
+            console.log(`No metadata found for image: ${relativePath}`);
+            console.log("Available paths:", metadataList.map(item => item.image_path));
             return null;
         }
 
@@ -282,7 +354,7 @@ export async function loadDesignForImage(imgPath) {
         });
 
         // updating global canvas design
-        window.canvasStateDesignGlobal = getCanvasStateDesign();; // it takes the design from first canvas only. Not dynamic???
+        window.canvasStateDesignGlobal = getCanvasStateDesign(); // it takes the design from first canvas only. Not dynamic???
 
 
         // Force a redraw of all canvases NEW NEW NEW

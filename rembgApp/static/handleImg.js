@@ -124,9 +124,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+
 // Add this new function to poll for task completion
 async function pollForTaskCompletion(postId) {
-    const maxAttempts = 120; // 60 attempts (30 seconds with 0.5s interval)
+    const maxAttempts = 120; // 120 attempts (2 minutes with 1s interval)
     let attempts = 0;
     
     const checkStatus = async () => {
@@ -137,16 +138,21 @@ async function pollForTaskCompletion(postId) {
             
             if (data.status === 'complete') {
                 // Processing complete - reload the page
-                console.log('completed!!!');
-                showLoadingSpinner('Completed...');
-                setTimeout(() => window.location.href = '/rmbg', 1000); // 1 second delay so then redirect to /rmbg
-                //window.location.href = '/rmbg';
+                console.log('All images completed!!!');
+                showLoadingSpinner('All images processed! Redirecting...');
+                setTimeout(() => window.location.href = '/rmbg', 1000); // 1 second delay then redirect
             } else if (data.status === 'processing') {
                 // Still processing - check again after delay
                 if (attempts < maxAttempts) {
-                    setTimeout(checkStatus, 1000); // Check every 1 seconds
-                    console.log(attempts+' seconds: processing...');
-                    showLoadingSpinner('Processing... It may take a minute.');
+                    setTimeout(checkStatus, 1000); // Check every 1 second
+                    console.log(attempts + ' seconds: processing...');
+                    
+                    // Show detailed progress if available
+                    let progressMessage = 'Processing... It may take a minute.';
+                    if (data.processed_count !== undefined && data.expected_count !== undefined) {
+                        progressMessage = `Processing... ${data.processed_count}/${data.expected_count} images completed`;
+                    }
+                    showLoadingSpinner(progressMessage);
                 } else {
                     // Timeout reached
                     showError("Processing is taking longer than expected. The page will reload shortly.", "orange");
@@ -159,7 +165,7 @@ async function pollForTaskCompletion(postId) {
         } catch (error) {
             console.error('Error checking status:', error);
             if (attempts < maxAttempts) {
-                setTimeout(checkStatus, 500);
+                setTimeout(checkStatus, 1000); // Increased to 1 second for consistency
             } else {
                 showError("Unable to check processing status. The page will reload shortly.", "orange");
                 setTimeout(() => window.location.href = '/rmbg', 3000);
@@ -169,8 +175,56 @@ async function pollForTaskCompletion(postId) {
     
     // Start polling
     checkStatus();
-
 }
+
+
+// Add this new function to poll for task completion
+// async function pollForTaskCompletion(postId) {
+//     const maxAttempts = 120; // 60 attempts (30 seconds with 0.5s interval)
+//     let attempts = 0;
+    
+//     const checkStatus = async () => {
+//         attempts++;
+//         try {
+//             const response = await fetch(`check-processing-status/${postId}/`);
+//             const data = await response.json();
+            
+//             if (data.status === 'complete') {
+//                 // Processing complete - reload the page
+//                 console.log('completed!!!');
+//                 showLoadingSpinner('Completed...');
+//                 setTimeout(() => window.location.href = '/rmbg', 1000); // 1 second delay so then redirect to /rmbg
+//                 //window.location.href = '/rmbg';
+//             } else if (data.status === 'processing') {
+//                 // Still processing - check again after delay
+//                 if (attempts < maxAttempts) {
+//                     setTimeout(checkStatus, 1000); // Check every 1 seconds
+//                     console.log(attempts+' seconds: processing...');
+//                     showLoadingSpinner('Processing... It may take a minute.');
+//                 } else {
+//                     // Timeout reached
+//                     showError("Processing is taking longer than expected. The page will reload shortly.", "orange");
+//                     setTimeout(() => window.location.href = '/rmbg', 3000);
+//                 }
+//             } else if (data.status === 'error') {
+//                 // Error occurred
+//                 showError("Error processing images: " + (data.message || 'Unknown error'), "red");
+//             }
+//         } catch (error) {
+//             console.error('Error checking status:', error);
+//             if (attempts < maxAttempts) {
+//                 setTimeout(checkStatus, 500);
+//             } else {
+//                 showError("Unable to check processing status. The page will reload shortly.", "orange");
+//                 setTimeout(() => window.location.href = '/rmbg', 3000);
+//             }
+//         }
+//     };
+    
+//     // Start polling
+//     checkStatus();
+
+// }
 
 
 

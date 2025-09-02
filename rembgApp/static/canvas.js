@@ -43,7 +43,7 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
 
     // Create an image object ---------> this is img source <---------
     const img = new Image();
-
+    img.crossOrigin = "Anonymous"; // Add this line
     // Set the image source  ---------> this is img source <---------
     img.src = givenImageSrc; // Replace with the path to your PNG
 
@@ -77,6 +77,7 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
 
     // Here is original image src -------->ORIGINAL img Src <--------
     const originalImage = new Image();
+    originalImage.crossOrigin = "Anonymous"; // Add this line to handle CORS issues
     originalImage.src = originalImageSrc; // Replace with the path to your original JPEG
 
     // Make sure to adjust the canvas size and draw the original image when it's loaded
@@ -338,6 +339,8 @@ function canvasEdit (givenImageSrc, originalImageSrc) {
         event.preventDefault();
 
         if (event.type != 'mouseout') {
+            img.crossOrigin = "Anonymous"; // Add this line
+            originalImage.crossOrigin = "Anonymous"; // Add this line
             restore_array.push(context.getImageData(0, 0, canvas.width, canvas.height));
             index += 1;
             //console.log(restore_array);

@@ -84,6 +84,8 @@ function Edit_Image(imageSrc) {
     console.log("originalImageSrc: ", originalImageSrc);
     imageSrc = null; // reseting imageSrc to null
 
+    givenImageSrc = "https://autobgpro-bkt.s3.amazonaws.com"+givenImageSrc;
+    originalImageSrc = "https://autobgpro-bkt.s3.amazonaws.com"+originalImageSrc;
     // call canvasEdit function and pass on values
     canvasEdit(givenImageSrc, originalImageSrc);
 

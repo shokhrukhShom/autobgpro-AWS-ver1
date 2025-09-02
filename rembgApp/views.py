@@ -446,7 +446,7 @@ def api_usage(request):
 #         # Creating directory for uploaded pictures
 #         path_save_uploaded_picture = "/home/sh/Desktop/django-rembg-2v/rembg_w_python/media/images/"+"user_id_" + user_id + "/" + "post_id_" + str(folder_inside_user_id)
 
-#         # Check if the directory exists
+#         # Check if the directory 
 #         if not os.path.exists(path_save_uploaded_picture):
 #             # If the directory doesn't exist, create it
 #             os.makedirs(path_save_uploaded_picture)
@@ -1255,13 +1255,16 @@ def imageProcessing(request):
         }, status=500)
 
 
-
 @csrf_exempt
 @login_required
 def check_processing_status(request, post_id):
+    print("_____check_processing_status started 2_______")
     try:
         # Get the project
         project = Uploaded_Pictures.objects.get(id=post_id, author=request.user)
+        
+        # Get expected number of files from the original upload
+        expected_files = len(project.images_text.split()) if project.images_text else 0
         
         # Check if processing is complete by looking for cropped images in S3
         user_id = request.user.id
@@ -1277,29 +1280,45 @@ def check_processing_status(request, post_id):
             
             # Filter for image files
             image_files = [f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            processed_count = len(image_files)
             
-            if image_files:
+            # Check if all expected files are processed
+            if processed_count >= expected_files and expected_files > 0:
                 return JsonResponse({
                     'status': 'complete',
                     'message': 'Processing complete',
-                    'file_count': len(image_files)
+                    'processed_count': processed_count,
+                    'expected_count': expected_files
+                })
+            elif processed_count > 0:
+                return JsonResponse({
+                    'status': 'processing',
+                    'message': f'Processing... {processed_count}/{expected_files} images completed',
+                    'processed_count': processed_count,
+                    'expected_count': expected_files
                 })
             else:
                 return JsonResponse({
                     'status': 'processing',
-                    'message': 'Still processing - no images found yet'
+                    'message': 'Still processing - no images found yet',
+                    'processed_count': 0,
+                    'expected_count': expected_files
                 })
                 
         except FileNotFoundError:
             return JsonResponse({
                 'status': 'processing',
-                'message': 'Still processing - directory not found'
+                'message': 'Still processing - directory not found',
+                'processed_count': 0,
+                'expected_count': expected_files
             })
         except Exception as dir_error:
             # If listdir fails, the directory might not exist yet
             return JsonResponse({
                 'status': 'processing',
-                'message': f'Still processing - {str(dir_error)}'
+                'message': f'Still processing - {str(dir_error)}',
+                'processed_count': 0,
+                'expected_count': expected_files
             })
             
     except Uploaded_Pictures.DoesNotExist:
@@ -1312,6 +1331,7 @@ def check_processing_status(request, post_id):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
 
 
 @csrf_exempt
@@ -1348,8 +1368,8 @@ def save_image_edit(request):
                 return JsonResponse({"status": "error", "message": "Invalid image path format"}, status=400)
             
             # S3 paths
-            rembg_s3_key = f"media/images/user_id_{user_id}/post_id_{project_id}/rembg/{filename}"
-            cropped_s3_key = f"media/images/user_id_{user_id}/post_id_{project_id}/cropped/{filename}"
+            rembg_s3_key = f"images/user_id_{user_id}/post_id_{project_id}/rembg/{filename}"
+            cropped_s3_key = f"images/user_id_{user_id}/post_id_{project_id}/cropped/{filename}"
             
             # Remove existing files from S3 if they exist
             from django.core.files.storage import default_storage
@@ -1410,141 +1430,6 @@ def save_image_edit(request):
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
     
-# @csrf_exempt
-# @login_required
-# def save_image_edit(request):
-#     if request.method == "POST":
-#         try:
-#             # Parse the JSON data from the request body
-#             data = json.loads(request.body)
-#             image_data = data.get("image")  # Base64 encoded image data
-#             image_path = data.get("image_path", "")  # Relative path to the image
-#             filename = data.get("filename")  # NEW: Get filename explicitly
-            
-#             if not image_data or not image_path:
-#                 return JsonResponse({"status": "error", "message": "Missing image data or path"}, status=400)
-            
-#             # Use explicit filename if provided, otherwise extract from path
-#             if not filename:
-#                 filename = os.path.basename(image_path)
-            
-#             # Validate filename format (should be like "0.png", "1.png", etc.)
-#             if not filename or not filename.lower().endswith('.png'):
-#                 return JsonResponse({"status": "error", "message": "Invalid filename format"}, status=400)
-            
-#             # Get user ID and project ID from the path
-#             path_parts = image_path.split('/')
-#             user_id = None
-#             project_id = None
-            
-#             # Parse the path to get user_id and project_id
-#             for i, part in enumerate(path_parts):
-#                 if part.startswith('user_id_'):
-#                     user_id = part.replace('user_id_', '')
-#                 elif part.startswith('post_id_'):
-#                     project_id = part.replace('post_id_', '')
-            
-#             if not user_id or not project_id:
-#                 return JsonResponse({"status": "error", "message": "Invalid image path format"}, status=400)
-            
-#             # Create the destination directory paths
-#             rembg_dir = os.path.join(
-#                 settings.MEDIA_ROOT,
-#                 'images',
-#                 f'user_id_{user_id}',
-#                 f'post_id_{project_id}',
-#                 'rembg'
-#             )
-            
-#             cropped_dir = os.path.join(
-#                 settings.MEDIA_ROOT,
-#                 'images',
-#                 f'user_id_{user_id}',
-#                 f'post_id_{project_id}',
-#                 'cropped'
-#             )
-            
-#             # Ensure directories exist
-#             os.makedirs(rembg_dir, exist_ok=True)
-#             os.makedirs(cropped_dir, exist_ok=True)
-            
-#             # Full paths to the image files
-#             rembg_path = os.path.join(rembg_dir, filename)
-#             cropped_path = os.path.join(cropped_dir, filename)
-            
-#             # Remove existing files if they exist
-#             for path in [rembg_path, cropped_path]:
-#                 if os.path.exists(path):
-#                     os.remove(path)
-            
-#             # Save the new image to rembg folder
-#             # The image data comes as "data:image/png;base64,..." so we need to split it
-#             format, imgstr = image_data.split(';base64,') 
-#             ext = format.split('/')[-1]  # Get the file extension
-            
-#             # Decode the base64 data
-#             data = ContentFile(base64.b64decode(imgstr), name=filename)
-            
-#             # Save to rembg file
-#             with open(rembg_path, 'wb+') as destination:
-#                 for chunk in data.chunks():
-#                     destination.write(chunk)
-            
-#             # Now process the cropped version
-#             try:
-#                 # Open the saved image
-#                 img = Image.open(rembg_path)
-                
-#                 # Get the bounding box of the non-transparent areas
-#                 bbox = img.getbbox()
-                
-#                 if bbox:  # Only crop if we found a bounding box
-#                     # Crop the image to the bounding box
-#                     cropped_img = img.crop(bbox)
-                    
-#                     # Save the cropped image
-#                     cropped_img.save(cropped_path)
-#                 else:
-#                     # If no bounding box found (shouldn't happen with transparent PNGs), just copy the original
-#                     img.save(cropped_path)
-            
-#             except Exception as e:
-#                 print(f"Error cropping image: {str(e)}")
-#                 # If cropping fails, just copy the original to cropped folder
-#                 with open(rembg_path, 'rb') as src, open(cropped_path, 'wb') as dst:
-#                     dst.write(src.read())
-            
-#             # Return the new paths (relative to MEDIA_URL)
-#             rembg_relative_path = os.path.join(
-#                 'images',
-#                 f'user_id_{user_id}',
-#                 f'post_id_{project_id}',
-#                 'rembg',
-#                 filename
-#             )
-            
-#             cropped_relative_path = os.path.join(
-#                 'images',
-#                 f'user_id_{user_id}',
-#                 f'post_id_{project_id}',
-#                 'cropped',
-#                 filename
-#             )
-            
-#             return JsonResponse({
-#                 "status": "success", 
-#                 "rembg_path": rembg_relative_path,
-#                 "cropped_path": cropped_relative_path,
-#                 "rembg_absolute_url": request.build_absolute_uri(settings.MEDIA_URL + rembg_relative_path),
-#                 "cropped_absolute_url": request.build_absolute_uri(settings.MEDIA_URL + cropped_relative_path),
-#                 "saved_filename": filename  # Return the actual filename that was saved
-#             })
-
-#         except Exception as e:
-#             return JsonResponse({"status": "error", "message": str(e)}, status=500)
-#     else:
-#         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
-
 
 
 
@@ -1621,9 +1506,7 @@ def handle_design_elements(request, data):
         if image_path is None:
             print("Error: no image path!!!!")
             
-        # image_path = "http://127.0.0.1:8000"+image_path 
-        # image_path = settings.MEDIA_URL + image_path
-        # image_path = image_path.replace('media/', '').lstrip('/')
+            
         image_path = element.get('image_path')
         if image_path is None:
             print("Error: no image path!!!!")
@@ -1667,7 +1550,7 @@ def handle_design_elements(request, data):
                 
                 'texts': design_data.get('texts', []),
                 
-                'logo_path': design_data.get('logo_path', "Not Given"),
+                'logo_path': "https://autobgpro-bkt.s3.amazonaws.com" + design_data.get('logo_path', "Not Given") if design_data.get('logo_path') else "Not Given",
                 'logo_x': design_data.get('logo_x', 100),
                 'logo_y': design_data.get('logo_y', 100),
                 'logo_scale': design_data.get('logo_scale', 0.1), 
@@ -1693,14 +1576,24 @@ def handle_design_elements(request, data):
                 metadata.texts = design_data['texts'] if design_data['texts'] is not None else metadata.texts
                 
             # Update logo properties if they exist in the design_data
-            if 'logo_path' in design_data:
-                metadata.logo_path = design_data['logo_path']
+            # if 'logo_path' in design_data:
+            #     metadata.logo_path = design_data['logo_path']
+            
             if 'logo_x' in design_data:
                 metadata.logo_x = design_data['logo_x']
             if 'logo_y' in design_data:
                 metadata.logo_y = design_data['logo_y']
             if 'logo_scale' in design_data:
                 metadata.logo_scale = design_data['logo_scale']
+            
+            # New - Update logo properties if they exist in the design_data
+            if 'logo_path' in design_data:
+                logo_path = design_data['logo_path']
+                # Only prepend S3 domain if it's a relative path
+                if logo_path and not logo_path.startswith('http'):
+                    metadata.logo_path = "https://autobgpro-bkt.s3.amazonaws.com" + logo_path
+                else:
+                    metadata.logo_path = logo_path
 
             # Update background path if it exists in design_data
             #if 'background_path' in design_data: metadata.background_path = design_data['background_path']
@@ -1713,8 +1606,7 @@ def handle_design_elements(request, data):
 
     return JsonResponse({'message': 'Design elements saved successfully!'}, status=201)
 
-
-#Save logo png file in folder
+#new version
 @csrf_exempt
 @login_required
 def upload_logo(request):
@@ -1730,7 +1622,8 @@ def upload_logo(request):
                 selected_pictures = json.loads(selected_pictures_json) if selected_pictures_json else []
                 if selected_pictures:
                     for pic in selected_pictures:
-                        metadata = Metadata.objects.filter(project__id=project_id, image_path=pic).first()
+                        print("-----------------  selected_pictures for picture:", pic)
+                        metadata = Metadata.objects.filter(project__id=project_id, image_path=pic) #.first()
                         if metadata:
                             metadata.logo_path = None  # Clear the logo path
                             metadata.save()
@@ -1741,100 +1634,280 @@ def upload_logo(request):
                     'logo_path': None
                 })
             
-            # S3 STORAGE IMPLEMENTATION
-            from django.core.files.storage import default_storage
             
-            # S3 path where logos will be stored
-            # Format: user_upload/user_id_{user_id}/logos/
-            s3_logos_prefix = f"user_upload/user_id_{user_id}/logos/"
+            import boto3
+            from botocore.exceptions import ClientError
             
-            # Check current number of logos in S3
-            current_count = 0
+            s3 = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_S3_REGION_NAME
+            )
+            
+            # Count existing logos in S3
+            logo_prefix = f"media/user_upload/user_id_{user_id}/logos/"
             try:
-                # List existing logo files in S3
-                subdirs, files = default_storage.listdir(s3_logos_prefix)
-                current_count = len([f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
-            except FileNotFoundError:
-                # Directory doesn't exist yet, so count is 0
-                current_count = 0
-            except Exception as e:
-                print(f"Error counting existing logos: {str(e)}")
-                current_count = 0
+                response = s3.list_objects_v2(
+                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                    Prefix=logo_prefix,
+                    MaxKeys=21  # We only need to check if we have 20+
+                )
+                current_count = len(response.get('Contents', []))
+                
+                # Enforce 20-logo limit
+                if current_count >= 20:
+                    return JsonResponse({
+                        'error': 'You have 20 logo images saved. Please delete old logos to upload more.',
+                        'limit_reached': True
+                    }, status=400)
+            except ClientError as e:
+                # If the prefix doesn't exist yet, count is 0
+                if e.response['Error']['Code'] == 'NoSuchKey':
+                    current_count = 0
+                else:
+                    raise e
             
-            # Enforce 20-logo limit
-            if current_count >= 20:
-                return JsonResponse({
-                    'error': 'You have 20 logo images saved. Please delete old logos to upload more.',
-                    'limit_reached': True
-                }, status=400)
-            
+
             # Generate a unique filename
             timestamp = int(time.time())
-            file_ext = os.path.splitext(logo_file.name)[1]
-            logo_filename = f'logo_{timestamp}{file_ext}'
+            file_extension = os.path.splitext(logo_file.name)[1].lower()
+            logo_filename = f'logo_{timestamp}{file_extension}'
             
-            # Full S3 key (path) for the new logo
-            s3_key = f"{s3_logos_prefix}{logo_filename}"
             
-            # Save the file to S3
-            default_storage.save(s3_key, logo_file)
-            print(f"Logo saved to S3: {s3_key}")
+            # Upload to S3
+            s3_logo_path = f"media/user_upload/user_id_{user_id}/logos/{logo_filename}"
             
-            # Get the public URL for the S3 object
-            logo_url = default_storage.url(s3_key)
+            s3 = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_S3_REGION_NAME
+            )
             
-            # For database storage, we can use either:
-            # Option 1: Store the S3 key (recommended - consistent across environments)
-            db_logo_path = s3_key  # "user_upload/user_id_1/logos/logo_1234567890.png"
+            # Upload the file
+            s3.upload_fileobj(
+                logo_file,
+                settings.AWS_STORAGE_BUCKET_NAME,
+                s3_logo_path,
+                ExtraArgs={
+                    'ContentType': logo_file.content_type,
+                    'ACL': 'private'  # Make the file private
+                }
+            )
             
-            # Option 2: Store the full URL (if frontend needs direct URL)
-            # db_logo_path = logo_url
+            # Generate a presigned URL for temporary access
+            logo_url = s3.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': settings.AWS_STORAGE_BUCKET_NAME,
+                    'Key': s3_logo_path
+                },
+                ExpiresIn=3600  #URL expires in 1 hour
+            )
             
-            # Option 3: Store relative path (if you want consistency with local dev)
-            # db_logo_path = f"media/{s3_key}"  # "media/user_upload/user_id_1/logos/logo_1234567890.png"
+            relative_path = s3_logo_path
+                
             
-            # Update metadata for selected pictures
+            
+            # Update metadata for selected pictures PRODUCTION
             selected_pictures_json = request.POST.get('selectedPictures')
             selected_pictures = json.loads(selected_pictures_json) if selected_pictures_json else []
             
             if selected_pictures:
-                print("Selected pictures:", selected_pictures)
-                
-                for pic in selected_pictures:
-                    selected_canvas = Metadata.objects.filter(project__id=project_id, image_path=pic).first()
+                cleaned_pictures = [pic.lstrip('/') for pic in selected_pictures]  # remove leading '/'
+
+                for pic in cleaned_pictures: # selected_pictures:
+                    print("-----------------  selected_pictures for picture:", pic)
+                    # Get the project instance
+                    project = Uploaded_Pictures.objects.get(id=project_id)
                     
-                    if selected_canvas:
-                        # Get or create metadata for this project
-                        metadata, created = Metadata.objects.get_or_create(
-                            project=selected_canvas.project,
-                            image_path=pic,
-                            defaults={
-                                'logo_path': db_logo_path,  # Use S3 key or URL
-                                # 'logo_x': 100,
-                                # 'logo_y': 100, 
-                                # 'logo_scale': 0.1
-                            }
-                        )
+                    # Get or create metadata for this project and image path
+                    metadata, created = Metadata.objects.get_or_create(
+                        project=project,
+                        image_path=pic,
+                        defaults={
+                            'logo_path': "https://autobgpro-bkt.s3.amazonaws.com/"+relative_path,
+                        }
+                    )
                     
-                        if not created:
-                            # Update existing metadata
-                            metadata.logo_path = db_logo_path  # Use S3 key or URL
-                            metadata.save()
+                    if not created:
+                        # Update existing metadata
+                        metadata.logo_path = "https://autobgpro-bkt.s3.amazonaws.com/"+relative_path
+                        metadata.save()
 
             return JsonResponse({
                 'status': 'success',
-                'logo_path': logo_url,  # Return URL for frontend display
-                's3_key': s3_key,      # Return S3 key for database/reference
-                'filename': logo_filename
+                'logo_path': relative_path,
+                'logo_url': logo_url if settings.ENVIRONMENT == 'production' else None
             })
             
         except Exception as e:
-            print(f"Error uploading logo: {str(e)}")
-            import traceback
-            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+@login_required
+def get_logo_url(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            logo_path = data.get('logo_path')
+            
+            if settings.ENVIRONMENT == 'production' and logo_path:
+                import boto3
+                
+                s3 = boto3.client(
+                    's3',
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                    region_name=settings.AWS_S3_REGION_NAME
+                )
+                
+                # Generate a new presigned URL
+                logo_url = s3.generate_presigned_url(
+                    'get_object',
+                    Params={
+                        'Bucket': settings.AWS_STORAGE_BUCKET_NAME,
+                        'Key': logo_path
+                    },
+                    ExpiresIn=3600  # 1 hour
+                )
+                
+                return JsonResponse({'url': logo_url})
+            
+            return JsonResponse({'error': 'Not in production mode or no logo path'}, status=400)
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+# Old version
+#Save logo png file in folder
+# @csrf_exempt
+# @login_required
+# def upload_logo(request):
+#     if request.method == 'POST':
+#         try:
+#             user_id = str(request.user.id)
+#             logo_file = request.FILES.get('logo')
+#             project_id = request.POST.get('project_id')
+
+#             # Handle logo reset case
+#             if not logo_file:
+#                 selected_pictures_json = request.POST.get('selectedPictures')
+#                 selected_pictures = json.loads(selected_pictures_json) if selected_pictures_json else []
+#                 if selected_pictures:
+#                     for pic in selected_pictures:
+#                         metadata = Metadata.objects.filter(project__id=project_id, image_path=pic).first()
+#                         if metadata:
+#                             metadata.logo_path = None  # Clear the logo path
+#                             metadata.save()
+                
+#                 return JsonResponse({
+#                     'status': 'success',
+#                     'message': 'Logo cleared successfully',
+#                     'logo_path': None
+#                 })
+            
+#             # S3 STORAGE IMPLEMENTATION
+#             from django.core.files.storage import default_storage
+            
+#             # S3 path where logos will be stored
+#             # Format: user_upload/user_id_{user_id}/logos/
+#             s3_logos_prefix =  f"user_upload/user_id_{user_id}/logos/"
+            
+            
+#             # Check current number of logos in S3
+#             current_count = 0
+#             try:
+#                 # List existing logo files in S3
+#                 subdirs, files = default_storage.listdir(s3_logos_prefix)
+#                 current_count = len([f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
+#             except FileNotFoundError:
+#                 # Directory doesn't exist yet, so count is 0
+#                 current_count = 0
+#             except Exception as e:
+#                 print(f"Error counting existing logos: {str(e)}")
+#                 current_count = 0
+            
+#             # Enforce 20-logo limit
+#             if current_count >= 20:
+#                 return JsonResponse({
+#                     'error': 'You have 20 logo images saved. Please delete old logos to upload more.',
+#                     'limit_reached': True
+#                 }, status=400)
+            
+#             # Generate a unique filename
+#             timestamp = int(time.time())
+#             file_ext = os.path.splitext(logo_file.name)[1]
+#             logo_filename = f'logo_{timestamp}{file_ext}'
+            
+#             # Full S3 key (path) for the new logo
+#             s3_key = f"{s3_logos_prefix}{logo_filename}"
+            
+#             # Save the file to S3
+#             default_storage.save(s3_key, logo_file)
+#             print(f"Logo saved to S3: {s3_key}")
+            
+#             # Get the public URL for the S3 object
+#             logo_url = default_storage.url(s3_key)
+            
+#             # For database storage, we can use either:
+#             # Store the S3 key (recommended - consistent across environments)
+#             db_logo_path = s3_key  # "user_upload/user_id_1/logos/logo_1234567890.png"
+            
+#             # Update metadata for selected pictures
+#             selected_pictures_json = request.POST.get('selectedPictures')
+#             selected_pictures = json.loads(selected_pictures_json) if selected_pictures_json else []
+            
+#             if selected_pictures:
+#                 print("-------------------------")
+#                 print("---------------->Selected pictures----------->:", selected_pictures)
+#                 print("logo path to save in DB:", db_logo_path)
+#                 print("logo URL to return to frontend:", logo_url)
+#                 print("-------------------------")
+
+#                 for pic in selected_pictures:
+#                     selected_canvas = Metadata.objects.filter(project__id=project_id, image_path=pic).first()
+                    
+#                     if selected_canvas:
+#                         # Get or create metadata for this project
+#                         metadata, created = Metadata.objects.get_or_create(
+#                             project=selected_canvas.project,
+#                             image_path=pic,
+#                             defaults={
+#                                 'logo_path': logo_url,  # Use S3 key or URL
+#                                 # 'logo_x': 100,
+#                                 # 'logo_y': 100, 
+#                                 # 'logo_scale': 0.1
+#                             }
+#                         )
+                    
+#                         if not created:
+#                             # Update existing metadata
+#                             metadata.logo_path = logo_url  # Use S3 key or URL
+#                             metadata.save()
+
+#             return JsonResponse({
+#                 'status': 'success',
+#                 'logo_path': logo_url,  # Return URL for frontend display
+#                 's3_key': s3_key,      # Return S3 key for database/reference
+#                 'filename': logo_filename
+#             })
+            
+#         except Exception as e:
+#             print(f"Error uploading logo: {str(e)}")
+#             import traceback
+#             traceback.print_exc()
+#             return JsonResponse({'error': str(e)}, status=500)
+    
+#     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
 
 
 @csrf_exempt  # Use CSRF token in frontend for security
@@ -1845,7 +1918,7 @@ def get_metadata(request, project_id):
         return JsonResponse(metadata, safe=False)  # Return the list directly
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-    
+
 
 
 @csrf_exempt
@@ -1860,12 +1933,17 @@ def design_template(request):
                 project_id = data.get('project_id')
                 template_name = data.get('template_name')
                 logo_path = data.get('logo_path')
+                print("logo_path in design_template:", logo_path)
                 
                 # Get the project (Uploaded_Pictures instance)
                 project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
                 
                 print("include_background: ",design_metadata.get("include_background"))
                 print("project id: ", project_id)
+                
+                # Strip S3 domain prefix if present
+                if logo_path and logo_path.startswith("https://autobgpro-bkt.s3.amazonaws.com"):
+                    logo_path = logo_path.replace("https://autobgpro-bkt.s3.amazonaws.com", "")
 
                 # Create a new Template instance
                 template = Template(
@@ -1889,6 +1967,8 @@ def design_template(request):
                     logo_y=design_metadata.get('logo', {}).get('y', 100),
                     logo_scale=design_metadata.get('logo', {}).get('scale', 1.0),
                     
+                    
+                        
                     # Texts
                     texts=design_metadata.get('footer', {}).get('texts', []),
                 )
@@ -1946,7 +2026,7 @@ def get_template_metadata(request, template_id):
         return JsonResponse({'error': 'Template not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-    
+
 
 @csrf_exempt
 @login_required
@@ -1960,55 +2040,60 @@ def delete_template(request, template_id):
             return JsonResponse({'error': str(e)}, status=400)
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
+# to show available logos - from saved logo dropdown button
+@csrf_exempt
 @login_required
 def get_available_logos(request):
     try:
         user_id = request.user.id
-        logos_dir = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', 'logos')
+        
+        # S3 path where user logos are stored
+        # Format: user_upload/user_id_{user_id}/logos/
+        s3_logos_prefix = f"user_upload/user_id_{user_id}/logos/"
         
         logos = []
-        if os.path.exists(logos_dir):
-            for filename in os.listdir(logos_dir):
+        
+        try:
+            # Use Django's storage backend (works for both local and S3)
+            from django.core.files.storage import default_storage
+            
+            # List files in the S3 directory
+            # default_storage.listdir() returns (subdirectories, files)
+            subdirs, files = default_storage.listdir(s3_logos_prefix)
+            
+            print(f"Found {len(files)} files in S3 logos directory: {s3_logos_prefix}")
+            
+            # Filter for image files
+            for filename in files:
                 if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    url = f"{settings.MEDIA_URL}images/user_id_{user_id}/logos/{filename}"
-                    path = f"images/user_id_{user_id}/logos/{filename}"
+                    # Construct the full S3 key for this file
+                    s3_key = f"{s3_logos_prefix}{filename}"
+                    
+                    # Get the public URL for the S3 object
+                    # default_storage.url() generates a pre-signed URL
+                    logo_url = default_storage.url(s3_key)
+                    
                     logos.append({
-                        'url': url,
-                        'path': path,
-                        'filename': filename
+                        'url': logo_url,           # URL for frontend display
+                        'path': s3_key,            # S3 key for backend operations (deletion, etc.)
+                        'filename': filename       # Original filename
                     })
+                    
+                    print(f"Added logo: {filename} -> {logo_url}")
+                    
+        except FileNotFoundError:
+            # Directory doesn't exist yet (no logos uploaded)
+            print(f"No logos found in S3: {s3_logos_prefix}")
+        except Exception as e:
+            print(f"Error accessing S3 logos: {str(e)}")
+            # You might want to return an error here or just empty list
         
         return JsonResponse({'logos': logos})
     
     except Exception as e:
+        print(f"Unexpected error in get_available_logos: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
     
-
-
-# @require_POST
-# def delete_logo(request):
-#     try:
-#         data = json.loads(request.body)
-#         logo_path = data.get('logo_path')
-        
-#         if not logo_path:
-#             return JsonResponse({'error': 'No logo path provided'}, status=400)
-        
-#         # Security check - prevent directory traversal
-#         if '../' in logo_path or not logo_path.startswith('logos/'):
-#             return JsonResponse({'error': 'Invalid logo path'}, status=400)
-        
-#         full_path = os.path.join(settings.MEDIA_ROOT, logo_path)
-        
-#         if not os.path.exists(full_path):
-#             return JsonResponse({'error': 'Logo not found'}, status=404)
-            
-#         os.remove(full_path)
-#         return JsonResponse({'message': 'Logo deleted successfully'})
-        
-#     except Exception as e:
-#         return JsonResponse({'error': str(e)}, status=500)
-
 
 from django.views.decorators.csrf import ensure_csrf_cookie
 
@@ -2017,31 +2102,72 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 @login_required
 def delete_logo(request):
     try:
-        # For FormData, use request.POST instead of request.body
+        # Get the logo path from the request
+        # This could be either a local path or S3 key, depending on what was stored
         logo_path = request.POST.get('logo_path')
         
         if not logo_path:
             return JsonResponse({'success': False, 'error': 'No logo path provided'}, status=400)
         
-
-        # Construct secure path
-        user_dir = os.path.join(settings.MEDIA_ROOT, "images", f"user_id_{request.user.id}")        
-        full_path = os.path.join(settings.MEDIA_ROOT, logo_path)
-
-       
-        # Security check
-        if not full_path.startswith(user_dir):
-            return JsonResponse({'success': False, 'error': 'Invalid path'}, status=400)
-            
-        if not os.path.exists(full_path):
-            return JsonResponse({'success': False, 'error': 'File not found'}, status=404)
-            
-        os.remove(full_path)
-        return JsonResponse({'success': True, 'message': 'Logo deleted'})
+        user_id = str(request.user.id)
         
+        # The logo_path could be in different formats depending on what was stored:
+        # 1. Full S3 key: "user_upload/user_id_1/logos/logo_1234567890.png"
+        # 2. Relative path: "media/user_upload/user_id_1/logos/logo_1234567890.png"
+        # 3. Full URL: "https://bucket.s3.amazonaws.com/user_upload/user_id_1/logos/logo_1234567890.png"
+        
+        # Extract the S3 key from whatever format we have
+        s3_key = None
+        
+        if logo_path.startswith('http'):
+            # Case 3: Full URL - extract the S3 key
+            # URL format: https://bucket.s3.region.amazonaws.com/user_upload/user_id_1/logos/filename.png
+            if settings.AWS_S3_CUSTOM_DOMAIN in logo_path:
+                s3_key = logo_path.replace(f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/", "")
+            else:
+                # Fallback: try to extract from any S3 URL
+                from urllib.parse import urlparse
+                parsed = urlparse(logo_path)
+                s3_key = parsed.path.lstrip('/')
+        
+        elif logo_path.startswith('media/'):
+            # Case 2: Relative path with media/ prefix
+            s3_key = logo_path.replace('media/', '')
+        
+        else:
+            # Case 1: Assume it's already an S3 key
+            s3_key = logo_path
+        
+        # Security check: Ensure the logo belongs to the current user
+        expected_prefix = f"user_upload/user_id_{user_id}/logos/"
+        if not s3_key.startswith(expected_prefix):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Invalid logo path - does not belong to user'
+            }, status=400)
+        
+        # Delete from S3
+        from django.core.files.storage import default_storage
+        
+        if default_storage.exists(s3_key):
+            default_storage.delete(s3_key)
+            print(f"Deleted logo from S3: {s3_key}")
+            return JsonResponse({
+                'success': True, 
+                'message': 'Logo deleted from S3',
+                'deleted_key': s3_key
+            })
+        else:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Logo not found in S3 storage'
+            }, status=404)
+                
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-    
+        print(f"Error deleting logo: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)}, status=500) 
 
 
 
@@ -2063,67 +2189,155 @@ def recent_projects(request):
     # Prepare project data
     project_data = []
     for project in page_projects:
-        # Get image paths for this project
         user_id = project.author.id
         project_id = project.id
-        cropped_path = os.path.join(settings.MEDIA_ROOT, 'images', f'user_id_{user_id}', f'post_id_{project_id}', 'cropped')
         
         images = []
-        if os.path.exists(cropped_path):
-            for filename in sorted(os.listdir(cropped_path)):
-                if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    file_path = os.path.join(settings.MEDIA_URL, 'images', f'user_id_{user_id}', f'post_id_{project_id}', 'cropped', filename)
-                    images.append(file_path)
+        
+        if settings.ENVIRONMENT == 'production' and hasattr(settings, 'DEFAULT_FILE_STORAGE'):
+            # PRODUCTION: S3 Storage
+            s3_cropped_prefix = f"images/user_id_{user_id}/post_id_{project_id}/cropped/"
+            
+            try:
+                from django.core.files.storage import default_storage
+                
+                # List files in the S3 directory
+                subdirs, files = default_storage.listdir(s3_cropped_prefix)
+                
+                # Filter for image files and get first 5
+                image_files = [f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+                
+                # Sort files numerically (0.png, 1.png, 2.png, etc.)
+                try:
+                    image_files.sort(key=lambda x: int(os.path.splitext(x)[0]))
+                except (ValueError, TypeError):
+                    image_files.sort()  # Fallback sort
+                
+                # Get URLs for first 5 images
+                for filename in image_files[:5]:
+                    s3_key = f"{s3_cropped_prefix}{filename}"
+                    image_url = default_storage.url(s3_key)
+                    images.append(image_url)
+                    
+            except FileNotFoundError:
+                # Directory doesn't exist yet (images still processing or no images)
+                pass
+            except Exception as e:
+                print(f"Error accessing S3 for project {project_id}: {str(e)}")
+                
+        else:
+            # DEVELOPMENT: Local Filesystem
+            cropped_path = os.path.join(
+                settings.MEDIA_ROOT, 
+                'images', 
+                f'user_id_{user_id}', 
+                f'post_id_{project_id}', 
+                'cropped'
+            )
+            
+            if os.path.exists(cropped_path):
+                for filename in sorted(os.listdir(cropped_path))[:5]:
+                    if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                        file_path = os.path.join(
+                            settings.MEDIA_URL, 
+                            'images', 
+                            f'user_id_{user_id}', 
+                            f'post_id_{project_id}', 
+                            'cropped', 
+                            filename
+                        )
+                        images.append(file_path)
         
         project_data.append({
             'id': project.id,
             'createdDate': project.createdDate.strftime("%Y-%m-%d %H:%M:%S"),
-            'images': images[:5]  # Show max 5 thumbnails
+            'images': images,  # Already limited to 5 images
+            'image_count': len(images)  # Additional info
         })
     
+    # AJAX request (JSON response)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
             'projects': project_data,
-            'has_more': page_projects.has_next()
+            'has_more': page_projects.has_next(),
+            'total_projects': paginator.count,
+            'current_page': page,
+            'offset': offset,
+            'limit': limit
         })
     
+    # Regular request (HTML response)
     return render(request, 'rembgApp/recentProject.html', {
         'recent_projects': project_data,
         'offset': offset,
         'limit': limit,
-        'has_more': page_projects.has_next()
+        'has_more': page_projects.has_next(),
+        'total_projects': paginator.count
     })
 
 
 # In views.py
 @login_required
 def get_project_images(request, project_id):
-    project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
-    user_id = request.user.id
-    cropped_path = os.path.join(
-        settings.MEDIA_ROOT,
-        'images',
-        f'user_id_{user_id}',
-        f'post_id_{project_id}',
-        'cropped'
-    )
-    
-    images = []
-    if os.path.exists(cropped_path):
-        for filename in sorted(os.listdir(cropped_path)):
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                file_path = os.path.join(
-                    settings.MEDIA_URL,
-                    'images',
-                    f'user_id_{user_id}',
-                    f'post_id_{project_id}',
-                    'cropped',
-                    filename
-                )
-                images.append(file_path)
-    
-    # Ensure we return a consistent format
-    return JsonResponse({
-        'success': True,
-        'images': images
-    })
+    try:
+        # Verify the project belongs to the current user
+        project = get_object_or_404(Uploaded_Pictures, id=project_id, author=request.user)
+        user_id = request.user.id
+        
+        images = []
+        
+        # PRODUCTION: S3 Storage
+        # S3 path where cropped images are stored
+        s3_cropped_prefix = f"images/user_id_{user_id}/post_id_{project_id}/cropped/"
+        
+        try:
+            from django.core.files.storage import default_storage
+            
+            # List files in the S3 directory
+            subdirs, files = default_storage.listdir(s3_cropped_prefix)
+            
+            # Filter for image files and sort them numerically
+            image_files = [f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            
+            # Sort files numerically (0.png, 1.png, 2.png, etc.)
+            try:
+                image_files.sort(key=lambda x: int(os.path.splitext(x)[0]))
+            except (ValueError, TypeError):
+                # Fallback: if filenames aren't numeric, use natural sort
+                image_files.sort()
+            
+            # Generate URLs for each image
+            for filename in image_files:
+                s3_key = f"{s3_cropped_prefix}{filename}"
+                image_url = default_storage.url(s3_key)
+                images.append(image_url)
+                
+            print(f"Found {len(images)} images in S3: {s3_cropped_prefix}")
+            
+        except FileNotFoundError:
+            # Directory doesn't exist yet (images still processing or no images)
+            print(f"S3 directory not found: {s3_cropped_prefix}")
+        except Exception as e:
+            print(f"Error accessing S3 images: {str(e)}")
+                
+        
+        # Return consistent JSON response
+        return JsonResponse({
+            'success': True,
+            'images': images,
+            'count': len(images),
+            'project_id': project_id
+        })
+        
+    except Uploaded_Pictures.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Project not found or access denied'
+        }, status=404)
+    except Exception as e:
+        print(f"Unexpected error in get_project_images: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Internal server error'
+        }, status=500)
+

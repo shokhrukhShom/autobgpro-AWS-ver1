@@ -64,6 +64,19 @@ export function initializeLogoSelect() {
             img.alt = 'Logo';
             img.className = 'logo-thumbnail';
             img.dataset.path = logo.path;
+            img.crossOrigin = "Anonymous"; // ← ADD THIS LINE
+
+            // Add error handling
+            img.onerror = function() {
+                console.error('Failed to load logo:', logo.url);
+                // Optionally show a placeholder or hide the broken image
+                this.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.textContent = 'Failed to load';
+                errorDiv.style.color = 'red';
+                errorDiv.style.fontSize = '12px';
+                imgContainer.appendChild(errorDiv);
+            };
             
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-logo-btn';

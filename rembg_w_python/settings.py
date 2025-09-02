@@ -209,6 +209,10 @@ if ENVIRONMENT == 'production':
    BG_TEMPLATES_ROOT = os.path.join(MEDIA_ROOT, 'bg-templates')
    
    USE_UPLOAD = os.path.join(MEDIA_ROOT, 'user_upload')
+   
+   # Custom S3 paths
+   S3_LOGO_ROOT = 'media/user_upload/user_id_{user_id}/logos/'
+   S3_MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/'
   
 
 else:
