@@ -125,7 +125,7 @@ function downloadRecentProject(projectId) {
 function processImageForDownload(imagePath, metadata, callback) {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
-    img.src = imagePath;
+    img.src = imagePath + '?v=' + Date.now();
 
     img.onload = function() {
         const canvas = document.createElement('canvas');
@@ -138,7 +138,8 @@ function processImageForDownload(imagePath, metadata, callback) {
         // Load background image
         const bg = new Image();
         bg.crossOrigin = 'Anonymous';
-        bg.src =  metadata.project?.background_image || metadata.background_path || '/media/bg-templates/patform.jpg';
+        const bgSrc =  metadata.project?.background_image || metadata.background_path || 'https://autobgpro-bkt.s3.amazonaws.com/media/bg-templates/patform.jpg';
+        bg.src = bgSrc + '?v=' + Date.now();
 
         bg.onload = function() {
             // Draw background
