@@ -2341,3 +2341,84 @@ def get_project_images(request, project_id):
             'error': 'Internal server error'
         }, status=500)
 
+
+
+
+
+# Email form handling
+from django.core.mail import EmailMessage
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
+from smtplib import SMTPException, SMTPAuthenticationError
+
+@csrf_exempt
+@require_POST
+def contact_form(request):
+    try:
+        data = json.loads(request.body)
+        
+        # Get form data
+        name = data.get('name', '')
+        email = data.get('email', '')
+        question = data.get('question', '')
+        volume = data.get('volume', '')
+        math_answer = data.get('math_answer', '')
+        correct_answer = data.get('correct_answer', '')
+        
+        # Validate required fields
+        if not all([name, email, question, math_answer, correct_answer]):
+            return JsonResponse({'success': False, 'error': 'All fields are required'})
+        
+        # Validate math answer
+        if not math_answer or int(math_answer) != int(correct_answer):
+            return JsonResponse({'success': False, 'error': 'Incorrect answer to the math question'})
+        
+        # Validate email format
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, email):
+            return JsonResponse({'success': False, 'error': 'Please enter a valid email address'})
+        
+        # Prepare email content
+        subject = f"AutoBG Pro Question from {name}"
+        message = f"""
+        Name: {name}
+        Email: {email}
+        Monthly Volume: {volume}
+        
+        Question:
+        {question}
+        
+        This message was sent from the AutoBG Pro contact form.
+        """
+        
+        # Send email using IONOS SMTP
+        try:
+            email_msg = EmailMessage(
+                subject,
+                message,
+                "noreply@autobgpro.com",  # From (must match authenticated user)
+                ["info@autobgpro.com"],   # To
+                reply_to=[email],         # Reply-to set to user's email
+            )
+            email_msg.send(fail_silently=False)
+            
+        except SMTPAuthenticationError:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Email authentication failed. Please check your email settings.'
+            })
+        except SMTPException as e:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Email server error: {str(e)}'
+            })
+        
+        return JsonResponse({'success': True})
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Server error: {str(e)}'
+        })

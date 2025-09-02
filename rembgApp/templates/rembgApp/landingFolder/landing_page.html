@@ -792,6 +792,44 @@
             transition: opacity 0.5s ease;
             opacity: 1;
             }
+
+            /* css for email math questions */
+
+            .math-question {
+                background-color: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
+                border: 1px dashed #ddd;
+                margin-bottom: 20px;
+            }
+
+            .math-question label {
+                margin-bottom: 10px;
+                display: block;
+                font-weight: 600;
+            }
+
+            .notification {
+                padding: 15px;
+                margin-top: 20px;
+                border-radius: 8px;
+                text-align: center;
+                font-weight: 500;
+            }
+
+            .success {
+                background-color: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+
+            .error {
+                background-color: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+        /* End of email math question css */
+
     </style>
 </head>
 <body>
@@ -1123,44 +1161,63 @@
 
     <!-- Form Section -->
     <a id="contact"></a>
+    <!-- Replace your current form section with this updated version -->
     <section class="form-section" id="form">
         <div class="container">
             <div class="form-container">
                 <h2 class="text-center">Ask a Question</h2>
-                <p class="text-center" >We will be happy to assist with any questions</p>
+                <p class="text-center">We will be happy to assist with any questions</p>
                 
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="full-name">Dealership Name / Full Name</label>
-                        <input type="text" id="full-name" placeholder="Enter Dealership Name / Full Name">
+                <form id="contact-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="full-name">Dealership Name / Full Name *</label>
+                            <input type="text" id="full-name" name="name" placeholder="Enter Dealership Name / Full Name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="question">Your Question *</label>
+                            <input id="question" name="question" rows="3" placeholder="My question is ..." required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="volume">Monthly Photo Volume</label>
+                            <select id="volume" name="volume">
+                                <option value="">Select volume range</option>
+                                <option value="1-1000">1-1000 photos</option>
+                                <option value="1000-2000">1000-2000 photos</option>
+                                <option value="2000+">2000+ photos</option>
+                            </select>
+                        </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" placeholder="Enter your email">
+                    <!-- Math question for bot prevention -->
+                    <div class="math-question">
+                        <label for="math-answer">Please answer this question to prove you're not a robot: 
+                            <span id="math-question" style="border-radius: 6px;  border: 1px solid #e2e8f0;"></span> *
+                        </label>
+                        <input type="number" id="math-answer" name="math-answer" placeholder="Your answer" required>
+                        <input type="hidden" id="correct-answer" name="correct-answer">
                     </div>
                     
-                    <div class="form-group">
-                        <label for="dealership">Your Question</label>
-                        <input type="text" id="dealership" placeholder="My question is ...">
-                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">SEND</button>
                     
-                    <div class="form-group">
-                        <label for="volume">Monthly Photo Volume</label>
-                        <select id="volume">
-                            <option value="">Select volume range</option>
-                            <option value="1-100">1-100 photos</option>
-                            <option value="101-500">101-500 photos</option>
-                            <option value="501-1000">501-1000 photos</option>
-                            <option value="1000+">1000+ photos</option>
-                        </select>
+                    <div class="form-footer">
+                        By clicking "SEND", you agree to our Terms of Service and Privacy Policy.
                     </div>
+                </form>
+                
+                <div id="success-message" class="notification success" style="display: none;">
+                    Thank you for your question! We'll get back to you soon.
                 </div>
                 
-                <button type="submit" class="btn" style="width: 100%;">SEND</button>
-                
-                <div class="form-footer">
-                    By clicking "SEND", you agree to our Terms of Service and Privacy Policy.
+                <div id="error-message" class="notification error" style="display: none;">
+                    There was an error submitting the form. Please try again.
                 </div>
             </div>
         </div>
@@ -1190,7 +1247,7 @@
                     <ul class="footer-description">
                         <li>Tech Help available</li>
                         <li>Mon-Fri 10 AM - 4 PM MST</li>
-                        <li>Support@AutoBGPRO.com</li>
+                        <li>support@autobgpro.com</li>
                         <li>+1 (720) 515-0277</li>
                     </ul>
 
@@ -1400,6 +1457,116 @@
             // Reset form
             form.reset();
         });
+
+
+        // Email form handling
+        // Generate random math question
+        function generateMathQuestion() {
+            const num1 = Math.floor(Math.random() * 10) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            const correctAnswer = num1 + num2;
+            
+            document.getElementById('math-question').textContent = `${num1} + ${num2} = ?`;
+            document.getElementById('correct-answer').value = correctAnswer;
+            
+            return correctAnswer;
+        }
+
+        // Initialize math question on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            generateMathQuestion();
+            
+            // Form submission handler
+            document.getElementById('contact-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Get form data
+                const formData = {
+                    name: document.getElementById('full-name').value,
+                    email: document.getElementById('email').value,
+                    question: document.getElementById('question').value,
+                    volume: document.getElementById('volume').value,
+                    math_answer: document.getElementById('math-answer').value,
+                    correct_answer: document.getElementById('correct-answer').value
+                };
+                
+                // Basic validation
+                if (!formData.name || !formData.email || !formData.question || !formData.math_answer) {
+                    showError('Please fill in all required fields');
+                    return;
+                }
+                
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(formData.email)) {
+                    showError('Please enter a valid email address');
+                    return;
+                }
+                
+                // Validate math answer
+                if (parseInt(formData.math_answer) !== parseInt(formData.correct_answer)) {
+                    showError('Incorrect answer to the math question. Please try again.');
+                    generateMathQuestion();
+                    document.getElementById('math-answer').value = '';
+                    return;
+                }
+                
+                try {
+                    // Send form data to server
+                    const response = await fetch('/contact/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken') // For CSRF protection
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showSuccess();
+                        document.getElementById('contact-form').reset();
+                        generateMathQuestion();
+                    } else {
+                        showError(result.error || 'There was an error submitting the form');
+                    }
+                } catch (error) {
+                    showError('There was an error submitting the form. Please try again.');
+                }
+            });
+        });
+
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Show success message
+        function showSuccess() {
+            document.getElementById('success-message').style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+        }
+
+        // Show error message
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-message').style.display = 'block';
+            document.getElementById('success-message').style.display = 'none';
+        }
+
+
     </script>
 </body>
 </html>

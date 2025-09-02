@@ -58,6 +58,8 @@ urlpatterns = [
 
     path('recent-projects/', views.recent_projects, name='recent_projects'),
     path('get_project_images/<int:project_id>/', views.get_project_images, name='get_project_images'),
+    
+    path('contact/', views.contact_form, name='contact_form'),
 
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -264,4 +264,6 @@ EMAIL_HOST_USER = "noreply@autobgpro.com"
 #EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
 # Default sender email
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = "noreply@autobgpro.com"
+SERVER_EMAIL = "noreply@autobgpro.com"
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
