@@ -15,6 +15,7 @@ FILES=(
     "git_files.sh"
     "requirements.txt"
     "documentation.txt"
+    "requirements-old.txt"
     
      #stripe
     "rembgApp/cron.py" # reset monthly count tokens
@@ -88,6 +89,8 @@ FILES=(
     "rembgApp/apps.py"
     "rembg_w_python/storage_backends.py"
     
+    # install script for building server
+    "install.sh"
     
 )
 
