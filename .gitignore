@@ -62,3 +62,11 @@ rembg_w_python/media
 vvv/lib/python3.9/site-packages/
 vvv/lib/python3.9/site-packages/cv2/cv2.abi3.so
 vvv/lib/python3.9/site-packages/llvmlite/binding/libllvmlite.so
+vvv/
+
+# ignore staticfiles from collectStatic
+staticfiles
+
+# ignore virtual environment
+vvv
+vvv/*

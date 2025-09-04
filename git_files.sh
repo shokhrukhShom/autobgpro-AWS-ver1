@@ -91,6 +91,9 @@ FILES=(
     
     # install script for building server
     "install.sh"
+
+    # add git ignore
+    ".gitignore"
     
 )
 
